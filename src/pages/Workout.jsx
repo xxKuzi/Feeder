@@ -4,12 +4,12 @@ import { useData } from "../parts/Memory";
 import CirclePB from "../components/CirclePB";
 
 export default function Workout() {
-  const { statistics, shoot, addRecord } = useData();
+  const { statistics, shoot, addRecord, updateStatistics } = useData();
   const [time, setTime] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [progress, setProgress] = useState(1);
 
-  const fullTime = 3;
+  const fullTime = 10;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,6 +56,7 @@ export default function Workout() {
   return (
     <div className="flex flex-col items-center justify-center w-screen">
       <p className="font-bold text-2xl">Workout</p>
+      <CirclePB radius={40} color="blue" progress={70} />
 
       <div className="mt-2 flex items-center justify-center gap-4">
         <button className="button button__positive" onClick={() => shoot(true)}>
@@ -111,7 +112,6 @@ export default function Workout() {
           style={{ width: `${progress * 256}` + "px" }}
         ></div>
       </div>
-      <CirclePB radius={40} color="blue" progress={70} />
     </div>
   );
 }

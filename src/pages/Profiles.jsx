@@ -10,13 +10,21 @@ import { MdDriveFileRenameOutline } from "react-icons/md";
 export default function Profiles() {
   const modalRef = useRef();
   const [newUserData, setNewUserData] = useState({});
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([{ name: "XYZ" }]);
 
-  const { updateProfile } = useData();
+  const { updateProfile, profile } = useData();
 
   useEffect(() => {
     loadUsers(); // Fetch users on component mount
   }, []);
+
+  useEffect(() => {
+    //for updating state of profile after rename
+    if (users[0].name !== "XYZ") {
+      const userData = users.find((user) => user.userId === profile.userId);
+      updateProfile({ name: userData.name, userId: userData.userId });
+    }
+  }, [users]);
 
   const loadUsers = async () => {
     try {
@@ -44,14 +52,12 @@ export default function Profiles() {
     } catch (error) {
       console.error("Failed to delete user:", error);
     }
-
     loadUsers();
-    selectUser(users[0].userId);
   }
 
   const renameUser = async (userId, newName) => {
     await invoke("rename_user", { userId: userId, newName: newName });
-    loadUsers();
+    await loadUsers();
   };
 
   async function addUser() {

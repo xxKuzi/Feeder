@@ -4,7 +4,7 @@ const DataContext = createContext();
 
 export function Memory({ children }) {
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
-  const [profile, setProfile] = useState({ userId: 1, name: "x" });
+  const [profile, setProfile] = useState({ userId: 0, name: "x" });
   const [records, setRecords] = useState([{}]);
 
   useEffect(() => {
@@ -25,14 +25,13 @@ export function Memory({ children }) {
   };
 
   const loadRecords = async () => {
-    console.log("Loading...");
     const loadedRecords = await invoke("load_records");
-    console.log(loadedRecords);
     setRecords(loadedRecords);
   };
 
-  const updateStatistics = () => {
-    setStatistics((prev) => ({ ...prev, taken: prev.taken + dif }));
+  const updateStatistics = (made, taken) => {
+    console.log("deleting", made, " ", taken);
+    setStatistics({ made: made, taken: taken });
   };
 
   const updateProfile = (userData) => {
@@ -61,12 +60,10 @@ export function Memory({ children }) {
     await loadRecords();
   }
 
-  const saveRecord = (time, made, missed) => {};
   const contextData = {
     statistics,
     updateStatistics,
     shoot,
-    saveRecord,
     profile,
     updateProfile,
     addRecord,

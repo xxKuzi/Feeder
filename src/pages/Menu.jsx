@@ -3,21 +3,34 @@ import { Link } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { useData } from "../parts/Memory";
 import Modal from "../components/Modal.jsx";
+import { useNavigate } from "react-router-dom";
 
 export default function Menu() {
   const [made, setMade] = useState(0); // State for made
   const [taken, setTaken] = useState(0); // State for taken
+  const navigate = useNavigate();
 
-  const { profile, addRecord } = useData();
+  const { profile, addRecord, updateStatistics } = useData();
 
   const modalRef = useRef();
+
+  const startWorkout = () => {
+    updateStatistics(0, 0);
+    navigate("/workout");
+  };
 
   return (
     <div className="flex flex-col items-center justify-center w-screen">
       <p className="headline">Menu</p>
-      <Link className="button mt-8 button__submit" to="/workout">
-        Workout
-      </Link>
+      <button
+        onClick={() => {
+          navigate("/workout");
+        }}
+      >
+        <button className="button mt-8 button__submit" onClick={startWorkout}>
+          Workout
+        </button>
+      </button>
 
       <input
         className="input__normal mt-8"
