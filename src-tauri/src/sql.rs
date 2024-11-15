@@ -141,12 +141,13 @@ pub async fn select_user(user_id: i32) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn rename_user(user_id: i32, new_name: String) -> Result<(), String> {
+pub async fn rename_user(user_id: i32, new_name: String, new_number: i32) -> Result<(), String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    sqlx::query("UPDATE users SET name = $1 WHERE user_id = $2")
+    sqlx::query("UPDATE users SET name = $1, number = $2 WHERE user_id = $3")
         .bind(new_name)
+        .bind(new_number)
         .bind(user_id)
         .execute(&*pool)
         .await

@@ -1,36 +1,81 @@
-// ModalButton.js
-import React, { useState, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 
 const Modal = forwardRef((_, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [modalProps, setModalProps] = useState({
-    confirmButton: "",
-    headline: "XXXAre you sure?",
-    question: "XXXDo you want to proceed?",
-    color: "lightblue",
-    input: false,
-    onConfirm: () => console.log("XXXDefault confirm"),
-  });
+  const [input, setInput] = useState([]);
+  const [modalProps, setModalProps] = useState({});
 
   // Expose the openModal function via the ref
   useImperativeHandle(ref, () => ({
     openModal: ({
-      confirmButton,
-      headline,
-      question,
-      color,
-      onConfirm,
-      input,
+      buttons = {},
+
+      okLabel = "Ok",
+      okColor = "bg-blue-500",
+      okHandle = () => setIsOpen(false),
+
+      cancelLabel = "Cancel",
+      cancelColor = "bg-gray-400",
+      cancelHandle = () => setIsOpen(false),
+
+      confirmLabel = "Yes",
+      confirmColor = "bg-indigo-500",
+      confirmHandle = () => setIsOpen(false),
+
+      declineLabel = "Special",
+      declineColor = "bg-red-500",
+      declineHandle = () => setIsOpen(false),
+
+      headline = "XXXAre you sure?",
+      question = "XXXDo you want to proceed?",
+
+      input = false,
+      numberOfInputs = 0,
+      inputData = [],
+      inputPlaceholders = ["1"],
     }) => {
       setModalProps({
-        confirmButton,
+        buttons: {
+          confirm: false,
+          decline: false,
+          ok: false,
+          cancel: false,
+          ...buttons,
+        },
+
+        buttonConfig: {
+          confirm: {
+            label: confirmLabel,
+            color: confirmColor,
+            handle: confirmHandle,
+          },
+          decline: {
+            label: declineLabel,
+            color: declineColor,
+            handle: declineHandle,
+          },
+          ok: { label: okLabel, color: okColor, handle: okHandle },
+          cancel: {
+            label: cancelLabel,
+            color: cancelColor,
+            handle: cancelHandle,
+          },
+        },
+
         headline,
         question,
-        color,
-        onConfirm,
+
         input,
+        numberOfInputs,
+        inputData,
+        inputPlaceholders,
       });
+      setInput(inputData);
       setIsOpen(true);
     },
   }));
@@ -38,26 +83,14 @@ const Modal = forwardRef((_, ref) => {
   const closeModal = () => setIsOpen(false);
 
   const handleConfirm = () => {
-    modalProps.input ? modalProps.onConfirm(input) : modalProps.onConfirm();
+    modalProps.input
+      ? modalProps.buttonConfig.confirm.handle(input)
+      : modalProps.buttonConfig.confirm.handle(input); //try out with var in both cases
     closeModal();
-  };
-
-  const selectedColor = () => {
-    switch (modalProps.color) {
-      case "positive":
-        return "bg-green-400";
-
-      case "negative":
-        return "bg-red-600";
-
-      case "submit":
-        return "bg-indigo-600";
-    }
   };
 
   return (
     <div>
-      {/* Modal Component */}
       {isOpen && (
         <div
           onClick={closeModal}
@@ -81,29 +114,41 @@ const Modal = forwardRef((_, ref) => {
                 </h3>
                 <p className="text-sm text-gray-500">{modalProps.question}</p>
               </div>
-              {modalProps.input && (
-                <input
-                  className="input"
-                  onChange={(e) => setInput(e.target.value)}
-                ></input>
-              )}
-              <div className="mt-6 flex gap-6 items-center justify-center">
-                {modalProps.confirmButton && (
-                  <button
-                    className={
-                      "text-white w-full py-2 rounded-md " + selectedColor()
-                    }
-                    onClick={handleConfirm}
-                  >
-                    {modalProps.confirmButton}
-                  </button>
+              {modalProps.input &&
+                Array.from({ length: modalProps.numberOfInputs }).map(
+                  (_, i) => (
+                    <input
+                      key={i}
+                      placeholder={modalProps.inputPlaceholders[i]}
+                      className="input"
+                      value={input[i]}
+                      onChange={(e) =>
+                        setInput((prev) => {
+                          const updated = [...prev];
+                          updated[i] = e.target.value;
+                          return updated;
+                        })
+                      }
+                    />
+                  )
                 )}
-                <button
-                  className="bg-gray-200 w-full py-2 rounded-md"
-                  onClick={closeModal}
-                >
-                  Cancel
-                </button>
+
+              <div className="flex justify-center items-center mt-4 gap-4">
+                {Object.entries(modalProps.buttonConfig).map((button, i) => {
+                  if (modalProps.buttons[button[0]]) {
+                    return (
+                      <button
+                        key={i}
+                        className={`text-white ${String(
+                          button[1].color
+                        )} w-full  py-2 rounded-md  `}
+                        onClick={handleConfirm}
+                      >
+                        {button[1].label}
+                      </button>
+                    );
+                  }
+                })}
               </div>
             </div>
           </div>

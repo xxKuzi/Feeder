@@ -10,37 +10,8 @@ import { MdDriveFileRenameOutline } from "react-icons/md";
 export default function Profiles() {
   const modalRef = useRef();
   const [newUserData, setNewUserData] = useState({});
-  const [users, setUsers] = useState([{ name: "XYZ" }]);
 
-  const { updateProfile, profile } = useData();
-
-  useEffect(() => {
-    loadUsers(); // Fetch users on component mount
-  }, []);
-
-  useEffect(() => {
-    //for updating state of profile after rename
-    if (users[0].name !== "XYZ") {
-      const userData = users.find((user) => user.userId === profile.userId);
-      updateProfile({ name: userData.name, userId: userData.userId });
-    }
-  }, [users]);
-
-  const loadUsers = async () => {
-    try {
-      const userListRust = await invoke("load_users", {}); // Call the Rust command expecting an array of users
-      const userList = userListRust.map((user) => ({
-        userId: user.user_id,
-        name: user.name,
-        number: user.number,
-        createdAt: user.created_at,
-      }));
-
-      setUsers(userList); // Assuming setUsers is set up to handle an array of user objects
-    } catch (err) {
-      console.error("Failed to load users:", err);
-    }
-  };
+  const { updateProfile, users, loadUsers } = useData();
 
   const updateNewUserData = (type, value) => {
     setNewUserData((prev) => ({ ...prev, [type]: value }));
@@ -55,23 +26,48 @@ export default function Profiles() {
     loadUsers();
   }
 
-  const renameUser = async (userId, newName) => {
-    await invoke("rename_user", { userId: userId, newName: newName });
-    await loadUsers();
+  const renameUser = async (userId, newName, newNumber) => {
+    console.log(/^\d+(\.\d+)?$/.test(newNumber));
+    if (/^\d+(\.\d+)?$/.test(newNumber)) {
+      await invoke("rename_user", {
+        userId: userId,
+        newName: newName,
+        newNumber: newNumber,
+      });
+      await loadUsers();
+    } else {
+      console.log("OPENING MODAL");
+      setTimeout(() => {
+        modalRef.current.openModal({
+          headline: "Číslo dresu musí být číslo",
+          question: "Upravte číslo dresu aby se jednalo o číslo",
+          buttons: { cancel: true },
+        });
+      }, 100);
+    }
   };
 
   async function addUser() {
-    try {
-      await invoke("add_user", {
-        name: newUserData.name,
-        number: Number(newUserData.number),
-      });
+    if (/^\d+(\.\d+)?$/.test(newUserData.number)) {
+      //Check if it is number
+      try {
+        await invoke("add_user", {
+          name: newUserData.name,
+          number: Number(newUserData.number),
+        });
 
-      console.log("User added successfully");
-    } catch (error) {
-      console.error("Failed to add user:", error);
+        console.log("User added successfully");
+      } catch (error) {
+        console.error("Failed to add user:", error);
+      }
+      loadUsers();
+    } else {
+      modalRef.current.openModal({
+        headline: "Číslo dresu musí být číslo",
+        question: "Upravte číslo dresu aby se jednalo o číslo",
+        buttons: { cancel: true },
+      });
     }
-    loadUsers();
   }
 
   const selectUser = async (userId) => {
@@ -103,18 +99,26 @@ export default function Profiles() {
               </button>
               <button
                 className=""
-                onClick={() =>
+                onClick={() => {
+                  const inputArr = [user.name, user.number];
                   modalRef.current.openModal({
-                    confirmButton: "Rename",
-                    headline: "Rename",
-                    question: "Chose new name",
-                    color: "submit",
-                    input: true,
-                    onConfirm: (inputValue) => {
-                      renameUser(user.userId, inputValue);
+                    buttons: {
+                      confirm: true,
+                      cancel: true,
                     },
-                  })
-                }
+
+                    headline: "Changing Data",
+                    question: "Chose new data",
+
+                    input: true,
+                    numberOfInputs: 2,
+                    inputData: inputArr,
+                    inputPlaceholders: ["name", "number"],
+                    confirmHandle: (newData) => {
+                      renameUser(user.userId, newData[0], newData[1]);
+                    },
+                  });
+                }}
               >
                 <MdDriveFileRenameOutline size={30} />
               </button>

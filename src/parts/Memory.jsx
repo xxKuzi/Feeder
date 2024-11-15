@@ -6,11 +6,36 @@ export function Memory({ children }) {
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
   const [profile, setProfile] = useState({ userId: 0, name: "x" });
   const [records, setRecords] = useState([{}]);
+  const [users, setUsers] = useState([{ name: "XYZ" }]);
 
   useEffect(() => {
     loadCurrentData();
     loadRecords();
+    loadUsers();
   }, []);
+
+  useEffect(() => {
+    if (users[0].name !== "XYZ") {
+      const userData = users.find((user) => user.userId === profile.userId);
+      updateProfile(userData);
+    }
+  }, [users]);
+
+  const loadUsers = async () => {
+    try {
+      const userListRust = await invoke("load_users", {}); // Call the Rust command expecting an array of users
+      const userList = userListRust.map((user) => ({
+        userId: user.user_id,
+        name: user.name,
+        number: user.number,
+        createdAt: user.created_at,
+      }));
+
+      setUsers(userList); // Assuming setUsers is set up to handle an array of user objects
+    } catch (err) {
+      console.error("Failed to load users:", err);
+    }
+  };
 
   const loadCurrentData = async () => {
     let userDataRust = (await invoke("load_current_data"))[0]; //because it returns an object in an array
@@ -30,7 +55,6 @@ export function Memory({ children }) {
   };
 
   const updateStatistics = (made, taken) => {
-    console.log("deleting", made, " ", taken);
     setStatistics({ made: made, taken: taken });
   };
 
@@ -66,9 +90,11 @@ export function Memory({ children }) {
     shoot,
     profile,
     updateProfile,
+    records,
     addRecord,
     loadRecords,
-    records,
+    users,
+    loadUsers,
   };
 
   return (

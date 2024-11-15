@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { useData } from "../parts/Memory";
 import Modal from "../components/Modal.jsx";
+import WorkoutKind from "../components/WorkoutKind.jsx";
 import { useNavigate } from "react-router-dom";
 
 export default function Menu() {
@@ -31,7 +32,13 @@ export default function Menu() {
           Workout
         </button>
       </button>
+    </div>
+  );
+}
 
+// FOR MANUAL ADDING RECORDS
+{
+  /* 
       <input
         className="input__normal mt-8"
         value={made}
@@ -51,21 +58,5 @@ export default function Menu() {
         onClick={() => addRecord(Number(made), Number(taken))} // Pass userId as name
       >
         Add Record
-      </button>
-      <button
-        className="button mt-4 button__positive"
-        onClick={() => {
-          modalRef.current.openModal({
-            button: "Yes, Continue",
-            headline: "Confirmation Required",
-            question: "Are you absolutely sure you want to proceed?",
-            color: "red",
-          });
-        }}
-      >
-        Open modal
-      </button>
-      <Modal ref={modalRef} />
-    </div>
-  );
+      </button> */
 }

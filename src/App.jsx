@@ -8,7 +8,7 @@ import Home from "./pages/Home";
 import Menu from "./pages/Menu";
 import Workout from "./pages/Workout";
 import Statistics from "./pages/Statistics";
-import End from "./pages/End";
+import Result from "./pages/Result";
 
 function App() {
   return (
@@ -20,7 +20,7 @@ function App() {
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/workout" element={<Workout />} />
         <Route path="/profiles" element={<Profiles />} />
-        <Route path="/end" element={<End />} />
+        <Route path="/result" element={<Result />} />
       </Routes>
     </main>
   );
