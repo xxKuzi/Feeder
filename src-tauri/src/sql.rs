@@ -62,8 +62,23 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
         user_id         INTEGER,
         updated_at      DATETIME DEFAULT (datetime('now', 'localtime'))
     );     
+
+    CREATE TABLE IF NOT EXISTS modes
+    (
+        mode_id         INTEGER PRIMARY KEY,
+        name            TEXT,
+        category        INTEGER DEFAULT 0,  
+        time            INTEGER DEFAULT 30,  
+        motor_speed     INTEGER DEFAULT 30,
+        angles          TEXT DEFAULT '30,90,150',
+        interval        INTEGER DEFAULT 5
+    );     
+
     INSERT INTO users (user_id, name, number)    VALUES (1, 'Default', 69);
     INSERT INTO data (user_id)                VALUES (1);
+    INSERT INTO modes (mode_id, category, name)                VALUES (0, 0, 'DEFAULT random New');
+    INSERT INTO modes (category, name)                VALUES (1, 'DEFAULT Two Point');
+    INSERT INTO modes (category, name)                VALUES (2, 'DEFAULT Three Point');
     ";
 
     sqlx::query(&qry).execute(&*pool).await // Execute the query
@@ -265,3 +280,66 @@ pub async fn load_records() -> Result<Vec<Record>, String> {
 
     users.map_err(|e| e.to_string())
 }
+
+
+
+/* Library */
+#[derive(Serialize, Deserialize, Debug, FromRow)]
+pub struct Mode {
+    mode_id: i32,
+    name: String,
+    category: i32,
+    time: i32,    
+    motor_speed: u32,
+    angles: String,
+    interval: i32,
+}
+
+#[tauri::command]
+pub async fn add_mode(data: Mode) -> Result<(), String> {    
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    let qry = "INSERT INTO history (name, category, time, motor_speed, angles, interval) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    let result = sqlx::query(&qry)        
+        .bind(data.name)
+        .bind(data.category)
+        .bind(data.time)
+        .bind(data.motor_speed)
+        .bind(data.angles)
+        .bind(data.interval)        
+        .execute(&*pool)
+        .await; 
+
+    result.map(|_| ()).map_err(|e| e.to_string()) // Map success to Ok(())
+}
+
+#[tauri::command]
+pub async fn load_modes() -> Result<Vec<Mode>, String> {
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    let qry = "SELECT mode_id, name, category, time, motor_speed, angles, interval FROM modes";
+    let modes = sqlx::query_as::<_, Mode>(qry)
+        .fetch_all(&*pool)
+        .await;
+
+    
+
+    modes.map_err(|e| e.to_string())
+}
+
+// #[tauri::command]
+// pub async fn load_records() -> Result<Vec<Record>, String> {
+//     let pool = get_db_pool().await;
+//     let pool = pool.lock().await;
+
+//     let qry = "SELECT history_id, made, taken, user_id, created_at FROM history";
+//     let users = sqlx::query_as::<_, Record>(qry)
+//         .fetch_all(&*pool)
+//         .await;
+
+    
+
+//     users.map_err(|e| e.to_string())
+// }

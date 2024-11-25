@@ -2,11 +2,8 @@ import React, { act, useEffect } from "react";
 import { useData } from "../parts/Memory";
 
 export default function Result() {
-  const { records, updateStatistics, statistics } = useData();
-  useEffect(() => {
-    console.log("statisticss", statistics);
-    updateStatistics(0, 0);
-  }, []);
+  const { records } = useData();
+
   const actualRecord = records[records.length - 1];
   const accuracy =
     actualRecord.taken > 0 ? actualRecord.made / actualRecord.taken : 0;

@@ -27,7 +27,6 @@ export default function Profiles() {
   }
 
   const renameUser = async (userId, newName, newNumber) => {
-    console.log(/^\d+(\.\d+)?$/.test(newNumber));
     if (/^\d+(\.\d+)?$/.test(newNumber)) {
       await invoke("rename_user", {
         userId: userId,

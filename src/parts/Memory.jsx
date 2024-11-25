@@ -4,14 +4,17 @@ const DataContext = createContext();
 
 export function Memory({ children }) {
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
-  const [profile, setProfile] = useState({ userId: 0, name: "x" });
+  const [workoutData, setWorkoutData] = useState({});
+  const [profile, setProfile] = useState({ userId: 0, name: "XYZ" });
   const [records, setRecords] = useState([{}]);
   const [users, setUsers] = useState([{ name: "XYZ" }]);
+  const [modes, setModes] = useState([{ name: "XYZ" }]);
 
   useEffect(() => {
     loadCurrentData();
     loadRecords();
     loadUsers();
+    loadModes();
   }, []);
 
   useEffect(() => {
@@ -20,6 +23,20 @@ export function Memory({ children }) {
       updateProfile(userData);
     }
   }, [users]);
+
+  const loadModes = async () => {
+    const modesListRust = await invoke("load_modes", {});
+    const modesList = modesListRust.map((mode) => ({
+      modeId: mode.mode_id,
+      name: mode.name,
+      category: mode.category,
+      time: mode.time,
+      motorSpeed: mode.motor_speed,
+      angles: mode.angles,
+      interval: mode.interval,
+    }));
+    setModes(modesList);
+  };
 
   const loadUsers = async () => {
     try {
@@ -95,6 +112,9 @@ export function Memory({ children }) {
     loadRecords,
     users,
     loadUsers,
+    modes,
+    workoutData,
+    setWorkoutData,
   };
 
   return (

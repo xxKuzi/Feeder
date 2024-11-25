@@ -4,18 +4,21 @@ import { useData } from "../parts/Memory";
 import CirclePB from "../components/CirclePB";
 
 export default function Workout() {
-  const { statistics, shoot, addRecord, updateStatistics } = useData();
+  const { statistics, shoot, addRecord, updateStatistics, workoutData } =
+    useData();
   const [time, setTime] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [shootingProgress, setShootingProgress] = useState(0);
-  //const [shootingProgress, setShootingProgress] = useState(0);
 
-  const fullTime = 5;
+  const [fullTime, setFullTime] = useState(5);
   const navigate = useNavigate();
 
   useEffect(() => {
     setIsActive(true);
     updateStatistics(0, 0);
+    console.log(typeof workoutData.time);
+
+    setFullTime(Number(workoutData.time));
   }, []);
 
   useEffect(() => {
@@ -38,7 +41,6 @@ export default function Workout() {
   }, [isActive]);
 
   useEffect(() => {
-    console.log("time ", time);
     if (time >= fullTime) {
       End();
     }
@@ -52,8 +54,8 @@ export default function Workout() {
   const formatTime = () => {
     //let hours = Math.floor(time / 3600);
     let remainingTime = fullTime - time;
-    let minutes = Math.ceil((remainingTime % 3600) / 60);
-    let seconds = Math.ceil(remainingTime % 60);
+    let minutes = Math.floor((remainingTime % 3600) / 60);
+    let seconds = Math.floor(remainingTime % 60);
 
     return `${minutes}:${seconds}`;
   };
@@ -72,7 +74,12 @@ export default function Workout() {
             <p>{Math.floor(shootingProgress * 100)}%</p>
           </div>
         </CirclePB>
-
+        <div className="flex mt-4 p-4 py-2 border-2 rounded-lg flex-col items-center justify-center">
+          <p>{workoutData.name}</p>
+          <p>{workoutData.motor_speed}</p>
+          <p>{workoutData.angles}</p>
+          <p>{workoutData.interval}</p>
+        </div>
         <div className="flex mt-4 p-4 py-2 border-2 rounded-lg flex-col items-center justify-center">
           <p>made: {statistics.made}</p>
           <p>taken: {statistics.taken}</p>
@@ -95,6 +102,7 @@ export default function Workout() {
           >
             {isActive ? "Pause" : "Start"}
           </button>
+
           <button
             className="button__small button__negative"
             onClick={() => {
@@ -104,6 +112,12 @@ export default function Workout() {
             }}
           >
             Reset
+          </button>
+          <button
+            className="button__small button__negative "
+            onClick={() => setTime(fullTime)}
+          >
+            END
           </button>
         </div>
         <div className="flex flex-col items-center justify-center h-8">
