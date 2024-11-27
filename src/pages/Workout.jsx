@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../parts/Memory";
 import CirclePB from "../components/CirclePB";
+import { listen } from "@tauri-apps/api/event";
 
 export default function Workout() {
   const { statistics, shoot, addRecord, updateStatistics, workoutData } =
@@ -12,6 +13,19 @@ export default function Workout() {
 
   const [fullTime, setFullTime] = useState(5);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Listen for the "pause" event emitted from the backend
+    const unlisten = listen("pause", () => {
+      console.log("Pause command received from the server");
+      setIsActive((prev) => !prev);
+    });
+
+    // Cleanup the listener when the component unmounts
+    return () => {
+      unlisten();
+    };
+  }, []);
 
   useEffect(() => {
     setIsActive(true);

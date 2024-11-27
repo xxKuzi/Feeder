@@ -75,7 +75,7 @@ export default function Profiles() {
     updateProfile(userData);
   };
   return (
-    <div className="flex flex-col items-center justify-center w-screen">
+    <div className="flex flex-col h-screen items-center justify-center">
       <p className="text-5xl font-semibold">Profily</p>
 
       <div className="flex items-center justify-center mt-8 gap-4">

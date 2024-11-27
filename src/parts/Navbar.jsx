@@ -10,7 +10,7 @@ import Clock from "../components/Clock";
 export default function Navbar() {
   const { profile } = useData();
   return (
-    <div className="flex flex-col items-center justify-center bg-gray-200">
+    <div className="flex flex-col items-center justify-center bg-gray-200 fixed top-0 left-0 w-[135px]">
       <div className="text-md justify-between h-screen flex py-2 px-2 flex-col">
         <div className="h-32">
           <div className="flex gap-2 items-center justify-start">

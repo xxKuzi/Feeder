@@ -71,14 +71,15 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
         time            INTEGER DEFAULT 30,  
         motor_speed     INTEGER DEFAULT 30,
         angles          TEXT DEFAULT '30,90,150',
-        interval        INTEGER DEFAULT 5
+        interval        INTEGER DEFAULT 5,
+        predefined      BOOL DEFAULT false
     );     
 
     INSERT INTO users (user_id, name, number)    VALUES (1, 'Default', 69);
     INSERT INTO data (user_id)                VALUES (1);
-    INSERT INTO modes (mode_id, category, name)                VALUES (0, 0, 'DEFAULT random New');
-    INSERT INTO modes (category, name)                VALUES (1, 'DEFAULT Two Point');
-    INSERT INTO modes (category, name)                VALUES (2, 'DEFAULT Three Point');
+    INSERT INTO modes (mode_id, category, name, predefined)                VALUES (0, 0, 'DEFAULT random New', true);
+    INSERT INTO modes (category, name, predefined)                VALUES (1, 'DEFAULT Two Point', true);
+    INSERT INTO modes (category, name, predefined)                VALUES (2, 'DEFAULT Three Point', true);
     ";
 
     sqlx::query(&qry).execute(&*pool).await // Execute the query
@@ -283,7 +284,7 @@ pub async fn load_records() -> Result<Vec<Record>, String> {
 
 
 
-/* Library */
+/*  --- Library ---  */
 #[derive(Serialize, Deserialize, Debug, FromRow)]
 pub struct Mode {
     mode_id: i32,
@@ -293,6 +294,7 @@ pub struct Mode {
     motor_speed: u32,
     angles: String,
     interval: i32,
+    predefined: bool,
 }
 
 #[tauri::command]
@@ -300,7 +302,7 @@ pub async fn add_mode(data: Mode) -> Result<(), String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "INSERT INTO history (name, category, time, motor_speed, angles, interval) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    let qry = "INSERT INTO history (name, category, time, motor_speed, angles, interval, default) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     let result = sqlx::query(&qry)        
         .bind(data.name)
         .bind(data.category)
@@ -308,6 +310,7 @@ pub async fn add_mode(data: Mode) -> Result<(), String> {
         .bind(data.motor_speed)
         .bind(data.angles)
         .bind(data.interval)        
+        .bind(data.predefined)       
         .execute(&*pool)
         .await; 
 
@@ -319,7 +322,7 @@ pub async fn load_modes() -> Result<Vec<Mode>, String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "SELECT mode_id, name, category, time, motor_speed, angles, interval FROM modes";
+    let qry = "SELECT mode_id, name, category, time, motor_speed, angles, interval, predefined FROM modes";
     let modes = sqlx::query_as::<_, Mode>(qry)
         .fetch_all(&*pool)
         .await;
@@ -329,17 +332,19 @@ pub async fn load_modes() -> Result<Vec<Mode>, String> {
     modes.map_err(|e| e.to_string())
 }
 
-// #[tauri::command]
-// pub async fn load_records() -> Result<Vec<Record>, String> {
-//     let pool = get_db_pool().await;
-//     let pool = pool.lock().await;
+#[tauri::command]
+pub async fn delete_mode(mode_id: i32) -> Result<(), String>{
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
 
-//     let qry = "SELECT history_id, made, taken, user_id, created_at FROM history";
-//     let users = sqlx::query_as::<_, Record>(qry)
-//         .fetch_all(&*pool)
-//         .await;
+    let qry = "DELETE FROM modes WHERE mode_id = ?";
+    let result = sqlx::query(&qry)
+        .bind(mode_id)
+        .execute(&*pool)
+        .await;
+ 
 
-    
+    result.map(|_| ()).map_err(|e| e.to_string()) 
+}
 
-//     users.map_err(|e| e.to_string())
-// }
+

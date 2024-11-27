@@ -12,16 +12,19 @@ import Result from "./pages/Result";
 
 function App() {
   return (
-    <main className="flex items-center justify-between">
-      <Navbar className="" /> {/* ADD FIXED CLASS or something like that*/}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/statistics" element={<Statistics />} />
-        <Route path="/workout" element={<Workout />} />
-        <Route path="/profiles" element={<Profiles />} />
-        <Route path="/result" element={<Result />} />
-      </Routes>
+    <main className="flex items-center justify-center">
+      <Navbar />
+      {/* ADD FIXED CLASS or something like that*/}
+      <div className="flex ml-[135px] flex-col items-center justify-center">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/statistics" element={<Statistics />} />
+          <Route path="/workout" element={<Workout />} />
+          <Route path="/profiles" element={<Profiles />} />
+          <Route path="/result" element={<Result />} />
+        </Routes>
+      </div>
     </main>
   );
 }

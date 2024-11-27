@@ -3,7 +3,7 @@ import Section from "../components/Section";
 
 export default function Home() {
   return (
-    <div className="w-screen flex flex-col items-center justify-center">
+    <div className="flex flex-col h-screen items-center justify-center">
       <p className="headline">Home</p>
       <div className="flex items-center justify-center gap-16">
         <Section

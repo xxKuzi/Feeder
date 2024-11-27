@@ -27,7 +27,7 @@ export default function Statistics() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-screen">
+    <div className="flex flex-col items-center h-screen justify-center">
       <p className="headline">Statistics</p>
       <div className="mt-8 flex items-center justify-center px-8 py-4 border-2 text-center gap-4 rounded-xl">
         <div className="w-16">

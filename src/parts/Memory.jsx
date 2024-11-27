@@ -34,7 +34,9 @@ export function Memory({ children }) {
       motorSpeed: mode.motor_speed,
       angles: mode.angles,
       interval: mode.interval,
+      predefined: mode.predefined,
     }));
+    console.log("LIST ", modesList);
     setModes(modesList);
   };
 
