@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowJs": true, // Support JavaScript files
+    "checkJs": false, // Don't type-check JavaScript files
+    "jsx": "react-jsx", // Enable React JSX support
+    "strict": true, // Enable strict type-checking
+    "module": "esnext",
+    "moduleResolution": "node",
+    "target": "esnext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "allowSyntheticDefaultImports": true, // Allows default imports for CommonJS modules
+    "esModuleInterop": true // Adds compatibility for CommonJS and ES modules
+  },
+  "include": ["src/**/*"], // Include all files in the src folder
+  "exclude": ["node_modules"]
+}

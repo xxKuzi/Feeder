@@ -241,8 +241,7 @@ impl fmt::Display for ShotData {
 }
 
 #[tauri::command]
-pub async fn add_record(data: ShotData) -> Result<(), String> {
-    println!("{}", data);
+pub async fn add_record(data: ShotData) -> Result<(), String> {    
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
@@ -291,18 +290,22 @@ pub struct Mode {
     name: String,
     category: i32,
     time: i32,    
-    motor_speed: u32,
+    motor_speed: i32,
     angles: String,
     interval: i32,
     predefined: bool,
 }
+
+
 
 #[tauri::command]
 pub async fn add_mode(data: Mode) -> Result<(), String> {    
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "INSERT INTO history (name, category, time, motor_speed, angles, interval, default) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    let angles = serde_json::to_string(&data.angles).map_err(|e| e.to_string())?;
+
+    let qry = "INSERT INTO modes (name, category, time, motor_speed, angles, interval, predefined) VALUES (?, ?, ?, ?, ?, ?, ?)";
     let result = sqlx::query(&qry)        
         .bind(data.name)
         .bind(data.category)

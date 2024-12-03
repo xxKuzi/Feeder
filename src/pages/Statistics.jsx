@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useData } from "../parts/Memory";
 import { invoke } from "@tauri-apps/api/core";
+import Table from "../components/ui/page";
 
 export default function Statistics() {
   const [records, setRecords] = useState([]);
@@ -56,6 +57,7 @@ export default function Statistics() {
           </div>
         ))}
       </div>
+      <Table />
     </div>
   );
 }

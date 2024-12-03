@@ -1,13 +1,8 @@
-import React, {
-  useState,
-  useEffect,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import React, { useState, forwardRef, useImperativeHandle } from "react";
 
 const Modal = forwardRef((_, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState([]);
+  const [input, setInput] = useState({});
   const [modalProps, setModalProps] = useState({});
 
   // Expose the openModal function via the ref
@@ -15,21 +10,21 @@ const Modal = forwardRef((_, ref) => {
     openModal: ({
       buttons = {},
 
-      okLabel = "Ok",
-      okColor = "bg-blue-500",
-      okHandle = () => setIsOpen(false),
-
       cancelLabel = "Cancel",
       cancelColor = "bg-gray-400",
       cancelHandle = () => setIsOpen(false),
 
-      confirmLabel = "Yes",
-      confirmColor = "bg-indigo-500",
-      confirmHandle = () => setIsOpen(false),
+      okLabel = "Ok",
+      okColor = "bg-blue-500",
+      okHandle = () => setIsOpen(false),
 
       declineLabel = "Special",
       declineColor = "bg-red-500",
       declineHandle = () => setIsOpen(false),
+
+      confirmLabel = "Yes",
+      confirmColor = "bg-indigo-500",
+      confirmHandle = () => setIsOpen(false),
 
       headline = "XXXAre you sure?",
       question = "XXXDo you want to proceed?",
@@ -41,29 +36,30 @@ const Modal = forwardRef((_, ref) => {
     }) => {
       setModalProps({
         buttons: {
-          confirm: false,
-          decline: false,
-          ok: false,
           cancel: false,
+          ok: false,
+          decline: false,
+          confirm: false,
           ...buttons,
         },
 
         buttonConfig: {
-          confirm: {
-            label: confirmLabel,
-            color: confirmColor,
-            handle: confirmHandle,
+          cancel: {
+            label: cancelLabel,
+            color: cancelColor,
+            handle: cancelHandle,
           },
+          ok: { label: okLabel, color: okColor, handle: okHandle },
+
           decline: {
             label: declineLabel,
             color: declineColor,
             handle: declineHandle,
           },
-          ok: { label: okLabel, color: okColor, handle: okHandle },
-          cancel: {
-            label: cancelLabel,
-            color: cancelColor,
-            handle: cancelHandle,
+          confirm: {
+            label: confirmLabel,
+            color: confirmColor,
+            handle: confirmHandle,
           },
         },
 
@@ -83,9 +79,10 @@ const Modal = forwardRef((_, ref) => {
   const closeModal = () => setIsOpen(false);
 
   const handleConfirm = () => {
+    //on confirm I need to send input back
     modalProps.input
       ? modalProps.buttonConfig.confirm.handle(input)
-      : modalProps.buttonConfig.confirm.handle(input); //try out with var in both cases
+      : modalProps.buttonConfig.confirm.handle;
     closeModal();
   };
 
@@ -121,11 +118,12 @@ const Modal = forwardRef((_, ref) => {
                       key={i}
                       placeholder={modalProps.inputPlaceholders[i]}
                       className="input"
-                      value={input[i]}
+                      value={input[modalProps.inputPlaceholders[i]]}
                       onChange={(e) =>
                         setInput((prev) => {
-                          const updated = [...prev];
-                          updated[i] = e.target.value;
+                          const updated = { ...prev };
+                          updated[modalProps.inputPlaceholders[i]] =
+                            e.target.value;
                           return updated;
                         })
                       }
@@ -135,14 +133,25 @@ const Modal = forwardRef((_, ref) => {
 
               <div className="flex justify-center items-center mt-4 gap-4">
                 {Object.entries(modalProps.buttonConfig).map((button, i) => {
+                  //button[0] is name - "confirm", button[1] is the values (label, color, handle)
+
                   if (modalProps.buttons[button[0]]) {
+                    //checks if we wanted that button on the modal window - (confirm: true)
                     return (
                       <button
                         key={i}
                         className={`text-white ${String(
                           button[1].color
                         )} w-full  py-2 rounded-md  `}
-                        onClick={handleConfirm}
+                        onClick={() => {
+                          if (button[0] === "confirm") {
+                            button[1].handle(input); // passes the input
+                          } else {
+                            button[1].handle(); // if cancel it doesn't pass the data
+                          }
+
+                          closeModal();
+                        }}
                       >
                         {button[1].label}
                       </button>

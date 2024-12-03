@@ -35,7 +35,6 @@ export default function Profiles() {
       });
       await loadUsers();
     } else {
-      console.log("OPENING MODAL");
       setTimeout(() => {
         modalRef.current.openModal({
           headline: "Číslo dresu musí být číslo",

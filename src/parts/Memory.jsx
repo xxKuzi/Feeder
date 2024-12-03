@@ -115,6 +115,7 @@ export function Memory({ children }) {
     users,
     loadUsers,
     modes,
+    loadModes,
     workoutData,
     setWorkoutData,
   };
