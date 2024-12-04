@@ -36,7 +36,6 @@ export function Memory({ children }) {
       interval: mode.interval,
       predefined: mode.predefined,
     }));
-    console.log("LIST ", modesList);
     setModes(modesList);
   };
 
@@ -69,8 +68,8 @@ export function Memory({ children }) {
   };
 
   const loadRecords = async () => {
-    const loadedRecords = await invoke("load_records");
-    console.log("LOADING RECORDS ", loadedRecords);
+    const rustRecords = await invoke("load_records");
+    let loadedRecords = convertKeysToCamelCase(rustRecords);
     setRecords(loadedRecords);
   };
 
@@ -102,6 +101,20 @@ export function Memory({ children }) {
       console.error("Failed to add record:", error);
     }
     await loadRecords();
+  }
+
+  function convertKeysToCamelCase(arr) {
+    const toCamelCase = (str) =>
+      str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+
+    return arr.map((obj) => {
+      const newObj = {};
+      Object.keys(obj).forEach((key) => {
+        const camelKey = toCamelCase(key);
+        newObj[camelKey] = obj[key];
+      });
+      return newObj;
+    });
   }
 
   const contextData = {

@@ -46,9 +46,9 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
         created_at      DATETIME DEFAULT (datetime('now', 'localtime'))        
     );  
 
-    CREATE TABLE IF NOT EXISTS history
+    CREATE TABLE IF NOT EXISTS records
     (
-        history_id      INTEGER PRIMARY KEY NOT NULL,
+        records_id      INTEGER PRIMARY KEY NOT NULL,
         made            INTEGER NOT NULL,
         taken           INTEGER NOT NULL,
         user_id         INTEGER,
@@ -245,7 +245,7 @@ pub async fn add_record(data: ShotData) -> Result<(), String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "INSERT INTO history (made, taken, user_id) VALUES (?, ?, ?)";
+    let qry = "INSERT INTO records (made, taken, user_id) VALUES (?, ?, ?)";
     let result = sqlx::query(&qry)
         .bind(data.made)
         .bind(data.taken)
@@ -259,7 +259,7 @@ pub async fn add_record(data: ShotData) -> Result<(), String> {
 
 #[derive(Serialize, Deserialize, Debug, FromRow)]
 pub struct Record {
-    history_id: u32,
+    records_id: u32,
     made: i32,
     taken: i32,
     user_id: u32,
@@ -271,7 +271,7 @@ pub async fn load_records() -> Result<Vec<Record>, String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "SELECT history_id, made, taken, user_id, created_at FROM history";
+    let qry = "SELECT records_id, made, taken, user_id, created_at FROM records";
     let users = sqlx::query_as::<_, Record>(qry)
         .fetch_all(&*pool)
         .await;

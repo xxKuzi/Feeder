@@ -31,8 +31,6 @@ export default function Workout() {
   useEffect(() => {
     setIsActive(true);
     updateStatistics(0, 0);
-    console.log(typeof workoutData.time);
-
     setFullTime(Number(workoutData.time));
   }, []);
 

@@ -3,36 +3,29 @@ import { Record, columns } from "./columns";
 import { DataTable } from "./data-table";
 import { useData } from "../../parts/Memory";
 
-async function getData(): Promise<Record[]> {
-  return [
-    {
-      id: "1",
-      made: 1,
-      taken: 10,
-      percentage: 1 / 2 + "%",
-      user: "user1",
-      time: new Date("2024-12-05"),
-    },
-
-    // ...
-  ];
-}
-
 export default function DemoPage() {
   const [data, setData] = useState<Record[] | null>(null);
-  const { records } = useData();
-  useEffect(() => {
-    // Fetch data from your API here.
+  const { records, users } = useData();
 
-    async function fetchData() {
-      const fetchedData = await getData();
-      setData(fetchedData);
-    }
-    fetchData();
-  }, []);
+  type User = {
+    userId: number;
+    name: number;
+  };
 
   useEffect(() => {
-    console.log("Data ", records);
+    //Getting and Editing data for table
+    const data = records.map((record: Record) => {
+      const realUser = users.find(
+        (user: User) => user.userId === record.userId
+      );
+
+      return {
+        ...record,
+        user: realUser.name,
+        percentage: Math.round((record.made / record.taken) * 100) + "%",
+      };
+    });
+    setData(data);
   }, [records]);
 
   if (!data) {

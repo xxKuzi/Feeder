@@ -114,7 +114,6 @@ export default function Modes() {
                 question: "Opravdu chcete tento mode odstranit?",
                 buttons: { confirm: true, cancel: true },
                 confirmHandle: () => {
-                  console.log("deleting");
                   deleteMode(data.modeId);
                 },
               })
@@ -156,7 +155,6 @@ export default function Modes() {
                 "predefined",
               ],
               confirmHandle: (newData) => {
-                console.log("HELLO");
                 createMode(newData);
               },
             });
