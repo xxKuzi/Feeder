@@ -70,6 +70,7 @@ export function Memory({ children }) {
 
   const loadRecords = async () => {
     const loadedRecords = await invoke("load_records");
+    console.log("LOADING RECORDS ", loadedRecords);
     setRecords(loadedRecords);
   };
 

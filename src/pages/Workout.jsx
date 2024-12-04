@@ -16,10 +16,11 @@ export default function Workout() {
 
   useEffect(() => {
     // Listen for the "pause" event emitted from the backend
-    const unlisten = listen("pause", () => {
-      console.log("Pause command received from the server");
-      setIsActive((prev) => !prev);
-    });
+    const unlisten = () =>
+      listen("pause", () => {
+        console.log("Pause command received from the server");
+        setIsActive((prev) => !prev);
+      });
 
     // Cleanup the listener when the component unmounts
     return () => {
