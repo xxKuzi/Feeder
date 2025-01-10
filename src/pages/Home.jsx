@@ -6,6 +6,7 @@ export default function Home() {
     <div className="flex flex-col h-screen items-center justify-center">
       <p className="headline">Home</p>
       <div className="flex items-center justify-center gap-16">
+        <p>Hello</p>
         <Section
           data={{
             name: "Statistiky",
