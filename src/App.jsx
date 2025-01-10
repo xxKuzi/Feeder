@@ -9,6 +9,7 @@ import Menu from "./pages/Menu";
 import Workout from "./pages/Workout";
 import Statistics from "./pages/Statistics";
 import Result from "./pages/Result";
+import ModeSettings from "./pages/modeSettings";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/workout" element={<Workout />} />
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/result" element={<Result />} />
+          <Route path="/mode-settings" element={<ModeSettings />} />
         </Routes>
       </div>
     </main>

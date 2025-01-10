@@ -33,6 +33,7 @@ export function Memory({ children }) {
       time: mode.time,
       motorSpeed: mode.motor_speed,
       angles: mode.angles,
+      distances: mode.distances,
       interval: mode.interval,
       predefined: mode.predefined,
     }));

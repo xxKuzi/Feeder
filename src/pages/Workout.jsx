@@ -91,6 +91,7 @@ export default function Workout() {
           <p>{workoutData.name}</p>
           <p>{workoutData.motor_speed}</p>
           <p>{workoutData.angles}</p>
+          <p>{workoutData.distances}</p>
           <p>{workoutData.interval}</p>
         </div>
         <div className="flex mt-4 p-4 py-2 border-2 rounded-lg flex-col items-center justify-center">

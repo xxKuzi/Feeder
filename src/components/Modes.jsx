@@ -3,6 +3,7 @@ import { useData } from "../parts/Memory";
 import { useSearchParams } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Modal from "../components/Modal.jsx";
 
 export default function Modes() {
@@ -57,6 +58,7 @@ export default function Modes() {
       time: Number(data.time),
       motor_speed: Number(data.motorSpeed),
       angles: String(data.angles),
+      distances: String(data.distances),
       interval: Number(data.interval),
       predefined: bool,
     };
@@ -91,13 +93,14 @@ export default function Modes() {
   };
 
   const WorkoutKind = ({ data }) => {
-    const { name, image, time, angles, interval, predefined } = data;
+    const { name, image, time, angles, interval, predefined, distances } = data;
     return (
       <div className="flex flex-col items-center relative justify-center border-2 rounded-lg w-[30%] px-6 py-4">
         <p className="text-3xl">{name}</p>
         <img src={image} />
         <p>délka cvičení: {time}</p>
         <p>úhly střelby: {angles}</p>
+        <p>délka výstřelu: {distances}</p>
         <p>interval střelby {interval}</p>
         <button
           className="button mt-4 button__positive"
@@ -130,7 +133,7 @@ export default function Modes() {
     <div className="flex flex-col items-center justify-center p-4 gap-4">
       <div className="w-full flex justify-end">
         <button
-          className="button button__positive"
+          className="button button__positive mr-2"
           onClick={() => {
             modalRef.current.openModal({
               buttons: {
@@ -151,6 +154,7 @@ export default function Modes() {
                 "time",
                 "motorSpeed",
                 "angles",
+                "distances",
                 "interval",
                 "predefined",
               ],
@@ -162,6 +166,9 @@ export default function Modes() {
         >
           Přidat mode
         </button>
+        <Link to="/mode-settings">
+          <button className="button button__positive">Přidat mode 2</button>
+        </Link>
       </div>
 
       <Category headline={"Unordered"} category={0} />
