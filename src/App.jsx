@@ -9,7 +9,7 @@ import Menu from "./pages/Menu";
 import Workout from "./pages/Workout";
 import Statistics from "./pages/Statistics";
 import Result from "./pages/Result";
-import ModeSettings from "./pages/modeSettings";
+import ModeSettings from "./pages/ModeSettings";
 
 function App() {
   return (

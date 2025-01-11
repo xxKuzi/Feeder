@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export default function AddMode({ onAddMode }) {
+export default function ModeSettings({ onAddMode }) {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
