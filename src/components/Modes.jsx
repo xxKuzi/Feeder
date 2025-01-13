@@ -52,20 +52,21 @@ export default function Modes() {
     })();
 
     const dataForRust = {
-      mode_id: 1, //random - just for not letting it blank - it is not used
+      mode_id: 11, //random - just for not letting it blank - it is not used
       name: data.name,
+      image: data.image,
       category: Number(data.category),
-      time: Number(data.time),
-      motor_speed: Number(data.motorSpeed),
-      angles: String(data.angles),
-      distances: String(data.distances),
-      interval: Number(data.interval),
       predefined: bool,
+      repetition: Number(data.repetition),
+      angles: JSON.stringify(data.angles),
+      distances: JSON.stringify(data.distances),
+      intervals: JSON.stringify(data.intervals),
     };
+    console.log("dataForRust", dataForRust);
     try {
       await invoke("add_mode", { data: dataForRust });
     } catch (error) {
-      console.error("Failed to add user:", error);
+      console.error("Failed to add mode:", error);
     }
 
     loadModes();
@@ -93,15 +94,25 @@ export default function Modes() {
   };
 
   const WorkoutKind = ({ data }) => {
-    const { name, image, time, angles, interval, predefined, distances } = data;
+    const {
+      modeId,
+      name,
+      image,
+      category,
+      predefined,
+      repetition,
+      intervals,
+      angles,
+      distances,
+    } = data;
     return (
       <div className="flex flex-col items-center relative justify-center border-2 rounded-lg w-[30%] px-6 py-4">
         <p className="text-3xl">{name}</p>
         <img src={image} />
-        <p>délka cvičení: {time}</p>
+        <p>délka cvičení: {repetition * intervals[0]}</p>
         <p>úhly střelby: {angles}</p>
         <p>délka výstřelu: {distances}</p>
-        <p>interval střelby {interval}</p>
+        <p>interval střelby {intervals[0]}</p>
         <button
           className="button mt-4 button__positive"
           onClick={() => startWorkout(data)}
@@ -110,7 +121,7 @@ export default function Modes() {
         </button>
         {data.predefined === false && (
           <button
-            className="rounded-full absolute top-0 right-0 bg-red-500 px-2"
+            className="rounded-full flex items-center justify-center absolute top-0 right-0 bg-red-500 px-2"
             onClick={() =>
               modalRef.current.openModal({
                 headline: "Odstranění módu",
@@ -122,7 +133,7 @@ export default function Modes() {
               })
             }
           >
-            x
+            <p className="text-white text-xl font-bold">X</p>
           </button>
         )}
       </div>
@@ -132,42 +143,8 @@ export default function Modes() {
   return (
     <div className="flex flex-col items-center justify-center p-4 gap-4">
       <div className="w-full flex justify-end">
-        <button
-          className="button button__positive mr-2"
-          onClick={() => {
-            modalRef.current.openModal({
-              buttons: {
-                confirm: true,
-                cancel: true,
-              },
-
-              headline: "Přidat nový mode",
-              question: "Zadejte údaje pro nový mode",
-
-              input: true,
-              numberOfInputs: 7,
-
-              inputData: [],
-              inputPlaceholders: [
-                "name",
-                "category",
-                "time",
-                "motorSpeed",
-                "angles",
-                "distances",
-                "interval",
-                "predefined",
-              ],
-              confirmHandle: (newData) => {
-                createMode(newData);
-              },
-            });
-          }}
-        >
-          Přidat mode
-        </button>
         <Link to="/mode-settings">
-          <button className="button button__positive">Přidat mode 2</button>
+          <button className="button button__positive">Přidat mode</button>
         </Link>
       </div>
 

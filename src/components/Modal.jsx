@@ -1,8 +1,13 @@
-import React, { useState, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useEffect,
+} from "react";
 
 const Modal = forwardRef((_, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState({});
+  const [input, setInput] = useState([]);
   const [modalProps, setModalProps] = useState({});
 
   // Expose the openModal function via the ref
@@ -95,7 +100,7 @@ const Modal = forwardRef((_, ref) => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-xl shadow p-6 transition-all scale-100 opacity-100"
+            className="bg-white rounded-xl shadow px-10 py-6 transition-all scale-100 opacity-100"
           >
             <button
               onClick={closeModal}
@@ -104,34 +109,38 @@ const Modal = forwardRef((_, ref) => {
             >
               ✕
             </button>
-            <div className="text-center w-56">
-              <div className="mx-auto my-4 w-48">
-                <h3 className="text-lg font-black text-gray-800">
+            <div className="flex text-center flex-col items-center justify-center">
+              <div className="mx-auto mb-6 w-48">
+                <p className="text-xl font-bold text-gray-800">
                   {modalProps.headline}
-                </h3>
-                <p className="text-sm text-gray-500">{modalProps.question}</p>
+                </p>
+                <p className="text-sm mt-2 text-gray-500">
+                  {modalProps.question}
+                </p>
               </div>
               {modalProps.input &&
                 Array.from({ length: modalProps.numberOfInputs }).map(
                   (_, i) => (
-                    <input
-                      key={i}
-                      placeholder={modalProps.inputPlaceholders[i]}
-                      className="input"
-                      value={input[modalProps.inputPlaceholders[i]]}
-                      onChange={(e) =>
-                        setInput((prev) => {
-                          const updated = { ...prev };
-                          updated[modalProps.inputPlaceholders[i]] =
-                            e.target.value;
-                          return updated;
-                        })
-                      }
-                    />
+                    <div className="flex items-center justify-center gap-4 text-start">
+                      <p className="w-32">{modalProps.inputPlaceholders[i]}</p>
+                      <input
+                        key={i}
+                        className="input w-[200px]"
+                        value={input[i]}
+                        onChange={(e) =>
+                          setInput((prev) => {
+                            const updated = { ...prev };
+                            updated[modalProps.inputPlaceholders[i]] =
+                              e.target.value;
+                            return updated;
+                          })
+                        }
+                      />
+                    </div>
                   )
                 )}
 
-              <div className="flex justify-center items-center mt-4 gap-4">
+              <div className="flex justify-center w-full items-center mt-6 gap-8">
                 {Object.entries(modalProps.buttonConfig).map((button, i) => {
                   //button[0] is name - "confirm", button[1] is the values (label, color, handle)
 

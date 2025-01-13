@@ -31,7 +31,7 @@ export default function Workout() {
   useEffect(() => {
     setIsActive(true);
     updateStatistics(0, 0);
-    setFullTime(Number(workoutData.time));
+    setFullTime(Number(workoutData.repetition) * 5); //NEED CHANGE
   }, []);
 
   useEffect(() => {
@@ -88,12 +88,14 @@ export default function Workout() {
           </div>
         </CirclePB>
         <div className="flex mt-4 p-4 py-2 border-2 rounded-lg flex-col items-center justify-center">
-          <p>{workoutData.name}</p>
-          <p>{workoutData.motor_speed}</p>
-          <p>{workoutData.angles}</p>
-          <p>{workoutData.distances}</p>
-          <p>{workoutData.interval}</p>
+          <p>name: {workoutData.name}</p>
+
+          <p>angles: {workoutData.angles}</p>
+          <p>distances: {workoutData.distances}</p>
+          <p>repetition: {workoutData.repetition}</p>
+          <p>intervals: {workoutData.intervals}</p>
         </div>
+        <img className="h-16 w-16" src={workoutData.image} />
         <div className="flex mt-4 p-4 py-2 border-2 rounded-lg flex-col items-center justify-center">
           <p>made: {statistics.made}</p>
           <p>taken: {statistics.taken}</p>
@@ -122,7 +124,6 @@ export default function Workout() {
             onClick={() => {
               setIsActive(false);
               setTime(0);
-              setTimeProgress(0);
             }}
           >
             Reset

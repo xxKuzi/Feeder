@@ -67,14 +67,15 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
     (
         mode_id         INTEGER PRIMARY KEY,
         name            TEXT,
+        image           TEXT,
         category        INTEGER DEFAULT 0,  
-        time            INTEGER DEFAULT 30,  
-        motor_speed     INTEGER DEFAULT 30,
-        angles          TEXT DEFAULT '30,90,150',
-        distances       TEXT DEFAULT '5000, 6000, 3000',
-        interval        INTEGER DEFAULT 5,
-        predefined      BOOL DEFAULT false
-    );     
+        predefined      BOOL DEFAULT false,
+        repetition      INTEGER DEFAULT 10,
+        angles          TEXT DEFAULT '[30,90,150]',
+        distances       TEXT DEFAULT '[5000,6000,3000]',
+        intervals       TEXT DEFAULT '[5,5,5]'
+        
+    );    
 
     INSERT INTO users (user_id, name, number)    VALUES (1, 'Default', 69);
     INSERT INTO data (user_id)                VALUES (1);
@@ -88,7 +89,7 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
 
 // Initialize and connect to the database
 pub async fn connect_to_database() {
-    if !Sqlite::database_exists(&*DB_URL).await.unwrap_or(false) {
+    if (!Sqlite::database_exists(&*DB_URL).await.unwrap_or(false)) {
         Sqlite::create_database(&*DB_URL).await.unwrap();
         match create_schema().await {
             Ok(_) => println!("Database created successfully"),
@@ -131,7 +132,7 @@ pub async fn delete_user(user_id: i32) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     // Step 2: Check if there are at least 2 users
-    if count.0 < 2 {
+    if (count.0 < 2) {
         return Err("Cannot delete user. At least 2 users are required.".to_string());
     }
 
@@ -289,13 +290,13 @@ pub async fn load_records() -> Result<Vec<Record>, String> {
 pub struct Mode {
     mode_id: i32,
     name: String,
+    image: String,
     category: i32,
-    time: i32,    
-    motor_speed: i32,
+    predefined: bool,
+    repetition: i32,
     angles: String,
     distances: String,
-    interval: i32,
-    predefined: bool,
+    intervals: String,
 }
 
 
@@ -304,20 +305,17 @@ pub struct Mode {
 pub async fn add_mode(data: Mode) -> Result<(), String> {    
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
-
-    let angles = serde_json::to_string(&data.angles).map_err(|e| e.to_string())?;
-    let distances = serde_json::to_string(&data.distances).map_err(|e| e.to_string())?;
-
-    let qry = "INSERT INTO modes (name, category, time, motor_speed, distances, interval, predefined) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    
+    let qry = "INSERT INTO modes (name, image, category, predefined, repetition, angles, distances, intervals) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
     let result = sqlx::query(&qry)        
         .bind(data.name)
+        .bind(data.image)  
         .bind(data.category)
-        .bind(data.time)
-        .bind(data.motor_speed)
+        .bind(data.predefined)
+        .bind(data.repetition)
         .bind(data.angles)
         .bind(data.distances)
-        .bind(data.interval)        
-        .bind(data.predefined)       
+        .bind(data.intervals)       
         .execute(&*pool)
         .await; 
 
@@ -329,12 +327,10 @@ pub async fn load_modes() -> Result<Vec<Mode>, String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "SELECT mode_id, name, category, time, motor_speed, angles, distances, interval, predefined FROM modes";
+    let qry = "SELECT mode_id, name, category, predefined, repetition, angles, distances, intervals, image FROM modes";
     let modes = sqlx::query_as::<_, Mode>(qry)
         .fetch_all(&*pool)
         .await;
-
-    
 
     modes.map_err(|e| e.to_string())
 }
@@ -353,5 +349,6 @@ pub async fn delete_mode(mode_id: i32) -> Result<(), String>{
 
     result.map(|_| ()).map_err(|e| e.to_string()) 
 }
+
 
 

@@ -27,15 +27,15 @@ export function Memory({ children }) {
   const loadModes = async () => {
     const modesListRust = await invoke("load_modes", {});
     const modesList = modesListRust.map((mode) => ({
-      modeId: mode.mode_id,
+      modeId: Number(mode.mode_id),
       name: mode.name,
-      category: mode.category,
-      time: mode.time,
-      motorSpeed: mode.motor_speed,
-      angles: mode.angles,
-      distances: mode.distances,
-      interval: mode.interval,
-      predefined: mode.predefined,
+      image: mode.image,
+      category: Number(mode.category),
+      predefined: Boolean(mode.predefined),
+      repetition: Number(mode.repetition),
+      angles: JSON.parse(mode.angles),
+      distances: JSON.parse(mode.distances),
+      intervals: JSON.parse(mode.intervals),
     }));
     setModes(modesList);
   };
@@ -118,6 +118,38 @@ export function Memory({ children }) {
     });
   }
 
+  const createMode = async (data) => {
+    console.log("data", data);
+    const dataForRust = {
+      mode_id: 11, //random - just for not letting it blank - it is not used (for the struct)
+      name: data.name,
+      image: data.image,
+      category: Number(data.category),
+      predefined: data.predefined,
+      repetition: Number(data.repetition),
+      angles: JSON.stringify(data.angles),
+      distances: JSON.stringify(data.distances),
+      intervals: JSON.stringify(data.intervals),
+    };
+    console.log("dataForRust", dataForRust);
+    try {
+      await invoke("add_mode", { data: dataForRust });
+    } catch (error) {
+      console.error("Failed to add mode:", error);
+    }
+
+    loadModes();
+  };
+
+  const deleteMode = async (modeId) => {
+    try {
+      await invoke("delete_mode", { modeId: modeId });
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+    }
+    loadModes();
+  };
+
   const contextData = {
     statistics,
     updateStatistics,
@@ -131,6 +163,8 @@ export function Memory({ children }) {
     loadUsers,
     modes,
     loadModes,
+    createMode,
+    deleteMode,
     workoutData,
     setWorkoutData,
   };
