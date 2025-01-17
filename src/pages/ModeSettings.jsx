@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useData } from "../parts/Memory";
+import { useNavigate } from "react-router-dom";
+import Modal from "../components/Modal.jsx";
 
 export default function ModeSettings({ onAddMode }) {
   const { createMode } = useData();
@@ -23,7 +25,9 @@ export default function ModeSettings({ onAddMode }) {
     repetition: [5, 10, 15, 20, 30],
     intervals: [2, 3, 5, 8, 10],
   };
+  const modalRef = useRef();
   const [customInterval, setCustomInterval] = useState(false);
+  const navigate = useNavigate();
 
   const [points, setPoints] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
@@ -157,7 +161,7 @@ export default function ModeSettings({ onAddMode }) {
       ...formData,
       interval: customInterval ? formData.intervals : formData.intervals[0],
     };
-    console.log("finalData", finalData);
+
     createMode(finalData);
   };
 
@@ -165,10 +169,7 @@ export default function ModeSettings({ onAddMode }) {
     <div className="flex flex-col items-center py-8">
       <h1 className="text-2xl font-bold mb-6">Add New Mode</h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="h-full w-full bg-white shadow-md rounded-lg p-6 space-y-4"
-      >
+      <div className="h-full w-full bg-white shadow-md rounded-lg p-6 space-y-4">
         {/* Name Field */}
         <div className="form-group flex flex-col">
           <label className="text-sm font-medium text-gray-700">Name</label>
@@ -207,7 +208,7 @@ export default function ModeSettings({ onAddMode }) {
             ))}
           </div>
         </div>
-        {/* Predefined */}
+        {/* Predefined
         <div className="form-group flex flex-col mt-4">
           <label className="text-sm font-medium text-gray-700">
             Predefined
@@ -223,7 +224,7 @@ export default function ModeSettings({ onAddMode }) {
           >
             {formData.predefined ? "Yes" : "No"}
           </button>
-        </div>
+        </div> */}
 
         <label className="text-sm mt-8 font-medium text-gray-700">Points</label>
         <div className="flex items-center relative justify-center">
@@ -411,12 +412,13 @@ export default function ModeSettings({ onAddMode }) {
         </div>
 
         <button
-          type="submit"
           className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 focus:ring focus:ring-blue-300"
+          onClick={handleSubmit}
         >
           Create Mode
         </button>
-      </form>
+      </div>
+      <Modal ref={modalRef} />
     </div>
   );
 }

@@ -51,6 +51,13 @@ export default function Navbar() {
             <IoNewspaperOutline size={40} />
             Statistics
           </Link>
+          <Link
+            to="/testing"
+            className="flex gap-1 flex-col items-center justify-center button button__positive"
+          >
+            <CiDumbbell size={50} />
+            Testing
+          </Link>
         </div>
         <div className="h-32 flex-col flex justify-end items-center text-center">
           <Clock />

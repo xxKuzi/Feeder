@@ -1,10 +1,20 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  useRef,
+} from "react";
 import { invoke } from "@tauri-apps/api/core";
 const DataContext = createContext();
+import Modal from "../components/Modal.jsx";
 
 export function Memory({ children }) {
+  const modalRef = useRef();
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
-  const [workoutData, setWorkoutData] = useState({});
+  const [workoutData, setWorkoutData] = useState({
+    intervals: [5],
+  });
   const [profile, setProfile] = useState({ userId: 0, name: "XYZ" });
   const [records, setRecords] = useState([{}]);
   const [users, setUsers] = useState([{ name: "XYZ" }]);
@@ -137,7 +147,14 @@ export function Memory({ children }) {
     } catch (error) {
       console.error("Failed to add mode:", error);
     }
-
+    modalRef.current.openModal({
+      headline: "Mode byl vytvořen",
+      question: "Díky",
+      buttons: { ok: true },
+      okHandle: () => {
+        navigate("/menu");
+      },
+    });
     loadModes();
   };
 
@@ -170,7 +187,11 @@ export function Memory({ children }) {
   };
 
   return (
-    <DataContext.Provider value={contextData}>{children}</DataContext.Provider>
+    <DataContext.Provider value={contextData}>
+      <Modal ref={modalRef} />
+
+      {children}
+    </DataContext.Provider>
   );
 }
 

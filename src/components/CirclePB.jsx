@@ -12,8 +12,8 @@ export default function CirclePB({
   let length = 2 * Math.PI * radius;
 
   return (
-    <div className="duration-300 transition">
-      <svg width="300" height="300" viewBox="0 0 200 200">
+    <div className="duration-300 transition w-full flex justify-center items-center">
+      <svg width="500" height="500" viewBox="-20 -20 250 250">
         <circle
           cx={width / 2}
           cy={width / 2}
@@ -27,11 +27,15 @@ export default function CirclePB({
             strokeDashoffset: length - progress * length,
             transition: "stroke-dashoffset 0.3s ease-in-out",
             transitionDelay: "300ms",
+            width: "full",
+            justifyContent: "center",
+            flexDirection: "column",
           }}
         />
         <text x="50%" y="50%" textAnchor="middle" dy={"0.3em"}></text>
         {children && (
           <foreignObject
+            className="text-sm"
             //x="50%"
             //y="50%"
             width={width}
