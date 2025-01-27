@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import Modal from "../components/Modal.jsx";
+import { RxCross2 } from "react-icons/rx";
 
 export default function Modes() {
   const { modes, setWorkoutData, loadModes } = useData();
@@ -73,19 +74,18 @@ export default function Modes() {
   };
 
   const Category = ({ headline, category }) => {
+    //category -  index of that category
     const elements = modes
       .filter((mode) => mode.category === category) // Filter relevant modes
       .map((mode) => {
         return (
           <WorkoutKind key={mode.modeId} data={mode} /> // Ensure each element has a unique key
         );
-        // <p>{mode.name}</p>
       });
 
     return (
-      <div className="flex flex-col mt-8 items-start justify-center border-2 border-blue-300 w-[75vw] rounded-lg px-6 py-4">
-        <p className="text-3xl">{headline}</p>
-        <p>Category number: {category}</p>
+      <div className="flex bg-gray-100 flex-col mt-8 items-start justify-center border-2 border-blue-300 w-[75vw] rounded-lg px-6 py-4">
+        <p className="text-3xl font-semibold">{headline}</p>
         <div className="mt-4 gap-6 flex justify-left items-left flex-wrap w-full">
           {elements}
         </div>
@@ -106,13 +106,31 @@ export default function Modes() {
       distances,
     } = data;
     return (
-      <div className="flex flex-col items-center relative justify-center border-2 rounded-lg w-[30%] px-6 py-4">
-        <p className="text-3xl">{name}</p>
-        <img src={image} />
-        <p>délka cvičení: {repetition * intervals[0]}</p>
-        <p>úhly střelby: {angles}</p>
-        <p>délka výstřelu: {distances}</p>
-        <p>interval střelby {intervals[0]}</p>
+      <div className="flex flex-col bg-white items-center relative justify-center border-2 rounded-lg w-[30%] px-6 py-4">
+        <p className="text-3xl">
+          {name.charAt(0).toUpperCase() + name.slice(1)}
+        </p>
+        {/* <img src={image} /> */}
+        <div className="mt-4">
+          <p>
+            délka cvičení:{" "}
+            {(repetition * intervals.reduce((acc, num) => acc + num, 0)) /
+              intervals.length}
+            s
+          </p>
+          <p>úhly střelby: {angles.map((angle) => angle + "° ")}</p>
+          <p>
+            délka výstřelu:{" "}
+            {distances.map((distance) => distance / 1000 + "m, ")}
+          </p>
+          <p>
+            interval střelby{" "}
+            {intervals.length === 1
+              ? intervals[0]
+              : intervals.map((interval) => interval + "s, ")}
+          </p>
+          <p>počet kol: {repetition}x</p>
+        </div>
         <button
           className="button mt-4 button__positive"
           onClick={() => startWorkout(data)}
@@ -121,7 +139,7 @@ export default function Modes() {
         </button>
         {data.predefined === false && (
           <button
-            className="rounded-full flex items-center justify-center absolute top-0 right-0 bg-red-500 px-2"
+            className="flex items-center justify-center absolute top-0 right-0"
             onClick={() =>
               modalRef.current.openModal({
                 headline: "Odstranění módu",
@@ -133,7 +151,7 @@ export default function Modes() {
               })
             }
           >
-            <p className="text-white text-xl font-bold">X</p>
+            <RxCross2 size={30} className="text-red-600" />
           </button>
         )}
       </div>
@@ -142,15 +160,18 @@ export default function Modes() {
 
   return (
     <div className="flex flex-col items-center justify-center p-4 gap-4">
-      <div className="w-full flex justify-end">
+      <div className="w-full flex justify-between">
+        <div className="w-[136px]" />
+        <p className="headline">Menu</p>
         <Link to="/mode-settings">
           <button className="button button__positive">Přidat mode</button>
         </Link>
       </div>
 
-      <Category headline={"Unordered"} category={0} />
-      <Category headline={"2Point Workouts"} category={1} />
-      <Category headline={"3Point Workouts"} category={2} />
+      {/* <Category headline={"Unordered"} category={0} /> */}
+      <Category headline={"Střely za 2 body"} category={1} />
+      <Category headline={"Střely za 3 body"} category={2} />
+      <Category headline={"Trestné hody"} category={3} />
       <Modal ref={modalRef} />
     </div>
   );

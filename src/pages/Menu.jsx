@@ -15,8 +15,6 @@ export default function Menu() {
 
   return (
     <div className="flex flex-col py-16 items-center justify-center">
-      <p className="headline">Menu</p>
-
       <Modes />
     </div>
   );
