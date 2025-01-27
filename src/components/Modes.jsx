@@ -114,9 +114,7 @@ export default function Modes() {
         <div className="mt-4">
           <p>
             délka cvičení:{" "}
-            {(repetition * intervals.reduce((acc, num) => acc + num, 0)) /
-              intervals.length}
-            s
+            {repetition * intervals.reduce((acc, num) => acc + num, 0)}s
           </p>
           <p>úhly střelby: {angles.map((angle) => angle + "° ")}</p>
           <p>

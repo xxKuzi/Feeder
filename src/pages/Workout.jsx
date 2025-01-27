@@ -8,34 +8,40 @@ export default function Workout() {
   const { statistics, shoot, addRecord, updateStatistics, workoutData } =
     useData();
   const [time, setTime] = useState(0);
-  const [isActive, setIsActive] = useState(false);
-  const [shootingProgress, setShootingProgress] = useState(0);
-  const [intervalTimer, setIntervalTimer] = useState(0);
-  const [intervalCounter, setIntervalCounter] = useState(0);
-  const [fullTime, setFullTime] = useState(5);
+  const [isActive, setIsActive] = useState(false); //time is running
+  const [shootingProgress, setShootingProgress] = useState(0); //shotting success rate (0-1)
+  const [intervalTimer, setIntervalTimer] = useState(0); //current interval value
+  const [intervalCounter, setIntervalCounter] = useState(0); //index of actual interval counter
+  const [fullTime, setFullTime] = useState(5); //fulltime
+  const [shottingData, setShottingData] = useState([]);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Listen for the "pause" event emitted from the backend
+    //ready for BLUETOOTH
     const unlisten = () =>
       listen("pause", () => {
         console.log("Pause command received from the server");
         setIsActive((prev) => !prev);
       });
 
-    // Cleanup the listener when the component unmounts
     return () => {
       unlisten();
     };
   }, []);
 
+  const updateData = (type, value) => {
+    setShottingData((prev) => ({ ...prev, [type]: value }));
+  };
+
+  //initialization
   useEffect(() => {
-    console.log("workoutData ", workoutData);
     setIsActive(true);
     updateStatistics(0, 0);
-    setFullTime(Number(workoutData.repetition) * 5); //NEED CHANGE
-    console.log("SETTING workoutData.intervals[0] ", workoutData.intervals[0]);
+    setFullTime(
+      workoutData.repetition *
+        workoutData.intervals.reduce((total, current) => total + current, 0)
+    ); //NEED CHANGE
     setIntervalTimer(workoutData.intervals[0]);
   }, []);
 
@@ -58,13 +64,12 @@ export default function Workout() {
           if (prev > 0) {
             return Math.floor((prev - 0.1) * 100) / 100; // Decrease the interval timer
           } else {
-            setIntervalCounter((prev) => prev + 1);
-            console.log("reset");
-            console.log("intervalCounter ", intervalCounter);
+            //here
             return workoutData.intervals[intervalCounter];
           }
         });
       }, 100);
+      //updateShottingData("");
     } else {
       clearInterval(interval);
     }
@@ -132,7 +137,6 @@ export default function Workout() {
         <div className="flex flex-col items-center justify-center">
           <div className="flex mt-16 px-4 py-3 border-2 rounded-lg flex-col items-center justify-center">
             <p className="text-xl font-bold">INFO</p>
-            <p>name: {workoutData.name}</p>
 
             <p>angles: {workoutData.angles}</p>
             <p>distances: {workoutData.distances}</p>
@@ -148,7 +152,7 @@ export default function Workout() {
             <p className="text-xl font-bold">MOTOR</p>
 
             <p>Shoot in {intervalTimer} seconds</p>
-            <p>motor speed: </p>
+            <p>motor speed: {}</p>
             <p>rotation: </p>
           </div>
 
