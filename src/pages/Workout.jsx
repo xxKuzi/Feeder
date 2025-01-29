@@ -5,6 +5,7 @@ import CirclePB from "../components/CirclePB";
 import { listen } from "@tauri-apps/api/event";
 import MotorControl from "../components/MotorControl.jsx";
 import Pause from "../components/Pause";
+import Countdown from "../components/Countdown";
 
 export default function Workout() {
   const { statistics, shoot, addRecord, updateStatistics, workoutData } =
@@ -12,26 +13,25 @@ export default function Workout() {
   const [time, setTime] = useState(0);
   const [refresh, setRefresh] = useState(false); //time is running
   const [shootingProgress, setShootingProgress] = useState(0); //shotting success rate (0-1)
-  const [intervalTimer, setIntervalTimer] = useState(0); //current interval value
+
   const [intervalCounter, setIntervalCounter] = useState(0); //index of actual interval counter
   const [fullTime, setFullTime] = useState(5); //fulltime
-  const [shottingData, setShottingData] = useState([]);
   const [stopButton, setStopButton] = useState(false);
   const [counter, setCounter] = useState(true);
   const [reset, setReset] = useState(false);
-  const [motorSpeed, setMotorSpeed] = useState(workoutData.distances[0]);
-  const [timer, setTimer] = useState(workoutData.intervals[0]);
+  const [timer, setTimer] = useState(workoutData.intervals[0]); //not overall timer just INTERVAL between SHOOTS
   const [round, setRound] = useState(0);
+  const [nextAngle, setNextAngle] = useState(0);
 
   const isRunningRef = useRef();
   const counterRef = useRef(true);
-  const beginningTimerRef = useRef(null);
   const counterValueRef = useRef(0);
+  const countdownRef = useRef(null);
 
   const navigate = useNavigate();
 
+  //BLUETOOTH
   useEffect(() => {
-    //ready for BLUETOOTH
     const unlisten = () =>
       listen("pause", () => {
         console.log("Pause command received from the server");
@@ -40,57 +40,37 @@ export default function Workout() {
 
     return () => {
       unlisten();
-      if (beginningTimerRef.current) {
-        clearInterval(beginningTimerRef.current);
-      }
     };
   }, []);
 
-  const updateData = (type, value) => {
-    setShottingData((prev) => ({ ...prev, [type]: value }));
-  };
-
-  const initialization = () => {
-    setReset(true);
-    counterValueRef.current = 4;
-    counterRef.current = true;
-
-    beginningTimerRef.current = setInterval(() => {
-      counterValueRef.current -= 0.1;
-      setCounter(Math.max(Math.ceil(counterValueRef.current), 0));
-      if (counterValueRef.current <= 0) {
-        counterRef.current = false;
-        clearInterval(beginningTimerRef.current);
-        console.log("SHOOT (first shot)");
-        isRunningRef.current = true;
-        setRefresh((prev) => !prev);
-        setStopButton(true);
-        setTimeout(() => {
-          shoot(true);
-        }, 1000);
-        setTimeout(() => {
-          shoot(false);
-          console.log("hello");
-        }, 2000);
-        setTimeout(() => {
-          shoot(true);
-        }, 3500);
-      }
-    }, 100);
-  };
-
-  //initialization
   useEffect(() => {
     initialization();
-    // isRunningRef.current = true;
-    updateStatistics(0, 0);
+  }, []);
+
+  //INITIALIZATION OR RESET
+  const initialization = () => {
+    setTime(0);
+    setReset(true); //changes angle and motorSpeed to first value in array
+    countdownRef.current.startCountdown(4); //Shows counter for 4s
+    updateStatistics(0, 0); //reset statistics
     setFullTime(
       workoutData.repetition *
         workoutData.intervals.reduce((total, current) => total + current, 0)
-    ); //NEED CHANGE
-    setIntervalTimer(workoutData.intervals[0]);
-  }, []);
+    ); //NEED CHANGE  //calculate fullTime
 
+    setTimeout(() => {
+      shoot(true);
+    }, 4000);
+    setTimeout(() => {
+      shoot(false);
+      console.log("hello");
+    }, 5000);
+    setTimeout(() => {
+      shoot(true);
+    }, 6000);
+  };
+
+  //UPDATING SUCCESS RATE
   useEffect(() => {
     let success =
       statistics.taken === 0 ? 0 : statistics.made / statistics.taken;
@@ -100,43 +80,30 @@ export default function Workout() {
   useEffect(() => {
     let interval = null;
 
-    if (isRunningRef.current && time < fullTime) {
+    //TIME MANAGEMENT
+    if (isRunningRef.current) {
       interval = setInterval(() => {
-        // Update the time
         setTime((prev) => prev + 0.1);
-
-        // Update the interval timer
-        setIntervalTimer((prev) => {
-          if (prev > 0) {
-            return Math.floor((prev - 0.1) * 100) / 100; // Decrease the interval timer
-          } else {
-            //here
-            return workoutData.intervals[intervalCounter];
-          }
-        });
+        if (time >= fullTime) {
+          End();
+        }
       }, 100);
-      //updateShottingData("");
     } else {
       clearInterval(interval);
     }
 
-    // Cleanup interval on unmount or dependency change
     return () => clearInterval(interval);
-  }, [isRunningRef.current, time, fullTime, workoutData]);
+  }, [isRunningRef.current]);
 
-  useEffect(() => {
-    if (time >= fullTime) {
-      End();
-    }
-  }, [time]);
-
-  const End = async () => {
-    await addRecord(statistics.made, statistics.taken);
-    navigate("/result");
+  //WHEN COUNTDOWN ENDS
+  const CountdownEnd = () => {
+    console.log("SHOOT (first shot)");
+    setStopButton(true);
+    isRunningRef.current = true;
+    setRefresh((prev) => !prev); //for refresh in MotorControl
   };
 
   const formatTime = () => {
-    //let hours = Math.floor(time / 3600);
     let remainingTime = fullTime - time;
     let minutes = Math.floor((remainingTime % 3600) / 60);
     let seconds = Math.floor(remainingTime % 60);
@@ -149,6 +116,10 @@ export default function Workout() {
 
   return (
     <div className="flex relative flex-col items-center justify-center w-full">
+      <Countdown
+        ref={(fn) => (countdownRef.current = fn)}
+        onCountdownEnd={CountdownEnd}
+      />
       <div className="absolute top-8 right-8">
         {" "}
         <Pause
@@ -163,24 +134,12 @@ export default function Workout() {
           }}
           handleReset={
             () => {
-              //reset time, intervals, rounds, smoothAnimation to beginning values (motorSpeed, angle)
-              setTime(0);
-              setReset(true);
-              counterRef.current = true;
-              counterValueRef.current = 3;
-              setTimeout(() => {
-                initialization();
-              }, 1000);
+              initialization();
             } //UPDATE NEEDED RESET MOTOR
           }
           handleExit={() => navigate("/menu")}
         />
       </div>
-      {counterRef.current && (
-        <p className="absolute z-40 left-auto top-auto text-[500px] bg-gray-200 ">
-          {counter}
-        </p>
-      )}
       <p className="text-4xl font-bold mt-10">{workoutData.name}</p>
       <div className="rounded-xl space-x-32 flex items-center justify-center w-full">
         <div className="mt-2 flex flex-col items-center justify-center gap-4">
@@ -237,25 +196,18 @@ export default function Workout() {
             setStopButton={(e) => setStopButton(e)}
             reset={reset}
             setReset={(e) => setReset(e)}
-            motorSpeed={motorSpeed}
-            setMotorSpeed={setMotorSpeed}
             round={round}
             setRound={setRound}
             timer={timer}
             setTimer={setTimer}
+            setNextAngle={setNextAngle}
           />
 
           <div className="flex items-center justify-center gap-2 mt-16">
             <p>{formatTime()}</p>
-
-            {/* <button
-              className="button__small button__negative "
-              onClick={() => (
-                setTime(fullTime), setIntervalTimer(workoutData.interval[0])
-              )}
-            >
-              END
-            </button> */}
+            <p>
+              next shot: {timer}s | {nextAngle}°
+            </p>
           </div>
           <div className="flex flex-col items-center justify-center h-8"></div>
         </div>

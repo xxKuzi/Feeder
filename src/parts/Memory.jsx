@@ -20,6 +20,7 @@ export function Memory({ children }) {
   const [users, setUsers] = useState([{ name: "XYZ" }]);
   const [modes, setModes] = useState([{ name: "XYZ" }]);
   const [globalAngle, setGlobalAngle] = useState(0);
+  const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
 
   useEffect(() => {
     loadCurrentData();
@@ -187,6 +188,8 @@ export function Memory({ children }) {
     setWorkoutData,
     globalAngle,
     setGlobalAngle,
+    globalMotorSpeed,
+    setGlobalMotorSpeed,
   };
 
   return (

@@ -9,22 +9,18 @@ export default function MotorControl({
   setStopButton,
   reset,
   setReset,
-  motorSpeed,
-  setMotorSpeed,
   round,
   setRound,
   timer,
   setTimer,
+  setNextAngle, //only used for changing values
 }) {
-  const { globalAngle, setGlobalAngle } = useData();
+  const { globalAngle, setGlobalAngle, globalMotorSpeed, setGlobalMotorSpeed } =
+    useData();
 
   const stepIndexRef = useRef(0);
   const requestRef = useRef(null);
   const timerRef = useRef(null);
-  const beginningTimerRef = useRef(null);
-  // const runningRef = useRef(false);
-
-  const timeLeftRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -43,13 +39,17 @@ export default function MotorControl({
       nextStep();
 
       setTimer(motorData.intervals[0]);
-      smoothTransition(motorSpeed, motorData.distances[0], 3, setMotorSpeed);
+      smoothTransition(
+        globalMotorSpeed,
+        motorData.distances[0],
+        3,
+        setGlobalMotorSpeed
+      );
       smoothTransition(globalAngle, motorData.angles[0], 3, setGlobalAngle);
     }
   }, [reset]);
 
   useEffect(() => {
-    console.log("CHECK ", runningRef.current);
     if (runningRef.current) {
       startMotor();
     } else {
@@ -64,11 +64,19 @@ export default function MotorControl({
     updateFunc,
     onComplete
   ) => {
+    console.log("CONTROL ", startValue, " ", endValue, " ", duration);
     const startTime = performance.now();
 
     const animate = (currentTime) => {
-      if (!runningRef.current && !reset) return; // Stop if the motor is stopped, run
-      if (reset && updateFunc === setTimer) return; //during the reset - Do NOT want TIMER to run
+      console.log("ANIMATING ", updateFunc.name);
+      if (!runningRef.current && !reset) {
+        console.log("hello1");
+        return;
+      } // Stop if the motor is stopped, run
+      if (reset && updateFunc === setTimer) {
+        console.log("hello2");
+        return;
+      } //during the reset - Do NOT want TIMER to run
 
       const elapsedTime = currentTime - startTime;
       const progress = Math.min(elapsedTime / (duration * 1000), 1);
@@ -121,6 +129,8 @@ export default function MotorControl({
       nextSpeed = motorData.distances[0];
     }
 
+    setNextAngle(nextAngle);
+
     //setting actual time left
 
     let timeLeft = pause ? timer : actualInterval;
@@ -146,7 +156,7 @@ export default function MotorControl({
         nextStep();
       }
     }, 100);
-    console.log("TIMER left ", timeLeft);
+
     setTimeout(
       () => {
         smoothTransition(
@@ -156,10 +166,10 @@ export default function MotorControl({
           setGlobalAngle
         ); // 1s transition
         smoothTransition(
-          pause ? motorSpeed : actualSpeed,
+          pause ? globalMotorSpeed : actualSpeed,
           nextSpeed,
           timeLeft > 2 ? timeLeft - 1 : 1,
-          setMotorSpeed
+          setGlobalMotorSpeed
         ); // 1s transition
       },
       pause ? 0 : 1000
@@ -186,7 +196,9 @@ export default function MotorControl({
           </p>
           <p>
             <strong>Motor Speed:</strong>{" "}
-            <span className="text-green-400">{motorSpeed.toFixed(1)} rpm</span>
+            <span className="text-green-400">
+              {globalMotorSpeed.toFixed(1)} rpm
+            </span>
           </p>
           <p>
             <strong>Next Shot In:</strong>{" "}
