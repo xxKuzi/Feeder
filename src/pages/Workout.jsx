@@ -10,25 +10,22 @@ import Countdown from "../components/Countdown";
 export default function Workout() {
   const { statistics, shoot, addRecord, updateStatistics, workoutData } =
     useData();
-  const [time, setTime] = useState(0);
-  const [refresh, setRefresh] = useState(false); //time is running
+  const [time, setTime] = useState(0); //elapsed Time
+  const [fullTime, setFullTime] = useState(5); //Fulltime
   const [shootingProgress, setShootingProgress] = useState(0); //shotting success rate (0-1)
+  const [stopButton, setStopButton] = useState(false); //variable indicating whether the STOP button is enabled
 
-  const [intervalCounter, setIntervalCounter] = useState(0); //index of actual interval counter
-  const [fullTime, setFullTime] = useState(5); //fulltime
-  const [stopButton, setStopButton] = useState(false);
-  const [counter, setCounter] = useState(true);
-  const [reset, setReset] = useState(false);
-  const [timer, setTimer] = useState(workoutData.intervals[0]); //not overall timer just INTERVAL between SHOOTS
-  const [round, setRound] = useState(0);
-  const [nextAngle, setNextAngle] = useState(0);
+  const [refresh, setRefresh] = useState(false);
+  const [newWorkout, setNewWorkout] = useState(false); //for motor in children | after Pause - false, after Initialization/Reset - true
+  const [reset, setReset] = useState(false); //helps to inform child's component to update
+  const [timer, setTimer] = useState(workoutData.intervals[0]); //INTERVAL between SHOOTS
+  const [round, setRound] = useState(0); //round of workout
+  const [nextAngle, setNextAngle] = useState(0); //mainly for better UX
 
-  const isRunningRef = useRef();
-  const counterRef = useRef(true);
-  const counterValueRef = useRef(0);
-  const countdownRef = useRef(null);
+  const isRunningRef = useRef(); //main variable
+  const countdownRef = useRef(null); //ref to CountDown
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); //used for navigation between pages
 
   //BLUETOOTH
   useEffect(() => {
@@ -63,7 +60,6 @@ export default function Workout() {
     }, 4000);
     setTimeout(() => {
       shoot(false);
-      console.log("hello");
     }, 5000);
     setTimeout(() => {
       shoot(true);
@@ -77,10 +73,9 @@ export default function Workout() {
     setShootingProgress(success);
   }, [statistics]);
 
+  //TIME MANAGEMENT
   useEffect(() => {
     let interval = null;
-
-    //TIME MANAGEMENT
     if (isRunningRef.current) {
       interval = setInterval(() => {
         setTime((prev) => prev + 0.1);
@@ -91,16 +86,16 @@ export default function Workout() {
     } else {
       clearInterval(interval);
     }
-
     return () => clearInterval(interval);
   }, [isRunningRef.current]);
 
   //WHEN COUNTDOWN ENDS
   const CountdownEnd = () => {
-    console.log("SHOOT (first shot)");
+    releaseBall();
     setStopButton(true);
     isRunningRef.current = true;
-    setRefresh((prev) => !prev); //for refresh in MotorControl
+    setNewWorkout(true); //for newWorkout in MotorControl
+    setRefresh((prev) => !prev);
   };
 
   const formatTime = () => {
@@ -112,6 +107,18 @@ export default function Workout() {
       2,
       "0"
     )}`;
+  };
+
+  const changeMotorAngle = (starting, ending) => {
+    const dif = ending - starting;
+    // console.log("updating Stepper motor angle by: ", dif);
+  };
+  const changeMotorSpeed = (ending) => {
+    // console.log("updating Stepper motor speed to: ", ending);
+  };
+
+  const releaseBall = () => {
+    // console.log("A ball was released");
   };
 
   return (
@@ -126,17 +133,15 @@ export default function Workout() {
           enabled={stopButton}
           handleClick={() => {
             isRunningRef.current = false;
-            setRefresh((prev) => !prev);
           }}
           handleResume={() => {
             isRunningRef.current = true;
+            setNewWorkout(false);
             setRefresh((prev) => !prev);
           }}
-          handleReset={
-            () => {
-              initialization();
-            } //UPDATE NEEDED RESET MOTOR
-          }
+          handleReset={() => {
+            initialization();
+          }}
           handleExit={() => navigate("/menu")}
         />
       </div>
@@ -191,6 +196,7 @@ export default function Workout() {
           <MotorControl
             motorData={workoutData}
             runningRef={isRunningRef}
+            newWorkout={newWorkout}
             refresh={refresh}
             stopButton={stopButton}
             setStopButton={(e) => setStopButton(e)}
@@ -201,6 +207,9 @@ export default function Workout() {
             timer={timer}
             setTimer={setTimer}
             setNextAngle={setNextAngle}
+            changeMotorAngle={changeMotorAngle}
+            changeMotorSpeed={changeMotorSpeed}
+            releaseBall={releaseBall}
           />
 
           <div className="flex items-center justify-center gap-2 mt-16">

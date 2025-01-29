@@ -4,6 +4,7 @@ import { useData } from "../parts/Memory";
 export default function MotorControl({
   motorData,
   runningRef,
+  newWorkout,
   refresh,
   stopButton,
   setStopButton,
@@ -14,6 +15,9 @@ export default function MotorControl({
   timer,
   setTimer,
   setNextAngle, //only used for changing values
+  changeMotorAngle,
+  changeMotorSpeed,
+  releaseBall,
 }) {
   const { globalAngle, setGlobalAngle, globalMotorSpeed, setGlobalMotorSpeed } =
     useData();
@@ -22,41 +26,50 @@ export default function MotorControl({
   const requestRef = useRef(null);
   const timerRef = useRef(null);
 
+  //CLEAN UP
   useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
   }, []);
 
+  //HANDLING RESET
   useEffect(() => {
     if (reset) {
-      console.log("RESETING");
       setRound(0);
       stepIndexRef.current = 0;
-      // setTimer(motorData.intervals[0]);
-      nextStep();
-
       setTimer(motorData.intervals[0]);
+
+      smoothTransition(globalAngle, motorData.angles[0], 3, setGlobalAngle);
+      changeMotorAngle(globalAngle, motorData.angles[0], 3);
       smoothTransition(
         globalMotorSpeed,
         motorData.distances[0],
         3,
         setGlobalMotorSpeed
       );
-      smoothTransition(globalAngle, motorData.angles[0], 3, setGlobalAngle);
+      changeMotorSpeed(motorData.distances[0], 3);
     }
   }, [reset]);
 
+  //HANDLING THE CODE RUNS
   useEffect(() => {
     if (runningRef.current) {
-      startMotor();
+      console.log("newWorkout: ", newWorkout);
+      if (newWorkout) {
+        startMotor(true);
+      } else {
+        startMotor(false);
+      }
     } else {
       stopMotor();
     }
-  }, [refresh]);
+  }, [refresh]); //because refresh changes value every time NewWorkout CHANGES
 
+  //FN FOR TRANSITION BETWEEN VALUES
   const smoothTransition = (
     startValue,
     endValue,
@@ -64,39 +77,34 @@ export default function MotorControl({
     updateFunc,
     onComplete
   ) => {
-    console.log("CONTROL ", startValue, " ", endValue, " ", duration);
     const startTime = performance.now();
 
     const animate = (currentTime) => {
-      console.log("ANIMATING ", updateFunc.name);
-      if (!runningRef.current && !reset) {
-        console.log("hello1");
-        return;
-      } // Stop if the motor is stopped, run
-      if (reset && updateFunc === setTimer) {
-        console.log("hello2");
-        return;
-      } //during the reset - Do NOT want TIMER to run
+      //RUN only when it is globally enabled or in reset mode
+      if (!runningRef.current && !reset) return;
+
+      //during the reset - Do NOT want TIMER to run
+      if (reset && updateFunc === setTimer) return;
 
       const elapsedTime = currentTime - startTime;
       const progress = Math.min(elapsedTime / (duration * 1000), 1);
       const newValue = startValue + progress * (endValue - startValue);
 
-      updateFunc(newValue);
+      updateFunc(newValue); //function which updates the value
 
       if (progress < 1) {
         requestRef.current = requestAnimationFrame(animate);
       } else if (progress >= 1) {
-        setReset(false);
+        setReset(false); //set reset to false
       } else if (onComplete) {
         onComplete();
       }
     };
-
     requestAnimationFrame(animate);
   };
 
-  const nextStep = (pause = false) => {
+  //FN RESPONSIBLE FOR SETTING NEW VALUES AND RUNNING EVERYTHING
+  const nextStep = (newWorkout = true) => {
     if (!runningRef.current) return;
 
     //ROUND AND INDEX OF CYCLE LOGIC
@@ -131,19 +139,19 @@ export default function MotorControl({
 
     setNextAngle(nextAngle);
 
-    //setting actual time left
+    //setting actual time left - after pause - only remaining time (SAVED IN TIMER) | after reset - NEW TIME
+    let timeLeft = newWorkout ? actualInterval : timer;
+    setTimer(timeLeft); //for UI
 
-    let timeLeft = pause ? timer : actualInterval;
-    setTimer(timeLeft);
     if (timerRef.current) clearInterval(timerRef.current);
-    let shot = false;
+    let shot = false; //for not shotting twice - maybe do not work
+
     timerRef.current = setInterval(() => {
       if (!runningRef.current) return;
       timeLeft -= 0.1;
       setTimer(Math.max(timeLeft.toFixed(1), 0));
       if (timeLeft <= 1 && !shot) {
-        console.log("SHOOT");
-
+        releaseBall();
         shot = true;
         setStopButton(false);
         setTimeout(() => {
@@ -160,24 +168,30 @@ export default function MotorControl({
     setTimeout(
       () => {
         smoothTransition(
-          pause ? globalAngle : actualAngle,
+          newWorkout ? actualAngle : globalAngle,
           nextAngle,
-          timeLeft > 2 ? timeLeft - 1 : 1,
+          timeLeft > 2 ? timeLeft - 1 : 1, //one second delay at the beginning of every countdown(before shoot)
           setGlobalAngle
-        ); // 1s transition
+        );
+        changeMotorAngle(
+          newWorkout ? actualAngle : globalAngle,
+          nextAngle,
+          timeLeft > 2 ? timeLeft - 1 : 1
+        );
         smoothTransition(
-          pause ? globalMotorSpeed : actualSpeed,
+          newWorkout ? actualSpeed : globalMotorSpeed,
           nextSpeed,
           timeLeft > 2 ? timeLeft - 1 : 1,
           setGlobalMotorSpeed
-        ); // 1s transition
+        );
+        changeMotorSpeed(nextSpeed, timeLeft > 2 ? timeLeft - 1 : 1);
       },
-      pause ? 0 : 1000
+      newWorkout ? 1000 : 0
     );
   };
 
-  const startMotor = () => {
-    nextStep(true); // Continue from the last state
+  const startMotor = (state) => {
+    nextStep(state); // Continue from the last state
   };
 
   const stopMotor = () => {
