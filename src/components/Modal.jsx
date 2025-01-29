@@ -7,7 +7,7 @@ import React, {
 
 const Modal = forwardRef((_, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState([]);
+  const [input, setInput] = useState({});
   const [modalProps, setModalProps] = useState({});
 
   // Expose the openModal function via the ref
@@ -126,12 +126,15 @@ const Modal = forwardRef((_, ref) => {
                       <input
                         key={i}
                         className="input w-[200px]"
-                        value={input[i]}
+                        value={input[modalProps.inputPlaceholders[i]]}
                         onChange={(e) =>
                           setInput((prev) => {
                             const updated = { ...prev };
+                            console.log("new value ", e.target.value);
+                            console.log(modalProps.inputPlaceholders[i]);
                             updated[modalProps.inputPlaceholders[i]] =
                               e.target.value;
+                            console.log("updated ", updated);
                             return updated;
                           })
                         }

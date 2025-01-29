@@ -19,6 +19,7 @@ export function Memory({ children }) {
   const [records, setRecords] = useState([{}]);
   const [users, setUsers] = useState([{ name: "XYZ" }]);
   const [modes, setModes] = useState([{ name: "XYZ" }]);
+  const [globalAngle, setGlobalAngle] = useState(0);
 
   useEffect(() => {
     loadCurrentData();
@@ -184,6 +185,8 @@ export function Memory({ children }) {
     deleteMode,
     workoutData,
     setWorkoutData,
+    globalAngle,
+    setGlobalAngle,
   };
 
   return (

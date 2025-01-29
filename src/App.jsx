@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import {} from "@tauri-apps/api/core";
 import "./App.css";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./parts/Navbar";
 import Profiles from "./pages/Profiles";
 import Home from "./pages/Home";
@@ -13,11 +13,16 @@ import ModeSettings from "./pages/ModeSettings";
 import Testing from "./pages/Testing";
 
 function App() {
+  const location = useLocation(); // Get the current route
   return (
     <main className="flex items-center justify-center">
       {/* ADD FIXED CLASS or something like that*/}
-      <div className="flex ml-[135px] flex-col items-center justify-center">
-        <Navbar />
+      <div
+        className={`flex flex-col items-center justify-center w-full ${
+          location.pathname !== "/workout" ? "ml-[135px]" : ""
+        }`}
+      >
+        {location.pathname !== "/workout" && <Navbar />}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/menu" element={<Menu />} />

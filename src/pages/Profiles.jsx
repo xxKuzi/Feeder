@@ -17,12 +17,16 @@ export default function Profiles() {
     setNewUserData((prev) => ({ ...prev, [type]: value }));
   };
 
-  async function deleteUser(userId) {
+  async function deleteUser(deletedUserId) {
     try {
-      await invoke("delete_user", { userId: userId });
+      await invoke("delete_user", { userId: deletedUserId });
     } catch (error) {
       console.error("Failed to delete user:", error);
     }
+    let newCurrentUser = users.find(
+      (user) => user.userId !== deletedUserId
+    ).userId; //random selected user
+    selectUser(newCurrentUser); //delete user would be selected
     loadUsers();
   }
 
@@ -50,7 +54,9 @@ export default function Profiles() {
       //Check if it is number
       try {
         await invoke("add_user", {
-          name: newUserData.name,
+          name:
+            newUserData.name.substring(0, 1).toUpperCase() +
+            newUserData.name.slice(1),
           number: Number(newUserData.number),
         });
 
@@ -110,10 +116,14 @@ export default function Profiles() {
 
                     input: true,
                     numberOfInputs: 2,
-                    inputData: inputArr,
+                    inputData: { name: user.name, number: user.number },
                     inputPlaceholders: ["name", "number"],
                     confirmHandle: (newData) => {
-                      renameUser(user.userId, newData[0], newData[1]);
+                      renameUser(
+                        user.userId,
+                        newData["name"],
+                        Number(newData["number"])
+                      );
                     },
                   });
                 }}

@@ -35,7 +35,6 @@ export default function Navbar() {
   const location = useLocation();
 
   useEffect(() => {
-    console.log(location.pathname);
     setPage(location.pathname);
   });
 
@@ -49,7 +48,7 @@ export default function Navbar() {
             <p className="text-xl">#{profile.number}</p>
           </div>
           <p className="text-2xl font-semibold max-w-[115px] text-wrap">
-            {profile.name.substring(0, 1).toUpperCase() + profile.name.slice(1)}
+            {profile.name}
           </p>
         </div>
 
