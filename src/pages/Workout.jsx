@@ -23,7 +23,8 @@ export default function Workout() {
   const [nextAngle, setNextAngle] = useState(0); //mainly for better UX
 
   const isRunningRef = useRef(); //main variable
-  const countdownRef = useRef(null); //ref to CountDown
+  const countdownRef = useRef(null); //ref to INITIAL CountDown
+  const pauseCountdownRef = useRef(null); //ref to PAUSE Countdown
 
   const navigate = useNavigate(); //used for navigation between pages
 
@@ -43,6 +44,13 @@ export default function Workout() {
   useEffect(() => {
     initialization();
   }, []);
+
+  // after delay after resume
+  const onPauseResume = () => {
+    isRunningRef.current = true;
+    setNewWorkout(false);
+    setRefresh((prev) => !prev);
+  };
 
   //INITIALIZATION OR RESET
   const initialization = () => {
@@ -127,6 +135,10 @@ export default function Workout() {
         ref={(fn) => (countdownRef.current = fn)}
         onCountdownEnd={CountdownEnd}
       />
+      <Countdown
+        ref={(fn) => (pauseCountdownRef.current = fn)}
+        onCountdownEnd={onPauseResume}
+      />
       <div className="absolute top-8 right-8">
         {" "}
         <Pause
@@ -135,9 +147,7 @@ export default function Workout() {
             isRunningRef.current = false;
           }}
           handleResume={() => {
-            isRunningRef.current = true;
-            setNewWorkout(false);
-            setRefresh((prev) => !prev);
+            pauseCountdownRef.current.startCountdown(2);
           }}
           handleReset={() => {
             initialization();
