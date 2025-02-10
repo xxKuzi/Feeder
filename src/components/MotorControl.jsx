@@ -41,7 +41,8 @@ export default function MotorControl({
     if (reset) {
       setRound(0);
       stepIndexRef.current = 0;
-      setTimer(motorData.intervals[0]);
+
+      setTimer(Math.max(motorData.intervals[0], 0).toFixed(1));
 
       smoothTransition(globalAngle, motorData.angles[0], 3, setGlobalAngle);
       changeMotorAngle(globalAngle, motorData.angles[0], 3);
@@ -141,7 +142,7 @@ export default function MotorControl({
 
     //setting actual time left - after pause - only remaining time (SAVED IN TIMER) | after reset - NEW TIME
     let timeLeft = newWorkout ? actualInterval : timer;
-    setTimer(timeLeft); //for UI
+    setTimer(Math.max(timeLeft, 0).toFixed(1));
 
     if (timerRef.current) clearInterval(timerRef.current);
     let shot = false; //for not shotting twice - maybe do not work
@@ -149,7 +150,7 @@ export default function MotorControl({
     timerRef.current = setInterval(() => {
       if (!runningRef.current) return;
       timeLeft -= 0.1;
-      setTimer(Math.max(timeLeft.toFixed(1), 0));
+      setTimer(Math.max(timeLeft, 0).toFixed(1));
       if (timeLeft <= 1 && !shot) {
         releaseBall();
         shot = true;

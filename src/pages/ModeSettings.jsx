@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useData } from "../parts/Memory";
 import { useNavigate } from "react-router-dom";
-import Modal from "../components/Modal.jsx";
 
 export default function ModeSettings({ onAddMode }) {
   const { createMode } = useData();
@@ -25,7 +24,7 @@ export default function ModeSettings({ onAddMode }) {
     repetition: [5, 10, 15, 20, 30],
     intervals: [2, 3, 5, 8, 10],
   };
-  const modalRef = useRef();
+
   const [customInterval, setCustomInterval] = useState(false);
   const navigate = useNavigate();
 
@@ -418,7 +417,6 @@ export default function ModeSettings({ onAddMode }) {
           Create Mode
         </button>
       </div>
-      <Modal ref={modalRef} />
     </div>
   );
 }

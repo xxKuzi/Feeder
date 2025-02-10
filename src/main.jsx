@@ -7,10 +7,10 @@ import { BrowserRouter as Router } from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <Memory>
-      <Router>
+    <Router>
+      <Memory>
         <App />
-      </Router>
-    </Memory>
+      </Memory>
+    </Router>
   </React.StrictMode>
 );

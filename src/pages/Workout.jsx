@@ -156,7 +156,9 @@ export default function Workout() {
         />
       </div>
       <p className="text-4xl font-bold mt-10">{workoutData.name}</p>
-      <div className="rounded-xl space-x-32 flex items-center justify-center w-full">
+      {/* MAIN */}
+      <div className="rounded-xl space-x-4 flex items-center justify-center w-full">
+        {/* Circle */}
         <div className="mt-2 flex flex-col items-center justify-center gap-4">
           <CirclePB
             radius={90}
@@ -173,36 +175,10 @@ export default function Workout() {
               </p>
             </div>
           </CirclePB>
-          {/* <div className="flex items-center justify-center space-x-4">
-            <button
-              className="button button__positive"
-              onClick={() => shoot(true)}
-            >
-              Bucket
-            </button>
-            <button
-              className="button button__negative"
-              onClick={() => shoot(false)}
-            >
-              Miss
-            </button>
-          </div> */}
         </div>
+
+        {/* Motor Control */}
         <div className="flex flex-col items-center justify-center">
-          {/* <div className="flex mt-16 px-4 py-3 border-2 rounded-lg flex-col items-center justify-center">
-            <p className="text-xl font-bold">INFO</p>
-
-            <p>angles: {workoutData.angles}</p>
-            <p>distances: {workoutData.distances}</p>
-            <p>repetition: {workoutData.repetition}</p>
-            <p>intervals: {workoutData.intervals}</p>
-            <img
-              className="h-16 w-16 mt-2"
-              src={workoutData.image}
-              alt="image"
-            />
-          </div> */}
-
           <MotorControl
             motorData={workoutData}
             runningRef={isRunningRef}
@@ -221,22 +197,58 @@ export default function Workout() {
             changeMotorSpeed={changeMotorSpeed}
             releaseBall={releaseBall}
           />
-
-          <div className="flex items-center justify-center gap-2 mt-16">
-            <p>{formatTime()}</p>
-            <p>
-              next shot: {timer}s | {nextAngle}°
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-center h-8"></div>
         </div>
       </div>
-      <div className="relative w-[1000px] h-2 rounded-md bg-black/10">
-        <div
-          className="absolute h-2 rounded-md  bg-green-400 duration-500"
-          style={{ width: `${((time + 0.3) / fullTime) * 1000}` + "px" }} //not using timeProgress because of delay animation for smoother animations
-        ></div>
+      {/* Bottom line*/}
+      <div className="flex items-center justify-center flex-col">
+        <div className="flex items-center justify-center text-center space-x-2">
+          <p className="text-6xl w-[130px]">{timer}s</p>
+          <p className="text-6xl">|</p>
+          <p className="text-6xl w-[130px]">{nextAngle}°</p>
+        </div>
+        <div className="flex w-full items-end justify-center flex-col">
+          <p className="text-6xl">{formatTime()}</p>
+        </div>
+
+        <div className="relative w-[1000px] h-2 mt-2 rounded-md bg-black/10">
+          <div
+            className="absolute h-2 rounded-md  bg-green-400 duration-500"
+            style={{ width: `${((time + 0.3) / fullTime) * 1000}` + "px" }} //not using timeProgress because of delay animation for smoother animations
+          ></div>
+        </div>
       </div>
     </div>
   );
+}
+
+{
+  /* <div className="flex mt-16 px-4 py-3 border-2 rounded-lg flex-col items-center justify-center">
+            <p className="text-xl font-bold">INFO</p>
+
+            <p>angles: {workoutData.angles}</p>
+            <p>distances: {workoutData.distances}</p>
+            <p>repetition: {workoutData.repetition}</p>
+            <p>intervals: {workoutData.intervals}</p>
+            <img
+              className="h-16 w-16 mt-2"
+              src={workoutData.image}
+              alt="image"
+            />
+          </div> */
+}
+{
+  /* <div className="flex items-center justify-center space-x-4">
+            <button
+              className="button button__positive"
+              onClick={() => shoot(true)}
+            >
+              Bucket
+            </button>
+            <button
+              className="button button__negative"
+              onClick={() => shoot(false)}
+            >
+              Miss
+            </button>
+          </div> */
 }

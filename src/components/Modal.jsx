@@ -15,6 +15,8 @@ const Modal = forwardRef((_, ref) => {
     openModal: ({
       buttons = {},
 
+      areaHandle = () => setIsOpen(false),
+
       cancelLabel = "Cancel",
       cancelColor = "bg-gray-400",
       cancelHandle = () => setIsOpen(false),
@@ -49,6 +51,9 @@ const Modal = forwardRef((_, ref) => {
         },
 
         buttonConfig: {
+          area: {
+            handle: areaHandle,
+          },
           cancel: {
             label: cancelLabel,
             color: cancelColor,
@@ -95,7 +100,10 @@ const Modal = forwardRef((_, ref) => {
     <div>
       {isOpen && (
         <div
-          onClick={closeModal}
+          onClick={() => {
+            modalProps.buttonConfig.area.handle();
+            closeModal();
+          }}
           className="ml-[135px] fixed z-50 inset-0 flex justify-center items-center bg-black/20 duration-1000 transition-colors "
         >
           <div

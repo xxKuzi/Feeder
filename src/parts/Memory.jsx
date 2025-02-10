@@ -8,9 +8,11 @@ import React, {
 import { invoke } from "@tauri-apps/api/core";
 const DataContext = createContext();
 import Modal from "../components/Modal.jsx";
+import { useNavigate } from "react-router-dom";
 
 export function Memory({ children }) {
   const modalRef = useRef();
+  const navigate = useNavigate();
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
   const [workoutData, setWorkoutData] = useState({
     intervals: [5],
@@ -154,6 +156,9 @@ export function Memory({ children }) {
       question: "Díky",
       buttons: { ok: true },
       okHandle: () => {
+        navigate("/menu");
+      },
+      areaHandle: () => {
         navigate("/menu");
       },
     });
