@@ -1,7 +1,6 @@
 #[cfg(target_os = "linux")]
 pub mod servo_control {
-    use rppal::gpio::{Gpio, OutputPin};
-    use tauri::{command, Manager};
+    use rppal::gpio::{Gpio, OutputPin};    
     use std::{thread, time::Duration};
 
     #[derive(Debug)]
@@ -40,9 +39,9 @@ pub mod servo_control {
             println!("Blinking LED for {} times", times);
             for _ in 0..times {
                 self.pin.set_high();
-                thread::sleep(Duration::from_micros(200));
+                thread::sleep(Duration::from_micros(300));
                 self.pin.set_low();
-                thread::sleep(Duration::from_micros(200));
+                thread::sleep(Duration::from_micros(300));
             }
         }
     }
@@ -58,7 +57,9 @@ pub mod servo_control {
     pub fn blink_led(times: u32) -> Result<String, String> {
         let mut servo = ServoController::new(12)?;
         servo.blink(times);
+        println!("Blinked");
         Ok(format!("Blinked {} times", times))
+        
     }
 }
 

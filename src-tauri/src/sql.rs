@@ -89,7 +89,7 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
 
 // Initialize and connect to the database
 pub async fn connect_to_database() {
-    if (!Sqlite::database_exists(&*DB_URL).await.unwrap_or(false)) {
+    if !Sqlite::database_exists(&*DB_URL).await.unwrap_or(false) {
         Sqlite::create_database(&*DB_URL).await.unwrap();
         match create_schema().await {
             Ok(_) => println!("Database created successfully"),
@@ -132,7 +132,7 @@ pub async fn delete_user(user_id: i32) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     // Step 2: Check if there are at least 2 users
-    if (count.0 < 2) {
+    if count.0 < 2 {
         return Err("Cannot delete user. At least 2 users are required.".to_string());
     }
 

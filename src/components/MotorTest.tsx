@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 export default function MotorTest() {
@@ -20,15 +20,18 @@ export default function MotorTest() {
     }
   };
 
-  const letsgo = () => {
+  useEffect(() => {
     while (running) {
-      blink();
+      
+      setTimeout(() => blink(), 1000)
     }
-  };
+  }, [running])
+
+  
 
   const blink = async () => {
     try {
-      await invoke("blink_led", { times: 1000 });
+      await invoke("blink_led", { times: 3000 });
     } catch (error) {
       console.error("Failed to update motor/servo value:", error);
     }
@@ -77,15 +80,11 @@ export default function MotorTest() {
       >
         STOP PROGRAM
       </button>
-      <button
-        onClick={() => {
-          setRunning((prev) => !prev);
-          letsgo();
-        }}
-      >
-        toggle running and blink
-      </button>
-      <button onClick={blink}>Blink</button>
+     <p>Motor Control</p>
+     <div className="flex space-x-4 justify-center items-center ">
+      <button className={`button ${running ? "button__positive" : "button__negative"}`} onClick={() => setRunning(prev => !prev)}>{running ? "Running..." : "Stopped"}</button>
+      <button className={`button button__positive`} onClick={() => blink()}>Blink once</button>
+      </div>
     </div>
   );
 }
