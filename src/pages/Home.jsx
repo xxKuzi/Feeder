@@ -1,5 +1,7 @@
 import React from "react";
 import Section from "../components/Section";
+import { FaPowerOff } from "react-icons/fa6";
+import { invoke } from "@tauri-apps/api/core";
 
 export default function Home() {
   return (
@@ -26,6 +28,15 @@ export default function Home() {
           }}
         />
       </div>
+      <button
+        onClick={() => {
+          invoke("exit_app");
+        }}
+      >
+        <div className="flex mt-6 justify-center items-center">
+          <p className="mr-2 text-xl">Power up</p> <FaPowerOff size={20} />
+        </div>
+      </button>
     </div>
   );
 }

@@ -21,7 +21,7 @@ pub mod servo_control {
         }
     
         pub fn set_angle(&mut self, angle: u8) {
-            println!("Setting angle: {} degrees", angle);
+            println!("Setting angle: {} degrees", angle);            
     
             // Map the angle (0-180) to pulse width (1ms to 2ms)
             let pulse_width = 1.0 + (angle as f32 / 180.0) * 1.0; // 1ms to 2ms range
@@ -44,6 +44,7 @@ pub mod servo_control {
         servo.set_angle(angle);
         Ok(format!("Servo set to {} degrees", angle))
     }
+    
 }
 
 #[cfg(not(target_os = "linux"))]

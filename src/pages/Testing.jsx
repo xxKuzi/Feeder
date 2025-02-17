@@ -8,6 +8,7 @@ export default function Testing() {
       Testing
       {/* <KeyboardSite /> */}
       <MotorTest />
+      <KeyboardSite />
     </div>
   );
 }
