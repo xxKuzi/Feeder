@@ -59,7 +59,6 @@ export default function MotorControl({
   //HANDLING THE CODE RUNS
   useEffect(() => {
     if (runningRef.current) {
-      console.log("newWorkout: ", newWorkout);
       if (newWorkout) {
         startMotor(true);
       } else {
@@ -123,7 +122,12 @@ export default function MotorControl({
         return newRound;
       });
     }
-    let actualInterval = motorData.intervals[index];
+
+    let actualInterval = motorData.intervals[0];
+    // only if custom interval
+    if (motorData.intervals.length > 1) {
+      actualInterval = motorData.intervals[index];
+    }
 
     let actualAngle = motorData.angles[index];
     let actualSpeed = motorData.distances[index];
@@ -150,6 +154,7 @@ export default function MotorControl({
     timerRef.current = setInterval(() => {
       if (!runningRef.current) return;
       timeLeft -= 0.1;
+      console.log("timeleft ", Math.max(timeLeft.toFixed(1), 0));
       setTimer(Math.max(timeLeft, 0).toFixed(1));
       if (timeLeft <= 1 && !shot) {
         releaseBall();

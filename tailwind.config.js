@@ -5,6 +5,9 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        spaceMono: ["SpaceMono", "monospace"],
+      },
       colors: {
         orange1: "rgb(241, 119, 32)",
         yellow1: "rgb(255, 166, 48)",

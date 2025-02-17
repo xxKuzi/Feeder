@@ -28,12 +28,19 @@ export default function Workout() {
 
   const navigate = useNavigate(); //used for navigation between pages
 
+  useEffect(() => {
+    if (time >= fullTime) {
+      isRunningRef.current = false;
+      End();
+    }
+  }, [time]);
+
   //BLUETOOTH
   useEffect(() => {
     const unlisten = () =>
       listen("pause", () => {
         console.log("Pause command received from the server");
-        isRunningRef.current(!isRunningRef.current);
+        isRunningRef.current = !isRunningRef.current;
       });
 
     return () => {
@@ -60,8 +67,9 @@ export default function Workout() {
     updateStatistics(0, 0); //reset statistics
     setFullTime(
       workoutData.repetition *
-        workoutData.intervals.reduce((total, current) => total + current, 0)
-    ); //NEED CHANGE  //calculate fullTime
+        workoutData.intervals.reduce((total, current) => total + current, 0) +
+        1
+    ); //calculate fullTime + ONE second safety
 
     setTimeout(() => {
       shoot(true);
@@ -81,21 +89,28 @@ export default function Workout() {
     setShootingProgress(success);
   }, [statistics]);
 
+  useEffect(() => {
+    console.log("time ", time);
+  }, [time]);
+
   //TIME MANAGEMENT
   useEffect(() => {
     let interval = null;
     if (isRunningRef.current) {
       interval = setInterval(() => {
         setTime((prev) => prev + 0.1);
-        if (time >= fullTime) {
-          End();
-        }
       }, 100);
     } else {
       clearInterval(interval);
     }
     return () => clearInterval(interval);
   }, [isRunningRef.current]);
+
+  //At the end
+  const End = async () => {
+    await addRecord(statistics.made, statistics.taken);
+    navigate("/result");
+  };
 
   //WHEN COUNTDOWN ENDS
   const CountdownEnd = () => {
@@ -109,12 +124,19 @@ export default function Workout() {
   const formatTime = () => {
     let remainingTime = fullTime - time;
     let minutes = Math.floor((remainingTime % 3600) / 60);
-    let seconds = Math.floor(remainingTime % 60);
+    let seconds;
+    if (remainingTime < 10) {
+      seconds = (remainingTime % 60).toFixed(1);
+    } else {
+      seconds = Math.floor(remainingTime % 60);
+    }
 
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
-      2,
-      "0"
-    )}`;
+    return remainingTime < 10
+      ? `${String(seconds).padStart(2, "0")}`
+      : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+          2,
+          "0"
+        )}`;
   };
 
   const changeMotorAngle = (starting, ending) => {
@@ -201,13 +223,13 @@ export default function Workout() {
       </div>
       {/* Bottom line*/}
       <div className="flex items-center justify-center flex-col">
-        <div className="flex items-center justify-center text-center space-x-2">
-          <p className="text-6xl w-[130px]">{timer}s</p>
+        <div className="flex items-center justify-center text-center space-x-0 font-spaceMono">
+          <p className="text-6xl min-w-[130px]">{timer}s</p>
           <p className="text-6xl">|</p>
-          <p className="text-6xl w-[130px]">{nextAngle}°</p>
+          <p className="text-6xl min-w-[130px]">{nextAngle}°</p>
         </div>
         <div className="flex w-full items-end justify-center flex-col">
-          <p className="text-6xl">{formatTime()}</p>
+          <p className="text-6xl font-spaceMono">{formatTime()}</p>
         </div>
 
         <div className="relative w-[1000px] h-2 mt-2 rounded-md bg-black/10">
