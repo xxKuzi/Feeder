@@ -33,4 +33,4 @@ tokio = { version = "1", features = ["full"] }  # Use the latest version of toki
 once_cell = "1.10"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rppal = "0.11"  # for GPIO control
+rppal = "0.16"  # for GPIO control

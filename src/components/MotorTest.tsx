@@ -1,20 +1,22 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 export default function MotorTest() {
   const [servoAngle, setServoAngle] = useState<number>(90); // Default at 90°
   const [motorSpeed, setMotorSpeed] = useState<number>(0); // Default at 0 RPM
 
   // Function to update values
-  const updateValues = (newServo: number, newSpeed: number) => {
+  const updateValues = async (newServo: number, newSpeed: number) => {
     setServoAngle(newServo);
     setMotorSpeed(newSpeed);
+    console.log("settings new values")
 
     // Send data to backend
-    fetch("/api/control", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ servo: newServo, motor: newSpeed }),
-    });
+    try {
+          await invoke("set_servo_angle", { angle: newServo });
+        } catch (error) {
+          console.error("Failed to update motor/servo value:", error);
+        }
   };
 
   // Stop function
