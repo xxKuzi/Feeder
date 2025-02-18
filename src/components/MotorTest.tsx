@@ -82,7 +82,10 @@ export default function MotorTest() {
           setRunning((prev) => !prev);
           letsgo();
         }}
-      ></button>
+      >
+        toggle running and blink
+      </button>
+      <button onClick={blink}>Blink</button>
     </div>
   );
 }
