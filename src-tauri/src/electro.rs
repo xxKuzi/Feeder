@@ -40,7 +40,7 @@ pub mod servo_control {
 
     #[tauri::command]
     pub fn set_servo_angle(angle: u8) -> Result<String, String> {
-        let mut servo = ServoController::new(18)?;
+        let mut servo = ServoController::new(32)?;
         servo.set_angle(angle);
         Ok(format!("Servo set to {} degrees", angle))
     }
