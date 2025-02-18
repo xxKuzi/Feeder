@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 export default function MotorTest() {
   const [servoAngle, setServoAngle] = useState<number>(90); // Default at 90°
   const [motorSpeed, setMotorSpeed] = useState<number>(0); // Default at 0 RPM
+  const [running, setRunning] = useState<boolean>(false);
 
   // Function to update values
   const updateValues = async (newServo: number, newSpeed: number) => {
@@ -19,9 +20,15 @@ export default function MotorTest() {
     }
   };
 
+  const letsgo = () => {
+    while (running) {
+      blink();
+    }
+  };
+
   const blink = async () => {
     try {
-      await invoke("blink_led", { times: 50 });
+      await invoke("blink_led", { times: 1000 });
     } catch (error) {
       console.error("Failed to update motor/servo value:", error);
     }
@@ -72,7 +79,8 @@ export default function MotorTest() {
       </button>
       <button
         onClick={() => {
-          blink();
+          setRunning((prev) => !prev);
+          letsgo();
         }}
       ></button>
     </div>

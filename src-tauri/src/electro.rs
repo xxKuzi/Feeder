@@ -40,9 +40,9 @@ pub mod servo_control {
             println!("Blinking LED for {} times", times);
             for _ in 0..times {
                 self.pin.set_high();
-                thread::sleep(Duration::from_millis(10));
+                thread::sleep(Duration::from_millis(1));
                 self.pin.set_low();
-                thread::sleep(Duration::from_millis(10));
+                thread::sleep(Duration::from_millis(1));
             }
         }
     }
@@ -57,7 +57,7 @@ pub mod servo_control {
     #[tauri::command]
     pub fn blink_led(times: u32) -> Result<String, String> {
         let mut servo = ServoController::new(12)?;
-        servo.blink(50);
+        servo.blink(times);
         Ok(format!("Blinked {} times", times))
     }
 }
