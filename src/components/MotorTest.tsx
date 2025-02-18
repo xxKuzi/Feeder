@@ -9,14 +9,22 @@ export default function MotorTest() {
   const updateValues = async (newServo: number, newSpeed: number) => {
     setServoAngle(newServo);
     setMotorSpeed(newSpeed);
-    console.log("settings new values")
+    console.log("settings new values");
 
     // Send data to backend
     try {
-          await invoke("set_servo_angle", { angle: newServo });
-        } catch (error) {
-          console.error("Failed to update motor/servo value:", error);
-        }
+      await invoke("set_servo_angle", { angle: newServo });
+    } catch (error) {
+      console.error("Failed to update motor/servo value:", error);
+    }
+  };
+
+  const blink = async () => {
+    try {
+      await invoke("blink_led", { times: 50 });
+    } catch (error) {
+      console.error("Failed to update motor/servo value:", error);
+    }
   };
 
   // Stop function
@@ -62,6 +70,11 @@ export default function MotorTest() {
       >
         STOP PROGRAM
       </button>
+      <button
+        onClick={() => {
+          blink();
+        }}
+      ></button>
     </div>
   );
 }
