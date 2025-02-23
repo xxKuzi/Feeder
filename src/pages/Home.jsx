@@ -34,7 +34,7 @@ export default function Home() {
         }}
       >
         <div className="flex mt-6 justify-center items-center">
-          <p className="mr-2 text-xl">Power up</p> <FaPowerOff size={20} />
+          <p className="mr-2 text-xl">Vypnout</p> <FaPowerOff size={20} />
         </div>
       </button>
     </div>
