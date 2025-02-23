@@ -30,6 +30,35 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
     > | null>(null);
     const keyboardRef = useRef<any>(null);
 
+    useEffect(() => {
+      const style = document.createElement("style");
+      style.innerHTML = `        
+
+        .simple-keyboard .hg-button {
+          height: 70px !important;
+          font-size: 20px !important;          
+        }
+      `;
+      document.head.appendChild(style);
+
+      return () => {
+        document.head.removeChild(style);
+      };
+    }, []);
+
+    useEffect(() => {
+      if (isVisible) {
+        document.body.style.overflow = "hidden"; // disables scroll
+      } else {
+        document.body.style.overflow = ""; // restores scroll
+      }
+
+      // Cleanup function to restore scrolling when unmounted
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }, [isVisible]);
+
     useImperativeHandle(ref, () => ({
       showKeyboard: (
         e: React.FocusEvent<HTMLInputElement>,
@@ -38,6 +67,10 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
         stateSetterRef.current = setState;
         setInput(e.target.value);
         setIsVisible(true);
+        //for some reason - it needs time to load
+        setTimeout(() => {
+          keyboardRef.current.setInput(e.target.value);
+        }, 50);
       },
       hideKeyboard: () => {
         setIsVisible(false);
@@ -57,6 +90,7 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
       }
 
       if (button === "{shift}" || button === "{lock}") {
+        console.log("shift");
         handleShift();
       }
     };
@@ -74,10 +108,20 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
     return (
       <div>
         {isVisible && (
-          <div className="ml-[135px] px-4 fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
+          <div className="ml-[135px] px-6 py-6 fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-end">
+            <button
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded fixed text-xl top-2 right-6" // 2, 6 - because of 4 padding
+              onClick={() => {
+                if (ref && typeof ref !== "function" && ref.current) {
+                  ref.current.hideKeyboard();
+                }
+              }}
+            >
+              Zavřít
+            </button>
             <input
               autoFocus
-              className="mb-2 p-2 border rounded"
+              className="mb-12 py-2 px-2 text-5xl border rounded"
               value={input}
               onChange={(e) => onChange(e.target.value)}
             />
@@ -88,13 +132,6 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
               onChange={onChange}
               onKeyPress={onKeyPress}
             />
-
-            <button
-              className="mt-4 px-4 py-2 bg-gray-200 rounded"
-              onClick={() => setIsVisible(false)}
-            >
-              Close
-            </button>
           </div>
         )}
       </div>

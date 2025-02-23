@@ -22,12 +22,14 @@ export default function Testing() {
           showKeyboard(e, (newValue) => setText((prev) => [newValue, prev[1]]))
         }
         value={text[0]}
+        onChange={() => {}}
         className="p-2 border rounded"
       />
       <input
         onFocus={(e) =>
           showKeyboard(e, (newValue) => setText((prev) => [prev[0], newValue]))
         }
+        onChange={() => {}}
         value={text[1]}
         className="p-2 border rounded"
       />
