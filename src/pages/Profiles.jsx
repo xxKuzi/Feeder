@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { CgProfile } from "react-icons/cg";
 import { invoke } from "@tauri-apps/api/core";
 import { useData } from "../parts/Memory";
-import Modal from "../components/Modal.jsx";
 
 import { MdOutlineDeleteForever } from "react-icons/md";
 import { MdDriveFileRenameOutline } from "react-icons/md";
@@ -11,7 +10,7 @@ export default function Profiles() {
   const modalRef = useRef();
   const [newUserData, setNewUserData] = useState({});
 
-  const { updateProfile, users, loadUsers } = useData();
+  const { updateProfile, users, loadUsers, openModal } = useData();
 
   const updateNewUserData = (type, value) => {
     setNewUserData((prev) => ({ ...prev, [type]: value }));
@@ -40,7 +39,7 @@ export default function Profiles() {
       await loadUsers();
     } else {
       setTimeout(() => {
-        modalRef.current.openModal({
+        openModal({
           headline: "Číslo dresu musí být číslo",
           question: "Upravte číslo dresu aby se jednalo o číslo",
           buttons: { cancel: true },
@@ -66,7 +65,7 @@ export default function Profiles() {
       }
       loadUsers();
     } else {
-      modalRef.current.openModal({
+      openModal({
         headline: "Číslo dresu musí být číslo",
         question: "Upravte číslo dresu aby se jednalo o číslo",
         buttons: { cancel: true },
@@ -105,7 +104,7 @@ export default function Profiles() {
                 className=""
                 onClick={() => {
                   const inputArr = [user.name, user.number];
-                  modalRef.current.openModal({
+                  openModal({
                     buttons: {
                       confirm: true,
                       cancel: true,
@@ -155,7 +154,6 @@ export default function Profiles() {
       >
         Přidat
       </button>
-      <Modal ref={modalRef} />
     </div>
   );
 }

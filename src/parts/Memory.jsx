@@ -9,9 +9,11 @@ import { invoke } from "@tauri-apps/api/core";
 const DataContext = createContext();
 import Modal from "../components/Modal.jsx";
 import { useNavigate } from "react-router-dom";
+import KeyboardOverlay from "../parts/Keyboard";
 
 export function Memory({ children }) {
   const modalRef = useRef();
+  const keyboardRef = useRef(null);
   const navigate = useNavigate();
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
   const [workoutData, setWorkoutData] = useState({
@@ -174,6 +176,18 @@ export function Memory({ children }) {
     loadModes();
   };
 
+  const openModal = (properties) => {
+    console.log("properties ", properties);
+    modalRef.current.openModal({
+      ...properties,
+    });
+  };
+
+  const showKeyboard = (e, stateFunction) => {
+    //state function is function for setting new useState value (individual for every input)
+    keyboardRef.current.showKeyboard(e, stateFunction);
+  };
+
   const contextData = {
     statistics,
     updateStatistics,
@@ -195,11 +209,14 @@ export function Memory({ children }) {
     setGlobalAngle,
     globalMotorSpeed,
     setGlobalMotorSpeed,
+    openModal,
+    showKeyboard,
   };
 
   return (
     <DataContext.Provider value={contextData}>
       <Modal ref={modalRef} />
+      <KeyboardOverlay ref={keyboardRef}></KeyboardOverlay>
 
       {children}
     </DataContext.Provider>

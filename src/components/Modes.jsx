@@ -4,11 +4,10 @@ import { useSearchParams } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import Modal from "../components/Modal.jsx";
 import { RxCross2 } from "react-icons/rx";
 
 export default function Modes() {
-  const { modes, setWorkoutData, loadModes } = useData();
+  const { modes, setWorkoutData, loadModes, openModal } = useData();
   const [categories, setCategories] = useState([0, 1]);
   const navigate = useNavigate();
   const modalRef = useRef();
@@ -139,7 +138,7 @@ export default function Modes() {
           <button
             className="flex items-center justify-center absolute top-0 right-0"
             onClick={() =>
-              modalRef.current.openModal({
+              openModal({
                 headline: "Odstranění módu",
                 question: "Opravdu chcete tento mode odstranit?",
                 buttons: { confirm: true, cancel: true },
@@ -170,7 +169,6 @@ export default function Modes() {
       <Category headline={"Střely za 2 body"} category={1} />
       <Category headline={"Střely za 3 body"} category={2} />
       <Category headline={"Trestné hody"} category={3} />
-      <Modal ref={modalRef} />
     </div>
   );
 }
