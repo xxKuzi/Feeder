@@ -89,10 +89,6 @@ export default function Workout() {
     setShootingProgress(success);
   }, [statistics]);
 
-  useEffect(() => {
-    console.log("time ", time);
-  }, [time]);
-
   //TIME MANAGEMENT
   useEffect(() => {
     let interval = null;

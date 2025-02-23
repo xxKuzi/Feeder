@@ -65,11 +65,13 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
         setState: React.Dispatch<React.SetStateAction<string>>
       ) => {
         stateSetterRef.current = setState;
-        setInput(e.target.value);
+        console.log("E bro ", e);
+        console.log("set State ", setState);
+        setInput(e ? e.target.value : "");
         setIsVisible(true);
         //for some reason - it needs time to load
         setTimeout(() => {
-          keyboardRef.current.setInput(e.target.value);
+          keyboardRef.current.setInput(e ? e.target.value : "");
         }, 50);
       },
       hideKeyboard: () => {
@@ -108,7 +110,7 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
     return (
       <div>
         {isVisible && (
-          <div className="ml-[135px] px-6 py-6 fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-end">
+          <div className="ml-[135px] px-6 py-6 fixed z-50 inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-end">
             <button
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded fixed text-xl top-2 right-6" // 2, 6 - because of 4 padding
               onClick={() => {

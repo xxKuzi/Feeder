@@ -3,7 +3,7 @@ import { useData } from "../parts/Memory";
 import { useNavigate } from "react-router-dom";
 
 export default function ModeSettings({ onAddMode }) {
-  const { createMode } = useData();
+  const { createMode, showKeyboard } = useData();
   const [formData, setFormData] = useState({
     name: "",
     image: "",
@@ -176,12 +176,15 @@ export default function ModeSettings({ onAddMode }) {
             type="text"
             name="name"
             value={formData.name}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                name: e.target.value,
-              }))
-            }
+            onFocus={(e) => {
+              showKeyboard(e, (newValue) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  name: newValue,
+                }))
+              );
+            }}
+            onChange={() => {}}
             className="border border-gray-300 rounded p-2"
           />
         </div>
@@ -262,9 +265,12 @@ export default function ModeSettings({ onAddMode }) {
                 <input
                   type="number"
                   value={point.angle}
-                  onChange={(e) =>
-                    handlePointChange(index, "angle", Number(e.target.value))
+                  onFocus={(e) =>
+                    showKeyboard(e, (newValue) =>
+                      handlePointChange(index, "angle", Number(newValue))
+                    )
                   }
+                  onChange={() => {}}
                   className="w-16 border border-gray-300 rounded p-1"
                 />
                 <label className="text-sm font-medium text-gray-700">
@@ -273,9 +279,12 @@ export default function ModeSettings({ onAddMode }) {
                 <input
                   type="number"
                   value={point.distance}
-                  onChange={(e) =>
-                    handlePointChange(index, "distance", Number(e.target.value))
+                  onFocus={(e) =>
+                    showKeyboard(e, (newValue) =>
+                      handlePointChange(index, "distance", Number(newValue))
+                    )
                   }
+                  onChange={() => {}}
                   className="w-16 border border-gray-300 rounded p-1"
                 />
                 <button
@@ -326,7 +335,12 @@ export default function ModeSettings({ onAddMode }) {
               type="number"
               min="1"
               value={formData.repetition}
-              onChange={(e) => handleRepetitionChange(Number(e.target.value))}
+              onFocus={(e) =>
+                showKeyboard(e, (newValue) =>
+                  handleRepetitionChange(Number(newValue))
+                )
+              }
+              onChange={() => {}}
               className="border border-gray-300 rounded p-2 w-20"
             />
           </div>
@@ -366,7 +380,12 @@ export default function ModeSettings({ onAddMode }) {
               type="number"
               min="1"
               value={formData.intervals[0]}
-              onChange={(e) => handleIntervalChange(0, Number(e.target.value))}
+              onFocus={(e) =>
+                showKeyboard(e, (newValue) =>
+                  handleIntervalChange(0, Number(newValue))
+                )
+              }
+              onChange={() => {}}
               className="border border-gray-300 rounded p-2 w-20"
             />
           </div>
@@ -400,9 +419,12 @@ export default function ModeSettings({ onAddMode }) {
                   min="1"
                   step={1}
                   value={formData.intervals[i + 1] || ""}
-                  onChange={(e) =>
-                    handleIntervalChange(i + 1, Number(e.target.value))
+                  onFocus={(e) =>
+                    showKeyboard(e, () =>
+                      handleIntervalChange(i + 1, Number(e.target.value))
+                    )
                   }
+                  onChange={() => {}}
                   className="border border-gray-300 rounded p-2 w-20 transition-transform duration-500 ease-out delay-300" // Delay only for the input
                 />
               </div>

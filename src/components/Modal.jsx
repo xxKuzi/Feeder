@@ -4,11 +4,13 @@ import React, {
   useImperativeHandle,
   useEffect,
 } from "react";
+import { useData } from "@/parts/Memory";
 
 const Modal = forwardRef((_, ref) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState({});
+  const [input, setInput] = useState({}); //expects {name: "petr", age: 18} - name, age are placeholders
   const [modalProps, setModalProps] = useState({});
+  const { showKeyboard } = useData();
 
   // Expose the openModal function via the ref
   useImperativeHandle(ref, () => ({
@@ -38,7 +40,7 @@ const Modal = forwardRef((_, ref) => {
 
       input = false,
       numberOfInputs = 0,
-      inputData = [],
+      inputData = [""],
       inputPlaceholders = ["1"],
     }) => {
       setModalProps({
@@ -129,23 +131,35 @@ const Modal = forwardRef((_, ref) => {
               {modalProps.input &&
                 Array.from({ length: modalProps.numberOfInputs }).map(
                   (_, i) => (
-                    <div className="flex items-center justify-center gap-4 text-start">
+                    <div
+                      key={i}
+                      className="flex items-center justify-center gap-4 text-start"
+                    >
                       <p className="w-32">{modalProps.inputPlaceholders[i]}</p>
                       <input
-                        key={i}
                         className="input w-[200px]"
                         value={input[modalProps.inputPlaceholders[i]]}
-                        onChange={(e) =>
-                          setInput((prev) => {
-                            const updated = { ...prev };
-                            console.log("new value ", e.target.value);
-                            console.log(modalProps.inputPlaceholders[i]);
-                            updated[modalProps.inputPlaceholders[i]] =
-                              e.target.value;
-                            console.log("updated ", updated);
-                            return updated;
+                        onFocus={(e) =>
+                          showKeyboard(e, (newValue) => {
+                            setInput((prev) => {
+                              const updated = { ...prev };
+                              console.log("new value ", newValue);
+                              console.log(modalProps.inputPlaceholders[i]);
+                              updated[modalProps.inputPlaceholders[i]] =
+                                newValue;
+                              console.log("updated ", updated);
+                              return updated;
+                            });
                           })
                         }
+                        onChange={(e) => {
+                          setInput((prev) => {
+                            const updated = { ...prev };
+                            updated[modalProps.inputPlaceholders[i]] =
+                              e.target.value;
+                            return updated;
+                          });
+                        }}
                       />
                     </div>
                   )

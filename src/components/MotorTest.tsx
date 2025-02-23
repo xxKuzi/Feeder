@@ -22,12 +22,9 @@ export default function MotorTest() {
 
   useEffect(() => {
     while (running) {
-      
-      setTimeout(() => blink(), 1000)
+      setTimeout(() => blink(), 1000);
     }
-  }, [running])
-
-  
+  }, [running]);
 
   const blink = async () => {
     try {
@@ -80,10 +77,19 @@ export default function MotorTest() {
       >
         STOP PROGRAM
       </button>
-     <p>Motor Control</p>
-     <div className="flex space-x-4 justify-center items-center ">
-      <button className={`button ${running ? "button__positive" : "button__negative"}`} onClick={() => setRunning(prev => !prev)}>{running ? "Running..." : "Stopped"}</button>
-      <button className={`button button__positive`} onClick={() => blink()}>Blink once</button>
+      <p>Motor Control</p>
+      <div className="flex space-x-4 justify-center items-center ">
+        <button
+          className={`button ${
+            running ? "button__positive" : "button__negative"
+          }`}
+          onClick={() => setRunning((prev) => !prev)}
+        >
+          {running ? "Running..." : "Stopped"}
+        </button>
+        <button className={`button button__positive`} onClick={() => blink()}>
+          Blink once
+        </button>
       </div>
     </div>
   );

@@ -13,7 +13,15 @@ export default function Testing() {
       {/* <KeyboardSite /> */}
       <MotorTest />
       <button
-        onClick={() => openModal({ buttons: { cancel: true, ok: true } })}
+        onClick={() =>
+          openModal({
+            buttons: { cancel: true, ok: true },
+            input: true,
+            numberOfInputs: 2,
+            inputPlaceholders: ["name", "age"],
+            inputData: { name: "petr", age: 11 },
+          })
+        }
       >
         Open modal
       </button>

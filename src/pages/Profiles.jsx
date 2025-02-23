@@ -10,7 +10,8 @@ export default function Profiles() {
   const modalRef = useRef();
   const [newUserData, setNewUserData] = useState({});
 
-  const { updateProfile, users, loadUsers, openModal } = useData();
+  const { updateProfile, users, loadUsers, openModal, showKeyboard } =
+    useData();
 
   const updateNewUserData = (type, value) => {
     setNewUserData((prev) => ({ ...prev, [type]: value }));
@@ -139,13 +140,17 @@ export default function Profiles() {
       <input
         className="mt-6 input__normal"
         value={newUserData.name}
-        onChange={(e) => updateNewUserData("name", e.target.value)}
+        onFocus={(e) =>
+          showKeyboard(e, (newValue) => updateNewUserData("name", newValue))
+        }
         placeholder="Jméno"
       />
       <input
         className="mt-1 input__normal"
         value={newUserData.number}
-        onChange={(e) => updateNewUserData("number", e.target.value)}
+        onFocus={(e) =>
+          showKeyboard(e, (newValue) => updateNewUserData("number", newValue))
+        }
         placeholder="Číslo dresu"
       />
       <button
