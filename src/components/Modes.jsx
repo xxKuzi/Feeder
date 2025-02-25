@@ -104,6 +104,17 @@ export default function Modes() {
       angles,
       distances,
     } = data;
+
+    const calculateOverallTime = () => {
+      let time = 0;
+      if (intervals.length === 1) {
+        time = repetition * intervals[0] * angles.length;
+      } else if (intervals.length > 1) {
+        time = repetition * intervals.reduce((acc, num) => acc + num, 0);
+      }
+      console.log("time ", time);
+      return time;
+    };
     return (
       <div className="flex flex-col bg-white items-center relative justify-center border-2 rounded-lg w-[30%] px-6 py-4">
         <p className="text-3xl">
@@ -111,22 +122,21 @@ export default function Modes() {
         </p>
         {/* <img src={image} /> */}
         <div className="mt-4">
+          <p>Délka cvičení: {calculateOverallTime()}s</p>
           <p>
-            délka cvičení:{" "}
-            {repetition * intervals.reduce((acc, num) => acc + num, 0)}s
-          </p>
-          <p>úhly střelby: {angles.map((angle) => angle + "° ")}</p>
-          <p>
-            délka výstřelu:{" "}
-            {distances.map((distance) => distance / 1000 + "m, ")}
-          </p>
-          <p>
-            interval střelby{" "}
+            Interval střelby:{" "}
             {intervals.length === 1
               ? intervals[0]
               : intervals.map((interval) => interval + "s, ")}
+            s
           </p>
-          <p>počet kol: {repetition}x</p>
+          <p>Úhly střelby: {angles.map((angle) => angle + "° ")}</p>
+          <p>
+            Délka výstřelu:{" "}
+            {distances.map((distance) => distance / 1000 + "m, ")}
+          </p>
+
+          <p>Počet kol: {repetition}x</p>
         </div>
         <button
           className="button mt-4 button__positive"

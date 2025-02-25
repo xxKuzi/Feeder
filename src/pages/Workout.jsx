@@ -28,13 +28,6 @@ export default function Workout() {
 
   const navigate = useNavigate(); //used for navigation between pages
 
-  useEffect(() => {
-    if (time >= fullTime) {
-      isRunningRef.current = false;
-      End();
-    }
-  }, [time]);
-
   //BLUETOOTH
   useEffect(() => {
     const unlisten = () =>
@@ -66,9 +59,12 @@ export default function Workout() {
     countdownRef.current.startCountdown(4); //Shows counter for 4s
     updateStatistics(0, 0); //reset statistics
     setFullTime(
-      workoutData.repetition *
-        workoutData.intervals.reduce((total, current) => total + current, 0) +
-        1
+      workoutData.intervals.length > 1
+        ? workoutData.repetition *
+            workoutData.intervals.reduce((total, current) => total + current, 0)
+        : workoutData.repetition *
+            workoutData.intervals[0] *
+            workoutData.angles.length
     ); //calculate fullTime + ONE second safety
 
     setTimeout(() => {
@@ -103,7 +99,7 @@ export default function Workout() {
   }, [isRunningRef.current]);
 
   //At the end
-  const End = async () => {
+  const end = async () => {
     await addRecord(statistics.made, statistics.taken);
     navigate("/result");
   };
@@ -214,6 +210,7 @@ export default function Workout() {
             changeMotorAngle={changeMotorAngle}
             changeMotorSpeed={changeMotorSpeed}
             releaseBall={releaseBall}
+            end={end}
           />
         </div>
       </div>

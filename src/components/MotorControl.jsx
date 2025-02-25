@@ -18,6 +18,7 @@ export default function MotorControl({
   changeMotorAngle,
   changeMotorSpeed,
   releaseBall,
+  end,
 }) {
   const { globalAngle, setGlobalAngle, globalMotorSpeed, setGlobalMotorSpeed } =
     useData();
@@ -118,6 +119,7 @@ export default function MotorControl({
         let newRound = prev + 1;
         if (newRound >= motorData.repetition) {
           runningRef.current = false;
+          end();
         }
         return newRound;
       });

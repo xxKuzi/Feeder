@@ -2,11 +2,15 @@ import React, { act, useEffect } from "react";
 import { useData } from "../parts/Memory";
 
 export default function Result() {
-  const { records } = useData();
+  const { records, slowdownMotor } = useData();
 
   const actualRecord = records[records.length - 1];
   const accuracy =
     actualRecord.taken > 0 ? actualRecord.made / actualRecord.taken : 0;
+
+  useEffect(() => {
+    slowdownMotor();
+  }, []);
   return (
     <div className="flex flex-col items-center justify-center">
       <div className="border-2 mt-2 flex flex-col justify-center items-center rounded-xl w-[80vw] h-[80vh]">

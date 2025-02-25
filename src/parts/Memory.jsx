@@ -155,7 +155,7 @@ export function Memory({ children }) {
     }
     modalRef.current.openModal({
       headline: "Mode byl vytvořen",
-      question: "Díky",
+      question: "Nyní se můžete vrátit do menu",
       buttons: { ok: true },
       okHandle: () => {
         navigate("/menu");
@@ -188,6 +188,10 @@ export function Memory({ children }) {
     keyboardRef.current.showKeyboard(e, stateFunction);
   };
 
+  const slowdownMotor = () => {
+    console.log("slowing down");
+  };
+
   const contextData = {
     statistics,
     updateStatistics,
@@ -211,6 +215,7 @@ export function Memory({ children }) {
     setGlobalMotorSpeed,
     openModal,
     showKeyboard,
+    slowdownMotor,
   };
 
   return (
