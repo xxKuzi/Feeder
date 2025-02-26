@@ -16,7 +16,7 @@ pub mod servo_control {
             let gpio = Gpio::new().map_err(|e| e.to_string())?;
             let stepper_motor = gpio.get(stepper_motor_pin).map_err(|e| e.to_string())?.into_output();
             let limit_switch = gpio.get(limit_switch_pin).map_err(|e| e.to_string())?.into_input();
-
+stepper_motor.set_high();
             Ok(ServoController { stepper_motor, limit_switch })
         }
     
@@ -36,9 +36,9 @@ pub mod servo_control {
             thread::sleep(Duration::from_millis(20) - Duration::from_micros(duty as u64));
         }
 
-        pub fn is_limit_switch_pressed(&self) -> bool {
-            let pressed = !self.limit_switch.is_high(); // Limit switch is active when HIGH
-            println!("Limit switch state: {}", if pressed { "PRESSED" } else { "NOT PRESSED" });
+        pub fn is_limit_switch_pressed(mut self) -> bool {
+            self.stepper_motor.set_high();
+            let pressed = !self.limit_switch.is_high(); // Limit switch is active when HIGH    
             pressed
         }
 
@@ -75,7 +75,7 @@ pub mod servo_control {
     }
 
     #[tauri::command]
-    pub fn blink_led(times: u32) -> Result<String, String> {
+    pub fn rotate_servo(times: u32) -> Result<String, String> {
         let mut servo = ServoController::new(12, 16)?;
         servo.rotate_servo(times);
         println!("Blinked");
@@ -91,7 +91,8 @@ pub mod servo_control {
     #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
         let servo = ServoController::new(6, 13)?;
-        let status = if servo.is_limit_switch_pressed() { "PRESSED" } else { "NOT PRESSED" };
+        let status = if servo.is_limit_switch_pressed() { "PRESSED OR NOT WORK" } else { "NOT PRESSED" };
+        println!("status: {}", status);
         Ok(format!("Limit switch is {}", status))
     }
 

@@ -52,10 +52,10 @@ pub async fn run() {
     .setup(|app| {
         // Blocking call to initialize BLE using the app handle from Tauri.
         // Note: This may block the setup, so ensure the BLE initialization is quick.
-        let ble_state = tauri::async_runtime::block_on(init_ble(app.handle().clone()))
-            .expect("Failed to initialize BLE peripheral");
+        //let ble_state = tauri::async_runtime::block_on(init_ble(app.handle().clone()))
+           // .expect("Failed to initialize BLE peripheral");
         // Register the BLE state so commands can access it.
-        app.manage(ble_state);
+        //app.manage(ble_state);
         Ok(())
     })
     .plugin(tauri_plugin_shell::init())
