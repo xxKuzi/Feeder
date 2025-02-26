@@ -39,9 +39,9 @@ pub mod servo_control {
             println!("Blinking LED for {} times", times);
             for _ in 0..times {
                 self.pin.set_high();
-                thread::sleep(Duration::from_micros(300));
+                thread::sleep(Duration::from_micros(469));
                 self.pin.set_low();
-                thread::sleep(Duration::from_micros(300));
+                thread::sleep(Duration::from_micros(469));
             }
         }
     }
