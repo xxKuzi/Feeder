@@ -88,6 +88,7 @@ pub mod servo_control {
         servo.calibrate()
     }
 
+    #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
         // Initialize the ServoController with GPIO pins (example: 6 for output, 13 for input)
         let mut limit_switch = ServoController::new(6, 13)?;
