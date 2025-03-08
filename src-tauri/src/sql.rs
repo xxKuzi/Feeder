@@ -351,4 +351,28 @@ pub async fn delete_mode(mode_id: i32) -> Result<(), String>{
 }
 
 
+#[tauri::command]
+pub async fn update_mode(data: Mode) -> Result<(), String> {
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    let qry = "UPDATE modes SET name = ?, image = ?, category = ?, predefined = ?, repetition = ?, angles = ?, distances = ?, intervals = ? WHERE mode_id = ?";
+    let result = sqlx::query(&qry)
+        .bind(data.name)
+        .bind(data.image)
+        .bind(data.category)
+        .bind(data.predefined)
+        .bind(data.repetition)
+        .bind(data.angles)
+        .bind(data.distances)
+        .bind(data.intervals)
+        .bind(data.mode_id)
+        .execute(&*pool)
+        .await;
+
+    result.map(|_| ()).map_err(|e| e.to_string())
+}
+
+
+
 

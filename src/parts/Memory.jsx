@@ -167,11 +167,43 @@ export function Memory({ children }) {
     loadModes();
   };
 
+  const updateMode = async (data) => {
+    console.log("data Mode ", data.modeId);
+    const dataForRust = {
+      mode_id: data.modeId, //important
+      name: data.name,
+      image: data.image,
+      category: Number(data.category),
+      predefined: data.predefined,
+      repetition: Number(data.repetition),
+      angles: JSON.stringify(data.angles),
+      distances: JSON.stringify(data.distances),
+      intervals: JSON.stringify(data.intervals),
+    };
+    try {
+      await invoke("update_mode", { data: dataForRust });
+    } catch (error) {
+      console.error("Failed to update mode:", error);
+    }
+    modalRef.current.openModal({
+      headline: "Mode byl upraven",
+      question: "Nyní se můžete vrátit do menu",
+      buttons: { ok: true },
+      okHandle: () => {
+        navigate("/menu");
+      },
+      areaHandle: () => {
+        navigate("/menu");
+      },
+    });
+    loadModes();
+  };
+
   const deleteMode = async (modeId) => {
     try {
       await invoke("delete_mode", { modeId: modeId });
     } catch (error) {
-      console.error("Failed to delete user:", error);
+      console.error("Failed to delete mode:", error);
     }
     loadModes();
   };
@@ -207,6 +239,7 @@ export function Memory({ children }) {
     loadModes,
     createMode,
     deleteMode,
+    updateMode,
     workoutData,
     setWorkoutData,
     globalAngle,

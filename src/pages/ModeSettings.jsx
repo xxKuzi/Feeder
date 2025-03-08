@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useData } from "../parts/Memory";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function ModeSettings({ onAddMode }) {
-  const { createMode, showKeyboard } = useData();
+  const { createMode, updateMode, showKeyboard } = useData();
   const [formData, setFormData] = useState({
     name: "",
     image: "",
@@ -24,6 +24,16 @@ export default function ModeSettings({ onAddMode }) {
     repetition: [5, 10, 15, 20, 30],
     intervals: [2, 3, 5, 8, 10],
   };
+
+  const location = useLocation();
+  const previousData = location.state ? location.state.data : null;
+
+  useEffect(() => {
+    console.log("DATA ", previousData);
+    if (previousData !== null) {
+      setFormData(previousData);
+    }
+  }, []);
 
   const [customInterval, setCustomInterval] = useState(false);
   const navigate = useNavigate();
@@ -160,13 +170,15 @@ export default function ModeSettings({ onAddMode }) {
       ...formData,
       interval: customInterval ? formData.intervals : formData.intervals[0],
     };
-
-    createMode(finalData);
+    console.log("FINAL DATA ", finalData);
+    previousData === null ? createMode(finalData) : updateMode(finalData);
   };
 
   return (
     <div className="flex flex-col items-center py-8">
-      <h1 className="text-2xl font-bold mb-6">Add New Mode</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        {previousData === null ? "Přidat nový mode" : "Upravit mode"}
+      </h1>
 
       <div className="h-full w-full bg-white shadow-md rounded-lg p-6 space-y-4">
         {/* Name Field */}
@@ -260,7 +272,7 @@ export default function ModeSettings({ onAddMode }) {
             {points.map((point, index) => (
               <div key={index} className="flex items-center space-x-4">
                 <label className="text-sm font-medium text-gray-700">
-                  Angle:
+                  Úhel:
                 </label>
                 <input
                   type="number"
@@ -274,7 +286,7 @@ export default function ModeSettings({ onAddMode }) {
                   className="w-16 border border-gray-300 rounded p-1"
                 />
                 <label className="text-sm font-medium text-gray-700">
-                  Distance:
+                  Vzdálenost:
                 </label>
                 <input
                   type="number"
@@ -436,7 +448,7 @@ export default function ModeSettings({ onAddMode }) {
           className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 focus:ring focus:ring-blue-300"
           onClick={handleSubmit}
         >
-          Create Mode
+          {previousData === null ? "Vytvořit mode" : "Upravit mode"}
         </button>
       </div>
     </div>

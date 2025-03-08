@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import KeyboardOverlay from "../parts/Keyboard";
 import MotorTest from "../components/MotorTest.tsx";
 import { useData } from "../parts/Memory.jsx";
+import HalfCircle from "@/components/halfCircle";
 
 export default function Testing() {
   const [text, setText] = useState(["a", "b"]);
@@ -41,6 +42,7 @@ export default function Testing() {
         value={text[1]}
         className="p-2 border rounded"
       />
+      <HalfCircle />
     </div>
   );
 }

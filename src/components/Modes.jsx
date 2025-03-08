@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { RxCross2 } from "react-icons/rx";
+import { IoOptions } from "react-icons/io5";
 
 export default function Modes() {
   const { modes, setWorkoutData, loadModes, openModal } = useData();
@@ -116,7 +117,7 @@ export default function Modes() {
       return time;
     };
     return (
-      <div className="flex flex-col bg-white items-center relative justify-center border-2 rounded-lg w-[30%] px-6 py-4">
+      <div className="flex flex-col bg-white items-center relative justify-center border-2 rounded-lg wx-[30%] px-8 py-4">
         <p className="text-3xl">
           {name.charAt(0).toUpperCase() + name.slice(1)}
         </p>
@@ -144,23 +145,36 @@ export default function Modes() {
         >
           Hrát
         </button>
-        {data.predefined === false && (
+        <div className="flex items-center justify-center absolute top-0 right-0">
           <button
-            className="flex items-center justify-center absolute top-0 right-0"
+            className={`flex w-[30px] h-[30px] items-center justify-center ${
+              data.predefined === true ? "mr-1" : "" //for design
+            }`}
             onClick={() =>
-              openModal({
-                headline: "Odstranění módu",
-                question: "Opravdu chcete tento mode odstranit?",
-                buttons: { confirm: true, cancel: true },
-                confirmHandle: () => {
-                  deleteMode(data.modeId);
-                },
-              })
+              //go to page mode settings
+              navigate("/mode-settings", { state: { data: data } })
             }
           >
-            <RxCross2 size={30} className="text-red-600" />
+            <IoOptions size={25} className="" />
           </button>
-        )}
+          {data.predefined === false && (
+            <button
+              className="flex items-center justify-center"
+              onClick={() =>
+                openModal({
+                  headline: "Odstranění módu",
+                  question: "Opravdu chcete tento mode odstranit?",
+                  buttons: { confirm: true, cancel: true },
+                  confirmHandle: () => {
+                    deleteMode(data.modeId);
+                  },
+                })
+              }
+            >
+              <RxCross2 size={30} className="text-red-600" />
+            </button>
+          )}
+        </div>
       </div>
     );
   };

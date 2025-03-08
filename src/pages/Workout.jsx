@@ -216,10 +216,10 @@ export default function Workout() {
       </div>
       {/* Bottom line*/}
       <div className="flex items-center justify-center flex-col">
-        <div className="flex items-center justify-center text-center space-x-0 font-spaceMono">
-          <p className="text-6xl min-w-[130px]">{timer}s</p>
-          <p className="text-6xl">|</p>
-          <p className="text-6xl min-w-[130px]">{nextAngle}°</p>
+        <div className="flex items-center justify-between space-x-[24px] font-spaceMono font-normal bg-green-200 rounded-lg px-4 py-2">
+          <p className="text-6xl text-end">{timer}s</p>
+          <p className="text-6xl font-light">|</p>
+          <p className="text-6xl text-start">{nextAngle}°</p>
         </div>
         <div className="flex w-full items-end justify-center flex-col">
           <p className="text-6xl font-spaceMono">{formatTime()}</p>
