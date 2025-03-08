@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export default function HalfCircle({ formData, setFormData }) {
+export default function FieldSimulation({ formData, setFormData }) {
   const [points, setPoints] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
   const MAX_POINTS = 5;

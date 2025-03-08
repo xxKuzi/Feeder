@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useData } from "../parts/Memory";
 import { useLocation, useNavigate } from "react-router-dom";
+import FieldSimulation from "../components/FieldSimulation"; // Import the separated field logic
 
 export default function ModeSettings({ onAddMode }) {
   const { createMode, updateMode, showKeyboard } = useData();
@@ -38,99 +39,6 @@ export default function ModeSettings({ onAddMode }) {
   const [customInterval, setCustomInterval] = useState(false);
   const navigate = useNavigate();
 
-  const [points, setPoints] = useState([]);
-  const [dragIndex, setDragIndex] = useState(null);
-
-  const MAX_POINTS = 5;
-
-  //#region POINTS MANAGEMENT
-  const addPoint = () => {
-    if (points.length >= MAX_POINTS) return;
-
-    const radius = 180; // Half the width of the circle (fixed)
-    const centerX = radius; // Center of the semi-circle
-    const centerY = radius; // Top center
-
-    setPoints((prev) => [
-      ...prev,
-      { x: centerX, y: centerY, angle: 90, distance: 0 },
-    ]);
-  };
-
-  const removePoint = (index) => {
-    setPoints((prev) => {
-      return prev.filter((_, i) => i !== index);
-    });
-  };
-
-  const handleDragStart = (index) => {
-    setDragIndex(index);
-  };
-
-  const handleDrag = (e) => {
-    if (dragIndex === null) return;
-
-    const circle = e.target.closest(".circle");
-    const rect = circle.getBoundingClientRect();
-    const radius = rect.width / 2;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (y <= radius) {
-      const angle = Math.round(calculateAngle(-x, -y, -radius));
-      const distance = Math.round(calculateDistance(x, y, radius));
-
-      if (distance > 240) {
-        return;
-      }
-      setPoints((prev) => {
-        const updated = [...prev];
-        updated[dragIndex] = { x, y, angle, distance };
-        updateFormData(updated);
-        return updated;
-      });
-    }
-  };
-
-  const handlePointChange = (index, key, value) => {
-    setPoints((prev) => {
-      const updated = [...prev];
-      const point = updated[index];
-      point[key] = value;
-
-      // Recalculate position based on the new angle and distance
-      const radius = 180; // Assume a fixed radius for the semi-circle
-      const radianAngle = (point.angle * Math.PI) / 180; // Convert angle to radians
-      point.x = radius + point.distance * Math.cos(radianAngle); // Calculate new x
-      point.y = radius + point.distance * Math.sin(radianAngle); // Calculate new y
-
-      updateFormData(updated); // Sync with schema
-      return updated;
-    });
-  };
-
-  const handleDragEnd = () => {
-    setDragIndex(null);
-  };
-
-  const calculateAngle = (x, y, radius) => {
-    const angle = Math.atan2(y - radius, x - radius) * (180 / Math.PI);
-    return angle < 0 ? 360 + angle : angle;
-  };
-
-  const calculateDistance = (x, y, radius) => {
-    return Math.sqrt((x - radius) ** 2 + (y - radius) ** 2).toFixed(2);
-  };
-
-  const updateFormData = (updatedPoints) => {
-    const angles = updatedPoints.map((point) => point.angle);
-    const distances = updatedPoints.map((point) => point.distance);
-    setFormData((prev) => ({ ...prev, angles, distances }));
-  };
-
-  //#endregion
-
-  //#region UPDATE FORM DATA
   const handleCategoryChange = (indexValue) => {
     setFormData((prev) => ({
       ...prev,
@@ -162,7 +70,6 @@ export default function ModeSettings({ onAddMode }) {
       };
     });
   };
-  //#endregion
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -196,10 +103,10 @@ export default function ModeSettings({ onAddMode }) {
                 }))
               );
             }}
-            onChange={() => {}}
             className="border border-gray-300 rounded p-2"
           />
         </div>
+
         {/* Category */}
         <div className="form-group flex flex-col mt-4">
           <label className="text-sm font-medium text-gray-700">Category</label>
@@ -208,9 +115,7 @@ export default function ModeSettings({ onAddMode }) {
               <button
                 key={index}
                 type="button"
-                onClick={() =>
-                  setFormData((prev) => ({ ...prev, category: index }))
-                }
+                onClick={() => handleCategoryChange(index)}
                 className={`px-4 py-2 rounded ${
                   formData.category === index
                     ? "bg-blue-600 text-white"
@@ -222,107 +127,11 @@ export default function ModeSettings({ onAddMode }) {
             ))}
           </div>
         </div>
-        {/* Predefined
-        <div className="form-group flex flex-col mt-4">
-          <label className="text-sm font-medium text-gray-700">
-            Predefined
-          </label>
-          <button
-            type="button"
-            onClick={handlePredefinedToggle}
-            className={`px-4 py-2 mt-2 rounded w-full ${
-              formData.predefined
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            {formData.predefined ? "Yes" : "No"}
-          </button>
-        </div> */}
 
+        {/* Field Simulation (Separated) */}
         <label className="text-sm mt-8 font-medium text-gray-700">Points</label>
-        <div className="flex items-center relative justify-center">
-          {/* Semi-Circle */}
+        <FieldSimulation formData={formData} setFormData={setFormData} />
 
-          <div
-            className="circle relative w-[360px] h-[180px] bg-gray-200  rounded-t-full"
-            onMouseMove={handleDrag}
-            onMouseUp={handleDragEnd}
-            onMouseLeave={handleDragEnd}
-          >
-            <div className="absolute inset-0 rounded-t-full bg-gradient-to-b from-blue-500 to-blue-700" />
-            {points.map((point, index) => (
-              <div
-                key={index}
-                className="absolute bg-red-500 w-8 h-8 rounded-full flex justify-center items-center cursor-pointer"
-                style={{
-                  left: `${point.x}px`,
-                  top: `${point.y}px`,
-                  transform: "translate(-50%, -50%)",
-                }}
-                onMouseDown={() => handleDragStart(index)}
-              >
-                <p className="text-white select-none">{index + 1}</p>
-              </div>
-            ))}
-          </div>
-          {/* #region Hello */}
-          {/* Points List */}
-          <div className="space-y-2 ml-16">
-            {points.map((point, index) => (
-              <div key={index} className="flex items-center space-x-4">
-                <label className="text-sm font-medium text-gray-700">
-                  Úhel:
-                </label>
-                <input
-                  type="number"
-                  value={point.angle}
-                  onFocus={(e) =>
-                    showKeyboard(e, (newValue) =>
-                      handlePointChange(index, "angle", Number(newValue))
-                    )
-                  }
-                  onChange={() => {}}
-                  className="w-16 border border-gray-300 rounded p-1"
-                />
-                <label className="text-sm font-medium text-gray-700">
-                  Vzdálenost:
-                </label>
-                <input
-                  type="number"
-                  value={point.distance}
-                  onFocus={(e) =>
-                    showKeyboard(e, (newValue) =>
-                      handlePointChange(index, "distance", Number(newValue))
-                    )
-                  }
-                  onChange={() => {}}
-                  className="w-16 border border-gray-300 rounded p-1"
-                />
-                <button
-                  type="button"
-                  onClick={() => removePoint(index)}
-                  className=" text-red-600 rounded hover:scale-110 w-full text-end duration-300 text-4xl"
-                >
-                  -
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addPoint}
-              className={`  w-full text-end duration-300 text-4xl ${
-                points.length >= MAX_POINTS
-                  ? "text-gray-600"
-                  : "text-blue-600 rounded"
-              }`}
-              disabled={points.length >= MAX_POINTS}
-            >
-              +
-            </button>
-          </div>
-          {/* #endregion */}
-        </div>
         {/* Repetition */}
         <div className="form-group flex flex-col mt-4">
           <label className="text-sm font-medium text-gray-700">
@@ -352,27 +161,14 @@ export default function ModeSettings({ onAddMode }) {
                   handleRepetitionChange(Number(newValue))
                 )
               }
-              onChange={() => {}}
               className="border border-gray-300 rounded p-2 w-20"
             />
           </div>
         </div>
-        {/* Interval */}
+
+        {/* Interval Selection */}
         <div className="form-group flex flex-col">
-          <div className="flex items-center justify-between text-center">
-            <label className="text-sm font-medium text-gray-700">
-              Interval
-            </label>
-            <button
-              className={
-                "text-blue-600 text-end mt-2 px-2 py-1 rounded-lg duration-300 " +
-                (customInterval ? "text-white bg-blue-600" : "text-blue-600")
-              }
-              onClick={() => setCustomInterval((prev) => !prev)}
-            >
-              Custom
-            </button>
-          </div>
+          <label className="text-sm font-medium text-gray-700">Interval</label>
           <div className="flex space-x-4 mt-2">
             {defaultLabels.intervals.map((value) => (
               <button
@@ -397,53 +193,12 @@ export default function ModeSettings({ onAddMode }) {
                   handleIntervalChange(0, Number(newValue))
                 )
               }
-              onChange={() => {}}
               className="border border-gray-300 rounded p-2 w-20"
             />
           </div>
-          <div>
-            {points.slice(0, points.length - 1).map((_, i) => (
-              <div
-                key={i}
-                className={`flex space-x-4 mt-2 transform transition-all duration-500 ease-out ${
-                  customInterval
-                    ? "translate-y-0 opacity-100 max-h-screen "
-                    : "-translate-y-full opacity-0 max-h-0"
-                }`}
-                style={{ overflow: "hidden" }}
-              >
-                {defaultLabels.intervals.map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => handleIntervalChange(i + 1, value)}
-                    className={`px-4 py-2 rounded transition-opacity duration-00 ease-out ${
-                      formData.intervals[i + 1] === value
-                        ? "bg-blue-600 text-white" // Delay on active button
-                        : "bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    {value}
-                  </button>
-                ))}
-                <input
-                  type="number"
-                  min="1"
-                  step={1}
-                  value={formData.intervals[i + 1] || ""}
-                  onFocus={(e) =>
-                    showKeyboard(e, () =>
-                      handleIntervalChange(i + 1, Number(e.target.value))
-                    )
-                  }
-                  onChange={() => {}}
-                  className="border border-gray-300 rounded p-2 w-20 transition-transform duration-500 ease-out delay-300" // Delay only for the input
-                />
-              </div>
-            ))}
-          </div>
         </div>
 
+        {/* Submit Button */}
         <button
           className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 focus:ring focus:ring-blue-300"
           onClick={handleSubmit}
