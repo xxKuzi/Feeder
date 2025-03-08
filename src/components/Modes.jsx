@@ -113,7 +113,6 @@ export default function Modes() {
       } else if (intervals.length > 1) {
         time = repetition * intervals.reduce((acc, num) => acc + num, 0);
       }
-      console.log("time ", time);
       return time;
     };
     return (

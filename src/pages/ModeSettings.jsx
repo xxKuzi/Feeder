@@ -27,7 +27,9 @@ export default function ModeSettings() {
   };
 
   const location = useLocation();
-  const previousData = location.state ? location.state.data : null;
+  const [previousData, setPreviousData] = useState(
+    location.state ? location.state.data : null
+  );
 
   useEffect(() => {
     console.log("DATA ", previousData);
@@ -131,7 +133,11 @@ export default function ModeSettings() {
 
         {/* Field Simulation (Separated) */}
         <label className="text-sm mt-8 font-medium text-gray-700">Points</label>
-        <FieldSimulation formData={formData} setFormData={setFormData} />
+        <FieldSimulation
+          formData={formData}
+          setFormData={setFormData}
+          previousData={previousData}
+        />
 
         {/* Repetition */}
         <div className="form-group flex flex-col mt-4">

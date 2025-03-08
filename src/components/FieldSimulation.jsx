@@ -1,11 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { useData } from "../parts/Memory";
+import { show } from "@tauri-apps/api/app";
 
-export default function FieldSimulation({ formData, setFormData }) {
+export default function FieldSimulation({
+  formData,
+  setFormData,
+  previousData, //previousData (not null) - edit mode (otherwise new mode) - only for loading previous value on beginning
+}) {
   const { showKeyboard } = useData();
   const [points, setPoints] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
   const MAX_POINTS = 5;
+
+  useEffect(() => {
+    if (previousData !== null && previousData) {
+      console.log("PREVIOUS DATA: ", previousData);
+      let tempPoints = [];
+      previousData.angles.map((_, i) => {
+        tempPoints.push({
+          angle: previousData.angles[i],
+          distance: previousData.distances[i],
+        });
+      });
+      console.log("TEMP POINTS: ", tempPoints);
+      setPoints(tempPoints);
+    }
+  }, [previousData]);
 
   const addPoint = () => {
     if (points.length >= MAX_POINTS) return;
@@ -80,7 +100,6 @@ export default function FieldSimulation({ formData, setFormData }) {
     return Math.sqrt((x - radius) ** 2 + y ** 2).toFixed(2);
   };
 
-  // ✅ Use useEffect to update formData after points change
   useEffect(() => {
     const angles = points.map((point) => point.angle);
     const distances = points.map((point) => point.distance);
@@ -119,8 +138,9 @@ export default function FieldSimulation({ formData, setFormData }) {
             <input
               type="number"
               value={point.angle}
-              onChange={(e) =>
-                handlePointChange(index, "angle", e.target.value)
+              readOnly
+              onFocus={(e) =>
+                showKeyboard(e, (newValue) => (e.target.value = newValue))
               }
               className="w-16 border border-gray-300 rounded p-1"
             />
@@ -130,8 +150,9 @@ export default function FieldSimulation({ formData, setFormData }) {
             <input
               type="number"
               value={point.distance}
-              onChange={(e) =>
-                handlePointChange(index, "distance", e.target.value)
+              readOnly
+              onFocus={(e) =>
+                showKeyboard(e, (newValue) => (e.target.value = newValue))
               }
               className="w-16 border border-gray-300 rounded p-1"
             />
