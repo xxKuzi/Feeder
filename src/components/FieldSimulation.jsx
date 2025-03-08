@@ -14,15 +14,18 @@ export default function FieldSimulation({
 
   useEffect(() => {
     if (previousData !== null && previousData) {
-      console.log("PREVIOUS DATA: ", previousData);
-      let tempPoints = [];
-      previousData.angles.map((_, i) => {
-        tempPoints.push({
-          angle: previousData.angles[i],
-          distance: previousData.distances[i],
-        });
+      const radius = 180; // Half of 360px width
+      let tempPoints = previousData.angles.map((angle, i) => {
+        const distanceMM = previousData.distances[i]; // Distance is stored in mm
+        const distancePx = distanceMM / MM_PER_PIXEL; // Convert to pixels
+        const radianAngle = (angle * Math.PI) / 180; // Convert angle to radians
+
+        // Convert to (x, y) based on the center of the semi-circle
+        const x = radius + distancePx * Math.cos(radianAngle);
+        const y = distancePx * Math.sin(radianAngle);
+
+        return { x, y, angle, distance: distanceMM }; // Keep distance in mm
       });
-      console.log("TEMP POINTS: ", tempPoints);
       setPoints(tempPoints);
     }
   }, [previousData]);
@@ -45,7 +48,6 @@ export default function FieldSimulation({
   const handleDragStart = (index) => {
     setDragIndex(index);
   };
-
   const handleDrag = (e) => {
     if (dragIndex === null) return;
 
@@ -56,15 +58,18 @@ export default function FieldSimulation({
     const y = e.clientY - rect.top;
 
     if (y >= 0 && y <= radius) {
-      // Ensure dragging stays within the lower semi-circle
       let angle = calculateAngle(x - radius, y, radius);
-      const distance = Math.round(calculateDistance(x, y, radius));
+      let distancePx = calculateDistance(x, y, radius);
 
-      if (distance > radius) return; // Prevents dragging outside the semi-circle
+      let distanceMeters = distancePx * MM_PER_PIXEL; // Convert to meters
+      if (distanceMeters > 6750) {
+        console.log("distanceMeters ", distanceMeters);
+        return;
+      } // Prevent going beyond max distance
 
       setPoints((prev) => {
         const updated = [...prev];
-        updated[dragIndex] = { x, y, angle, distance };
+        updated[dragIndex] = { x, y, angle, distance: distanceMeters };
         return updated;
       });
     }
@@ -74,17 +79,20 @@ export default function FieldSimulation({
     setDragIndex(null);
   };
 
+  const MM_PER_PIXEL = (6.75 / 180) * 1000; // Scale factor
+
   const handlePointChange = (index, key, value) => {
     setPoints((prev) => {
       const updated = [...prev];
       updated[index][key] = Number(value);
 
-      // Recalculate position based on the new angle and distance
+      // Convert distance to pixels
       const radius = 180;
-      const radianAngle = (updated[index].angle * Math.PI) / 180; // Adjusted for bottom curve
-      updated[index].x =
-        radius + updated[index].distance * Math.cos(radianAngle);
-      updated[index].y = updated[index].distance * Math.sin(radianAngle);
+      const scaledDistance = updated[index].distance / MM_PER_PIXEL;
+      const radianAngle = (updated[index].angle * Math.PI) / 180;
+
+      updated[index].x = radius + scaledDistance * Math.cos(radianAngle);
+      updated[index].y = scaledDistance * Math.sin(radianAngle);
 
       return updated;
     });
@@ -140,7 +148,11 @@ export default function FieldSimulation({
               value={point.angle}
               readOnly
               onFocus={(e) =>
-                showKeyboard(e, (newValue) => (e.target.value = newValue))
+                showKeyboard(e, (newValue) =>
+                  newValue <= 180 && newValue >= 0
+                    ? handlePointChange(index, "angle", newValue)
+                    : null
+                )
               }
               className="w-16 border border-gray-300 rounded p-1"
             />
@@ -152,7 +164,11 @@ export default function FieldSimulation({
               value={point.distance}
               readOnly
               onFocus={(e) =>
-                showKeyboard(e, (newValue) => (e.target.value = newValue))
+                showKeyboard(e, (newValue) =>
+                  newValue <= 6750 && newValue >= 0
+                    ? handlePointChange(index, "distance", newValue)
+                    : null
+                )
               }
               className="w-16 border border-gray-300 rounded p-1"
             />
