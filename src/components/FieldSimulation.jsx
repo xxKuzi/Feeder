@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useData } from "../parts/Memory";
 
 export default function FieldSimulation({ formData, setFormData }) {
+  const { showKeyboard } = useData();
   const [points, setPoints] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
   const MAX_POINTS = 5;
@@ -43,7 +45,6 @@ export default function FieldSimulation({ formData, setFormData }) {
       setPoints((prev) => {
         const updated = [...prev];
         updated[dragIndex] = { x, y, angle, distance };
-        updateFormData(updated);
         return updated;
       });
     }
@@ -65,7 +66,6 @@ export default function FieldSimulation({ formData, setFormData }) {
         radius + updated[index].distance * Math.cos(radianAngle);
       updated[index].y = updated[index].distance * Math.sin(radianAngle);
 
-      updateFormData(updated);
       return updated;
     });
   };
@@ -80,11 +80,12 @@ export default function FieldSimulation({ formData, setFormData }) {
     return Math.sqrt((x - radius) ** 2 + y ** 2).toFixed(2);
   };
 
-  const updateFormData = (updatedPoints) => {
-    const angles = updatedPoints.map((point) => point.angle);
-    const distances = updatedPoints.map((point) => point.distance);
+  // ✅ Use useEffect to update formData after points change
+  useEffect(() => {
+    const angles = points.map((point) => point.angle);
+    const distances = points.map((point) => point.distance);
     setFormData((prev) => ({ ...prev, angles, distances }));
-  };
+  }, [points, setFormData]); // Runs whenever points change
 
   return (
     <div className="flex items-center relative justify-center">
