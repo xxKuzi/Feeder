@@ -22,13 +22,13 @@ export default function MotorTest() {
 
   useEffect(() => {
     while (running) {
-      setTimeout(() => blink(), 1000);
+      setTimeout(() => blink(180), 1000);
     }
   }, [running]);
 
-  const blink = async () => {
+  const blink = async (degrees: number) => {
     try {
-      await invoke("blink_led", { times: 3000 });
+      await invoke("blink_led", { times: 6400/360*degrees });
     } catch (error) {
       console.error("Failed to update motor/servo value:", error);
     }
@@ -87,8 +87,11 @@ export default function MotorTest() {
         >
           {running ? "Running..." : "Stopped"}
         </button>
-        <button className={`button button__positive`} onClick={() => blink()}>
-          Blink once
+        <button className={`button button__positive`} onClick={() => blink(90)}>
+          Blink once 90 degrees
+        </button>
+        <button className={`button button__positive`} onClick={() => blink(180)}>
+          Blink once 180 degrees
         </button>
       </div>
     </div>
