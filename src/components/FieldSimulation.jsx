@@ -9,7 +9,7 @@ export default function FieldSimulation({ formData, setFormData }) {
     if (points.length >= MAX_POINTS) return;
     const radius = 180;
     const centerX = radius;
-    const centerY = radius;
+    const centerY = 0; // Move the center to the bottom part of the container
     setPoints((prev) => [
       ...prev,
       { x: centerX, y: centerY, angle: 90, distance: 0 },
@@ -33,11 +33,13 @@ export default function FieldSimulation({ formData, setFormData }) {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (y <= radius) {
-      const angle = Math.round(calculateAngle(-x, -y, -radius));
+    if (y >= 0 && y <= radius) {
+      // Ensure dragging stays within the lower semi-circle
+      let angle = calculateAngle(x - radius, y, radius);
       const distance = Math.round(calculateDistance(x, y, radius));
 
-      if (distance > 240) return;
+      if (distance > radius) return; // Prevents dragging outside the semi-circle
+
       setPoints((prev) => {
         const updated = [...prev];
         updated[dragIndex] = { x, y, angle, distance };
@@ -51,13 +53,31 @@ export default function FieldSimulation({ formData, setFormData }) {
     setDragIndex(null);
   };
 
+  const handlePointChange = (index, key, value) => {
+    setPoints((prev) => {
+      const updated = [...prev];
+      updated[index][key] = Number(value);
+
+      // Recalculate position based on the new angle and distance
+      const radius = 180;
+      const radianAngle = (updated[index].angle * Math.PI) / 180; // Adjusted for bottom curve
+      updated[index].x =
+        radius + updated[index].distance * Math.cos(radianAngle);
+      updated[index].y = updated[index].distance * Math.sin(radianAngle);
+
+      updateFormData(updated);
+      return updated;
+    });
+  };
+
   const calculateAngle = (x, y, radius) => {
-    const angle = Math.atan2(y - radius, x - radius) * (180 / Math.PI);
-    return angle < 0 ? 360 + angle : angle;
+    let angle = Math.atan2(y, x) * (180 / Math.PI); // Convert to degrees
+    if (angle < 0) angle += 180; // Ensure angle remains within 0 - 180 range
+    return Math.round(angle);
   };
 
   const calculateDistance = (x, y, radius) => {
-    return Math.sqrt((x - radius) ** 2 + (y - radius) ** 2).toFixed(2);
+    return Math.sqrt((x - radius) ** 2 + y ** 2).toFixed(2);
   };
 
   const updateFormData = (updatedPoints) => {
@@ -69,12 +89,12 @@ export default function FieldSimulation({ formData, setFormData }) {
   return (
     <div className="flex items-center relative justify-center">
       <div
-        className="circle relative w-[360px] h-[180px] bg-gray-200 rounded-t-full"
+        className="circle relative w-[360px] h-[180px] bg-gray-200 rounded-b-full"
         onMouseMove={handleDrag}
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
       >
-        <div className="absolute inset-0 rounded-t-full bg-gradient-to-b from-blue-500 to-blue-700" />
+        <div className="absolute inset-0 rounded-b-full bg-gradient-to-t from-blue-500 to-blue-700" />
         {points.map((point, index) => (
           <div
             key={index}
@@ -98,8 +118,10 @@ export default function FieldSimulation({ formData, setFormData }) {
             <input
               type="number"
               value={point.angle}
+              onChange={(e) =>
+                handlePointChange(index, "angle", e.target.value)
+              }
               className="w-16 border border-gray-300 rounded p-1"
-              onChange={() => {}}
             />
             <label className="text-sm font-medium text-gray-700">
               Vzdálenost:
@@ -107,8 +129,10 @@ export default function FieldSimulation({ formData, setFormData }) {
             <input
               type="number"
               value={point.distance}
+              onChange={(e) =>
+                handlePointChange(index, "distance", e.target.value)
+              }
               className="w-16 border border-gray-300 rounded p-1"
-              onChange={() => {}}
             />
             <button
               type="button"

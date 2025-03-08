@@ -3,7 +3,7 @@ import { useData } from "../parts/Memory";
 import { useLocation, useNavigate } from "react-router-dom";
 import FieldSimulation from "../components/FieldSimulation"; // Import the separated field logic
 
-export default function ModeSettings({ onAddMode }) {
+export default function ModeSettings() {
   const { createMode, updateMode, showKeyboard } = useData();
   const [formData, setFormData] = useState({
     name: "",
@@ -103,6 +103,7 @@ export default function ModeSettings({ onAddMode }) {
                 }))
               );
             }}
+            readOnly
             className="border border-gray-300 rounded p-2"
           />
         </div>
@@ -161,6 +162,7 @@ export default function ModeSettings({ onAddMode }) {
                   handleRepetitionChange(Number(newValue))
                 )
               }
+              readOnly
               className="border border-gray-300 rounded p-2 w-20"
             />
           </div>
@@ -193,6 +195,7 @@ export default function ModeSettings({ onAddMode }) {
                   handleIntervalChange(0, Number(newValue))
                 )
               }
+              readOnly
               className="border border-gray-300 rounded p-2 w-20"
             />
           </div>
