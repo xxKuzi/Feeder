@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
+import { useData } from "../parts/Memory.jsx";
 import KeyboardOverlay from "../parts/Keyboard";
 import MotorTest from "../components/MotorTest.tsx";
-import { useData } from "../parts/Memory.jsx";
+import BluetoothControls from "@/components/BluetoothControls.jsx";
 
 export default function Testing() {
   const [text, setText] = useState(["a", "b"]);
@@ -41,6 +42,7 @@ export default function Testing() {
         value={text[1]}
         className="p-2 border rounded"
       />
+      <BluetoothControls />
     </div>
   );
 }
