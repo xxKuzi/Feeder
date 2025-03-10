@@ -1,8 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 const BluetoothControls = () => {
-  const [workoutState, setWorkoutState] = useState("Unknown");
+  const [workoutState, setWorkoutState] = useState<string>("Unknown");
+
+  type StateChanged = {
+    url: string;
+    downloadId: number;
+    contentLength: number;
+  };
+
+  listen<StateChanged>("state-changed", (event) => {
+    console.log(`state changing ${event.payload}  LETS GO`);
+  });
 
   const startWorkout = async () => {
     try {
@@ -24,7 +35,7 @@ const BluetoothControls = () => {
 
   const fetchState = async () => {
     try {
-      const state = await invoke("get_workout_state");
+      const state = await invoke<string>("get_workout_state");
       setWorkoutState(state);
     } catch (err) {
       console.error("Error fetching workout state:", err);
