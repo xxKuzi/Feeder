@@ -6,6 +6,11 @@ use sql::{connect_to_database, add_record, add_user, load_users, select_user, de
 use crate::electro::servo_control::{set_servo_angle, blink_led};
 
 pub async fn run() {
+     std::env::set_var("RUST_LOG", "info");
+  if let Err(err) = pretty_env_logger::try_init() {
+      eprintln!("WARNING: failed to initialize logging framework: {}", err);
+  }
+
       // Connect to the SQLite database.
       connect_to_database().await;
 
