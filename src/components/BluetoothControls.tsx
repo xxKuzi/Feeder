@@ -5,19 +5,23 @@ import { listen } from "@tauri-apps/api/event";
 const BluetoothControls = () => {
   const [workoutState, setWorkoutState] = useState<string>("Unknown");
 
-  type StateChanged = {
-    url: string;
-    downloadId: number;
-    contentLength: number;
-  };
+  useEffect(() => {
+    // Listen for the "state-changed" global event.
+    const unlistenPromise = listen<string>("state-changed", (event) => {
+      console.log(`State changed event received: ${event.payload}`);
+      setWorkoutState(event.payload);
+    });
 
-  listen<StateChanged>("state-changed", (event) => {
-    console.log(`state changing ${event.payload}  LETS GO`);
-  });
+    // Clean up the event listener on component unmount.
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  }, []);
 
   const startWorkout = async () => {
     try {
       await invoke("start_workout");
+      // Optionally, you can update the state immediately.
       setWorkoutState("running");
     } catch (err) {
       console.error("Error starting workout:", err);
@@ -27,6 +31,7 @@ const BluetoothControls = () => {
   const pauseWorkout = async () => {
     try {
       await invoke("pause_workout");
+      // Optionally, update the state immediately.
       setWorkoutState("paused");
     } catch (err) {
       console.error("Error pausing workout:", err);
