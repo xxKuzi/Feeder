@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useData } from "../parts/Memory.jsx";
 import KeyboardOverlay from "../parts/Keyboard";
 import MotorTest from "../components/MotorTest.tsx";
-import BluetoothControls from "@/components/BluetoothControls.jsx";
+import BluetoothControls from "@/components/BluetoothControls.tsx";
 
 export default function Testing() {
   const [text, setText] = useState(["a", "b"]);
