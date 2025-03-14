@@ -8,8 +8,14 @@ import Pause from "../components/Pause";
 import Countdown from "../components/Countdown";
 
 export default function Workout() {
-  const { statistics, shoot, addRecord, updateStatistics, workoutData } =
-    useData();
+  const {
+    statistics,
+    shoot,
+    addRecord,
+    updateStatistics,
+    workoutData,
+    rotateServo,
+  } = useData();
   const [time, setTime] = useState(0); //elapsed Time
   const [fullTime, setFullTime] = useState(5); //Fulltime
   const [shootingProgress, setShootingProgress] = useState(0); //shotting success rate (0-1)
@@ -133,7 +139,8 @@ export default function Workout() {
 
   const changeMotorAngle = (starting, ending) => {
     const dif = ending - starting;
-    // console.log("updating Stepper motor angle by: ", dif);
+    console.log("updating Stepper motor angle by: ", dif);
+    //rotateServo(dif);
   };
   const changeMotorSpeed = (ending) => {
     // console.log("updating Stepper motor speed to: ", ending);

@@ -224,6 +224,14 @@ export function Memory({ children }) {
     console.log("slowing down");
   };
 
+  const rotateServo = async (degrees) => {
+    try {
+      await invoke("rotate_servo", { times: (6400 / 360) * degrees });
+    } catch (error) {
+      console.error("Failed to update motor/servo value:", error);
+    }
+  };
+
   const contextData = {
     statistics,
     updateStatistics,
@@ -249,6 +257,7 @@ export function Memory({ children }) {
     openModal,
     showKeyboard,
     slowdownMotor,
+    rotateServo,
   };
 
   return (

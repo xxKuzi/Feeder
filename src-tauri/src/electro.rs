@@ -35,8 +35,8 @@ pub mod servo_control {
             thread::sleep(Duration::from_millis(20) - Duration::from_micros(duty as u64));
         }
 
-        pub fn blink(&mut self, times: u32) {
-            println!("Blinking LED for {} times", times);
+        pub fn rotate_servo(&mut self, times: u32) {
+            println!("rotating SERVO for {} times", times);
             for _ in 0..times {
                 self.pin.set_high();
                 thread::sleep(Duration::from_micros(469));
@@ -66,7 +66,8 @@ pub mod servo_control {
 #[cfg(not(target_os = "linux"))]
 pub mod servo_control {
     #[tauri::command]
-    pub fn set_servo_angle(angle: u8) -> Result<String, String> {
+    pub fn rotate_servo(times: u32) -> Result<String, String> {
+        println!("rotating SERVO for {} times", times);
         Err("Servo control not supported on this platform".to_string())
     }
 

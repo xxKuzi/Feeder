@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useData } from "../parts/Memory";
 
 export default function MotorTest() {
   const [servoAngle, setServoAngle] = useState<number>(90); // Default at 90°
   const [motorSpeed, setMotorSpeed] = useState<number>(0); // Default at 0 RPM
   const [running, setRunning] = useState<boolean>(false);
+  const { rotateServo } = useData();
 
   // Function to update values
   const updateValues = async (newServo: number, newSpeed: number) => {
@@ -15,20 +17,6 @@ export default function MotorTest() {
     // Send data to backend
     try {
       await invoke("set_servo_angle", { angle: newServo });
-    } catch (error) {
-      console.error("Failed to update motor/servo value:", error);
-    }
-  };
-
-  useEffect(() => {
-    while (running) {
-      setTimeout(() => blink(180), 1000);
-    }
-  }, [running]);
-
-  const blink = async (degrees: number) => {
-    try {
-      await invoke("blink_led", { times: 6400/360*degrees });
     } catch (error) {
       console.error("Failed to update motor/servo value:", error);
     }
@@ -87,11 +75,17 @@ export default function MotorTest() {
         >
           {running ? "Running..." : "Stopped"}
         </button>
-        <button className={`button button__positive`} onClick={() => blink(90)}>
-          Blink once 90 degrees
+        <button
+          className={`button button__positive`}
+          onClick={() => rotateServo(90)}
+        >
+          rotate servo once 90 degrees
         </button>
-        <button className={`button button__positive`} onClick={() => blink(180)}>
-          Blink once 180 degrees
+        <button
+          className={`button button__positive`}
+          onClick={() => rotateServo(180)}
+        >
+          rotate servo once 180 degrees
         </button>
       </div>
     </div>
