@@ -6,6 +6,7 @@ import { listen } from "@tauri-apps/api/event";
 import MotorControl from "../components/MotorControl.jsx";
 import Pause from "../components/Pause";
 import Countdown from "../components/Countdown";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 export default function Workout() {
   const {
@@ -33,19 +34,21 @@ export default function Workout() {
   const pauseCountdownRef = useRef(null); //ref to PAUSE Countdown
 
   const navigate = useNavigate(); //used for navigation between pages
+  const appWebview = getCurrentWebviewWindow();
+
+  appWebview.listen("state-changed", (event) => {
+    // localStorage.setItem("console-message", event.payload);
+    console.log("payload ", event.payload);
+    if (event.payload === "on") {
+      isRunningRef.current(true);
+    } else if (event.payload === "off") {
+      isRunningRef.current(false);
+    } else {
+      setWorkoutState("bad argument");
+    }
+  });
 
   //BLUETOOTH
-  useEffect(() => {
-    const unlisten = () =>
-      listen("pause", () => {
-        console.log("Pause command received from the server");
-        isRunningRef.current = !isRunningRef.current;
-      });
-
-    return () => {
-      unlisten();
-    };
-  }, []);
 
   useEffect(() => {
     initialization();
