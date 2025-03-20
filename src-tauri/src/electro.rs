@@ -89,15 +89,28 @@ pub mod servo_control {
     }
 
     pub fn check_limit_switch() -> Result<String, String> {
-        // Initialize the ServoController with GPIO pins (example: 6 for output, 13 for input)
-        let mut limit_switch = ServoController::new(6, 13)?;
+        // Initialize the ServoController with GPIO pins (Example: 6 for output, 13 for input)
+        let mut servo = ServoController::new(6, 13)?;
     
-        // Set the output pin HIGH before checking the input pin
-        limit_switch.output_pin.set_high();
+        // Set the output pin HIGH to provide 3.3V
+        servo.output_pin.set_high();
         println!("Output pin set to HIGH");
     
-        // Wait for input and check its state
-        let status = if limit_switch.input_pin.is_high() {
+        // Small delay to allow the signal to stabilize
+        thread::sleep(Duration::from_millis(100));
+    
+        // Try reading multiple times to confirm stability
+        let mut detected_high = false;
+        for _ in 0..5 {
+            if servo.input_pin.is_high() {
+                detected_high = true;
+                break; // Exit loop early if we detect HIGH
+            }
+            thread::sleep(Duration::from_millis(50)); // Wait and retry
+        }
+    
+        // Determine final status
+        let status = if detected_high {
             "NOT PRESSED (1)"  // When connected, it should read HIGH
         } else {
             "PRESSED (0)" // If something pulls it LOW, it means pressed
