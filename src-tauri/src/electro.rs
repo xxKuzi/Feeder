@@ -37,7 +37,7 @@ pub mod servo_control {
         }
 
         pub fn is_limit_switch_pressed(&self) -> bool {
-            let pressed = self.limit_switch.is_high(); // Limit switch is active when HIGH
+            let pressed = !self.limit_switch.is_high(); // Limit switch is active when HIGH
             println!("Limit switch state: {}", if pressed { "PRESSED" } else { "NOT PRESSED" });
             pressed
         }
@@ -90,7 +90,7 @@ pub mod servo_control {
 
     #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
-        let servo = ServoController::new(12, 16)?;
+        let servo = ServoController::new(6, 13)?;
         let status = if servo.is_limit_switch_pressed() { "PRESSED" } else { "NOT PRESSED" };
         Ok(format!("Limit switch is {}", status))
     }
