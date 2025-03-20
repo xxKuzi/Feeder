@@ -34,6 +34,10 @@ export function Memory({ children }) {
   }, []);
 
   useEffect(() => {
+    console.log("GLOBAL MEMORY ANGLE: CHANGED: ", globalAngle);
+  }, [globalAngle]);
+
+  useEffect(() => {
     if (users[0].name !== "XYZ") {
       const userData = users.find((user) => user.userId === profile.userId);
       updateProfile(userData);
@@ -232,6 +236,22 @@ export function Memory({ children }) {
     }
   };
 
+  const calibrate = async () => {
+    try {
+      await invoke("calibrate_stepper_motor");
+    } catch (error) {
+      console.error("Failed to calibrate stepper motor:", error);
+    }
+  };
+
+  const checkLimitSwitch = async () => {
+    try {
+      await invoke("check_limit_switch");
+    } catch (error) {
+      console.error("Failed to calibrate stepper motor:", error);
+    }
+  };
+
   const contextData = {
     statistics,
     updateStatistics,
@@ -258,6 +278,8 @@ export function Memory({ children }) {
     showKeyboard,
     slowdownMotor,
     rotateServo,
+    calibrate,
+    checkLimitSwitch,
   };
 
   return (

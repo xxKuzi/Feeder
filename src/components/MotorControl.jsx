@@ -93,6 +93,8 @@ export default function MotorControl({
 
       updateFunc(newValue); //function which updates the value
 
+      // console.log("sets global to: ", newValue);
+
       if (progress < 1) {
         requestRef.current = requestAnimationFrame(animate);
       } else if (progress >= 1) {
@@ -156,7 +158,6 @@ export default function MotorControl({
     timerRef.current = setInterval(() => {
       if (!runningRef.current) return;
       timeLeft -= 0.1;
-      console.log("timeleft ", Math.max(timeLeft.toFixed(1), 0));
       setTimer(Math.max(timeLeft, 0).toFixed(1));
       if (timeLeft <= 1 && !shot) {
         releaseBall();

@@ -8,7 +8,14 @@ import { RxCross2 } from "react-icons/rx";
 import { IoOptions } from "react-icons/io5";
 
 export default function Modes() {
-  const { modes, setWorkoutData, loadModes, openModal } = useData();
+  const {
+    modes,
+    setWorkoutData,
+    loadModes,
+    openModal,
+    calibrate,
+    checkLimitSwitch,
+  } = useData();
   const [categories, setCategories] = useState([0, 1]);
   const navigate = useNavigate();
   const modalRef = useRef();
@@ -180,12 +187,25 @@ export default function Modes() {
 
   return (
     <div className="flex flex-col items-center justify-center p-4 gap-4">
-      <div className="w-full flex justify-between">
-        <div className="w-[136px]" />
+      <div className="w-full flex justify-center relative">
         <p className="headline">Menu</p>
-        <Link to="/mode-settings">
-          <button className="button button__positive">Přidat mode</button>
-        </Link>
+        <div className="flex items-center justify-center absolute right-0">
+          <button
+            onClick={() => checkLimitSwitch()}
+            className="button button__negative mr-4"
+          >
+            check switch
+          </button>
+          <button
+            onClick={() => calibrate()}
+            className="button button__submit mr-4"
+          >
+            Calibrate
+          </button>
+          <Link to="/mode-settings">
+            <button className="button button__positive">Přidat mode</button>
+          </Link>
+        </div>
       </div>
 
       {/* <Category headline={"Unordered"} category={0} /> */}

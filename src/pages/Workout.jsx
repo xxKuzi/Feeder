@@ -15,6 +15,7 @@ export default function Workout() {
     updateStatistics,
     workoutData,
     rotateServo,
+    globalAngle,
   } = useData();
   const [time, setTime] = useState(0); //elapsed Time
   const [fullTime, setFullTime] = useState(5); //Fulltime
@@ -139,8 +140,9 @@ export default function Workout() {
 
   const changeMotorAngle = (starting, ending) => {
     const dif = ending - starting;
-    console.log("updating Stepper motor angle by: ", dif);
-    //rotateServo(dif);
+    console.log("updating Stepper motor angle by: ", dif, " to: ", ending);
+    console.log("global angle: ", globalAngle);
+    // rotateServo(dif);
   };
   const changeMotorSpeed = (ending) => {
     // console.log("updating Stepper motor speed to: ", ending);
