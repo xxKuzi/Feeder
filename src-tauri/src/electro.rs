@@ -75,7 +75,7 @@ pub mod servo_control {
     }
 
     #[tauri::command]
-    pub fn blink_led(times: u32) -> Result<String, String> {
+    pub fn rotate_servo(times: u32) -> Result<String, String> {
         let mut servo = ServoController::new(12, 16)?;
         servo.rotate_servo(times);
         println!("Blinked");
