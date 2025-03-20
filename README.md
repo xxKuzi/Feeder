@@ -1,7 +1,14 @@
-# Tauri + React
+# App for Basketball ball feeder(passer)
 
-This template should help get you started developing with Tauri and React in Vite.
+- running on Raspberry Pi 5 8GB
+- project for local basketball club
 
-## Recommended IDE Setup
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+
+## Motor control
+- controlling one stepper motor and two rpm motors with GPIO pins
+## Data Storage
+- using SQLite database for profiles and shooting history
+
+## BLE Communication
+- integrated Bluetooth LE Peripheral to communicate with mobile app (FeederMini)
