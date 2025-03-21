@@ -6,7 +6,7 @@ export default function MotorTest() {
   const [servoAngle, setServoAngle] = useState<number>(90); // Default at 90°
   const [motorSpeed, setMotorSpeed] = useState<number>(0); // Default at 0 RPM
   const [running, setRunning] = useState<boolean>(false);
-  const { rotateServo } = useData();
+  const { rotateServo, changeDirection } = useData();
 
   // Function to update values
   const updateValues = async (newServo: number, newSpeed: number) => {
@@ -86,6 +86,18 @@ export default function MotorTest() {
           onClick={() => rotateServo(180)}
         >
           rotate servo once 180 degrees
+        </button>
+        <button
+          onClick={() => changeDirection(true)}
+          className="button button__submit mr-4"
+        >
+          set right
+        </button>
+        <button
+          onClick={() => changeDirection(false)}
+          className="button button__submit mr-4"
+        >
+          set left
         </button>
       </div>
     </div>
