@@ -9,7 +9,7 @@ use sql::{
     connect_to_database, add_record, add_user, load_users, select_user, delete_user,
     load_current_data, load_records, rename_user, add_mode, load_modes, delete_mode, update_mode,
 };
-use electro::servo_control::{rotate_servo, calibrate_stepper_motor, check_limit_switch};
+use electro::servo_control::{rotate_servo, calibrate_stepper_motor, check_limit_switch, change_direction};
 
 use tauri::{Manager, AppHandle};
 use once_cell::sync::OnceCell;
@@ -78,7 +78,8 @@ pub async fn run() {
         pause_workout,
         get_workout_state,
         calibrate_stepper_motor,
-        check_limit_switch
+        check_limit_switch,
+        change_direction
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
