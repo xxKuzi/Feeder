@@ -113,13 +113,14 @@ pub mod servo_control {
     /// Pass `true` for HIGH and `false` for LOW.
     #[tauri::command]
     pub fn change_direction(state: bool) -> Result<String, String> {
-        let mut controller = ServoController::new(1, 2, 14)?;
+        let mut controller = ServoController::new(1, 2, 23)?;
         if state {
             controller.direction_pin.set_high();
         } else {
             controller.direction_pin.set_low();
         }
         let status = if state { "HIGH" } else { "LOW" };
+        println!("state set: {}", status);
         Ok(format!("Direction pin set to {}", status))
     }
     
