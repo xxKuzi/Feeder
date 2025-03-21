@@ -90,14 +90,14 @@ pub mod servo_control {
     
     #[tauri::command]
     pub fn set_servo_angle(angle: u8) -> Result<String, String> {
-        let mut servo = ServoController::new(12, 16, 14)?; // Example: output: GPIO12, input: GPIO16, direction: GPIO14
+        let mut servo = ServoController::new(12, 16, 4)?; // Example: output: GPIO12, input: GPIO16, direction: GPIO14
         servo.set_angle(angle);
         Ok(format!("Servo set to {} degrees", angle))
     }
 
     #[tauri::command]
     pub fn rotate_servo(times: u32) -> Result<String, String> {
-        let mut servo = ServoController::new(12, 16, 14)?;
+        let mut servo = ServoController::new(12, 16, 4)?;
         servo.rotate_servo(times);
         println!("Rotated servo");
         Ok(format!("Rotated servo {} times", times))
@@ -105,7 +105,7 @@ pub mod servo_control {
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
-        let mut servo = ServoController::new(12, 16, 14)?;
+        let mut servo = ServoController::new(12, 16, 3)?;
         servo.calibrate()
     }
 
@@ -113,6 +113,7 @@ pub mod servo_control {
     /// Pass `true` for HIGH and `false` for LOW.
     #[tauri::command]
     pub fn change_direction(state: bool) -> Result<String, String> {
+        
         let mut controller = ServoController::new(1, 2, 14)?;
         controller.set_direction(state);
         let status = if state { "HIGH" } else { "LOW" };
@@ -122,7 +123,7 @@ pub mod servo_control {
     #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
         // Example initialization with specific GPIO pins: output: GPIO6, input: GPIO13, direction: GPIO14
-        let mut servo = ServoController::new(6, 13, 14)?;
+        let mut servo = ServoController::new(6, 13, 4)?;
     
         // Set the output pin HIGH to provide 3.3V
         servo.output_pin.set_high();

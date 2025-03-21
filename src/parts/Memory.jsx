@@ -254,7 +254,7 @@ export function Memory({ children }) {
 
   const changeDirection = async (direction) => {
     try {
-      await invoke("rotate_servo", { state: direction });
+      await invoke("change_direction", { state: direction });
     } catch (error) {
       console.error("Failed to update motor/servo value:", error);
     }
