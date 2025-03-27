@@ -16,7 +16,7 @@ pub mod servo_control {
         /// `input_pin_pin` for the limit switch,
         /// and `direction_pin_pin` for setting direction.
         pub fn new(
-            output_pin_pin: Option<u8>,
+            output_pin_pin: u8,
             input_pin_pin: Option<u8>,
             direction_pin_pin: Option<u8>,
         ) -> Result<Self, String> {
@@ -104,14 +104,14 @@ pub mod servo_control {
     
     #[tauri::command]
     pub fn set_servo_angle(angle: u8) -> Result<String, String> { //not used anymore
-        let mut servo = ServoController::new(Some(12), Some(16), Some(4))?; // needs only first argument
+        let mut servo = ServoController::new(12, 16, 4)?; // needs only first argument
         servo.set_angle(angle);
         Ok(format!("Servo set to {} degrees", angle))
     }
 
     #[tauri::command]
     pub fn rotate_servo(times: u32) -> Result<String, String> {
-        let mut servo = ServoController::new(Some(12), Some(16), Some(4))?; //only FIRST ONE
+        let mut servo = ServoController::new(12, 16, 4)?; //only FIRST ONE
         servo.rotate_servo(times);
         println!("Rotated servo");
         Ok(format!("Rotated servo {} times", times))
@@ -119,7 +119,7 @@ pub mod servo_control {
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
-        let mut servo = ServoController::new(Some(12), Some(16), Some(3))?; //FIRST and SECOND 
+        let mut servo = ServoController::new(12, 16, 3)?; //FIRST and SECOND 
         servo.calibrate()
     }
 
@@ -127,7 +127,7 @@ pub mod servo_control {
     /// Pass `true` for HIGH and `false` for LOW.
     #[tauri::command]
     pub fn change_direction(state: bool) -> Result<String, String> {
-        let mut controller = ServoController::new(Some(1), Some(2), Some(23))?;//THIRD
+        let mut controller = ServoController::new(1, 2, 23)?;//THIRD
         if state {
             controller.direction_pin.set_high();
         } else {
@@ -142,7 +142,7 @@ pub mod servo_control {
     #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
         // Example initialization with specific GPIO pins: output: GPIO6, input: GPIO13, direction: GPIO14
-        let mut servo = ServoController::new(Some(6), Some(13), Some(4))?; //FIRST and SECOND
+        let mut servo = ServoController::new(6, 13, 4)?; //FIRST and SECOND
     
         // Set the output pin HIGH to provide 3.3V
         servo.output_pin.set_high();
