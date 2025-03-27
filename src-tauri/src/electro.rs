@@ -5,45 +5,38 @@ pub mod servo_control {
 
     #[derive(Debug)]
     pub struct ServoController {
-        output_pin: OutputPin,  // Pin for servo pulses (mandatory)
-        input_pin: Option<InputPin>, // Limit switch for calibration (optional)
-        direction_pin: Option<OutputPin>, // Pin to control direction (optional)
+        output_pin: OutputPin,  // Pin for servo pulses
+        input_pin: InputPin,    // Limit switch for calibration
+        direction_pin: OutputPin, // Pin to control direction
     }
 
     impl ServoController {
         /// Creates a new ServoController with the given GPIO pins.
-        /// `output_pin_pin` is used for servo pulses (mandatory),
-        /// `input_pin_pin` for the limit switch (optional),
-        /// and `direction_pin_pin` for setting direction (optional).
+        /// `output_pin_pin` is used for servo pulses,
+        /// `input_pin_pin` for the limit switch,
+        /// and `direction_pin_pin` for setting direction.
         pub fn new(
-            output_pin_pin: Option<u8>, // Output pin is mandatory
-            input_pin_pin: Option<u8>,  // Input pin is optional
-            direction_pin_pin: Option<u8>, // Direction pin is optional
+            output_pin_pin: Option<u8>,
+            input_pin_pin: Option<u8>,
+            direction_pin_pin: Option<u8>,
         ) -> Result<Self, String> {
             let gpio = Gpio::new().map_err(|e| e.to_string())?;
-            
-            // Configure the mandatory output pin
-            let output_pin = match output_pin_pin {
-                Some(pin) => gpio.get(pin).map_err(|e| e.to_string())?.into_output(),
-                None => return Err("Output pin is required".to_string()),
-            };
-
-            // Configure optional input pin
+            let output_pin = gpio.get(output_pin_pin).map_err(|e| e.to_string())?.into_output();
+    
             let input_pin = match input_pin_pin {
                 Some(pin) => Some(gpio.get(pin).map_err(|e| e.to_string())?.into_input()),
                 None => None,
             };
-
-            // Configure optional direction pin
+    
             let direction_pin = match direction_pin_pin {
                 Some(pin) => Some(gpio.get(pin).map_err(|e| e.to_string())?.into_output()),
                 None => None,
             };
-
+    
             Ok(ServoController {
-                output_pin,       // Mandatory pin
-                input_pin,        // Optional pin
-                direction_pin,    // Optional pin
+                output_pin,
+                input_pin,
+                direction_pin,
             })
         }
     
@@ -52,7 +45,7 @@ pub mod servo_control {
             println!("Setting angle: {} degrees", angle);            
     
             // Map the angle (0-180) to pulse width (1ms to 2ms)
-            let pulse_width = 1.0 + (angle as f32 / 18000.0) * 1.0; // Pulse width in ms
+            let pulse_width = 1.0 + (angle as f32 / 18000.0) * 1.0; // pulse width in ms
             let duty = pulse_width * 1000.0; // Convert to microseconds
     
             // Activate servo pulse
@@ -64,16 +57,11 @@ pub mod servo_control {
             thread::sleep(Duration::from_millis(20) - Duration::from_micros(duty as u64));
         }
 
-        /// Reads the limit switch state (if available).
-        pub fn is_limit_switch_pressed(&self) -> Option<bool> {
-            if let Some(input_pin) = &self.input_pin {
-                let pressed = !input_pin.is_high(); // Limit switch active when LOW
-                println!("Limit switch state: {}", if pressed { "PRESSED" } else { "NOT PRESSED" });
-                Some(pressed)
-            } else {
-                println!("Limit switch not configured");
-                None
-            }
+        /// Reads the limit switch state.
+        pub fn is_limit_switch_pressed(&self) -> bool {
+            let pressed = !self.input_pin.is_high(); // Limit switch active when LOW
+            println!("Limit switch state: {}", if pressed { "PRESSED" } else { "NOT PRESSED" });
+            pressed
         }
 
         /// Rotates the servo for a given number of cycles.
@@ -90,47 +78,40 @@ pub mod servo_control {
         /// Calibrates the servo by rotating until the limit switch is triggered.
         pub fn calibrate(&mut self) -> Result<String, String> {
             println!("Starting calibration...");
-            if let Some(input_pin) = &self.input_pin {
-                while input_pin.is_low() { // Rotate until the limit switch is triggered
-                    self.output_pin.set_high();
-                    thread::sleep(Duration::from_micros(469));
-                    self.output_pin.set_low();
-                    thread::sleep(Duration::from_micros(469));
-                }
 
-                println!("Calibration complete: Limit switch activated.");
-                Ok("Calibration Complete".to_string())
-            } else {
-                Err("Calibration failed: Limit switch not configured".to_string())
+            while self.input_pin.is_low() { // Rotate until the limit switch is triggered
+                self.output_pin.set_high();
+                thread::sleep(Duration::from_micros(469));
+                self.output_pin.set_low();
+                thread::sleep(Duration::from_micros(469));
             }
+
+            println!("Calibration complete: Limit switch activated.");
+            Ok("Calibration Complete".to_string())
         }
 
-        /// Sets the direction pin to high or low (if available).
+        /// Sets the direction pin to high or low.
         pub fn set_direction(&mut self, high: bool) {
-            if let Some(direction_pin) = &self.direction_pin {
-                if high {
-                    direction_pin.set_high();
-                    println!("Direction pin set to HIGH");
-                } else {
-                    direction_pin.set_low();
-                    println!("Direction pin set to LOW");
-                }
+            if high {
+                self.direction_pin.set_high();
+                println!("Direction pin set to HIGH");
             } else {
-                println!("Direction pin not configured");
+                self.direction_pin.set_low();
+                println!("Direction pin set to LOW");
             }
         }
     }
     
     #[tauri::command]
-    pub fn set_servo_angle(angle: u8) -> Result<String, String> {
-        let mut servo = ServoController::new(Some(12), None, None)?; // Mandatory output pin
+    pub fn set_servo_angle(angle: u8) -> Result<String, String> { //not used anymore
+        let mut servo = ServoController::new(Some(12), Some(16), Some(4))?; // needs only first argument
         servo.set_angle(angle);
         Ok(format!("Servo set to {} degrees", angle))
     }
 
     #[tauri::command]
     pub fn rotate_servo(times: u32) -> Result<String, String> {
-        let mut servo = ServoController::new(Some(12), None, None)?; // Mandatory output pin
+        let mut servo = ServoController::new(Some(12), Some(16), Some(4))?; //only FIRST ONE
         servo.rotate_servo(times);
         println!("Rotated servo");
         Ok(format!("Rotated servo {} times", times))
@@ -138,14 +119,20 @@ pub mod servo_control {
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
-        let mut servo = ServoController::new(Some(12), Some(16), None)?; // Mandatory output pin and limit switch
+        let mut servo = ServoController::new(Some(12), Some(16), Some(3))?; //FIRST and SECOND 
         servo.calibrate()
     }
 
+    /// Changes the direction based on the provided state.
+    /// Pass `true` for HIGH and `false` for LOW.
     #[tauri::command]
     pub fn change_direction(state: bool) -> Result<String, String> {
-        let mut controller = ServoController::new(Some(1), None, Some(23))?; // Mandatory output pin and direction pin
-        controller.set_direction(state);
+        let mut controller = ServoController::new(Some(1), Some(2), Some(23))?;//THIRD
+        if state {
+            controller.direction_pin.set_high();
+        } else {
+            controller.direction_pin.set_low();
+        }
         let status = if state { "HIGH" } else { "LOW" };
         println!("state set: {}", status);
         Ok(format!("Direction pin set to {}", status))
@@ -154,7 +141,8 @@ pub mod servo_control {
 
     #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
-        let mut servo = ServoController::new(Some(6), Some(13), None)?; // Mandatory output pin and limit switch
+        // Example initialization with specific GPIO pins: output: GPIO6, input: GPIO13, direction: GPIO14
+        let mut servo = ServoController::new(Some(6), Some(13), Some(4))?; //FIRST and SECOND
     
         // Set the output pin HIGH to provide 3.3V
         servo.output_pin.set_high();
@@ -165,18 +153,14 @@ pub mod servo_control {
     
         // Confirm stable reading from the limit switch
         let mut detected_high = false;
-        if let Some(input_pin) = &servo.input_pin {
-            for _ in 0..5 {
-                if input_pin.is_high() {
-                    detected_high = true;
-                    break;
-                }
-                thread::sleep(Duration::from_millis(50));
+        for _ in 0..5 {
+            if servo.input_pin.is_high() {
+                detected_high = true;
+                break;
             }
-        } else {
-            return Err("Limit switch not configured".to_string());
+            thread::sleep(Duration::from_millis(50));
         }
-
+    
         let status = if detected_high {
             "NOT PRESSED (1)"  // Limit switch reads HIGH when not pressed
         } else {
