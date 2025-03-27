@@ -113,6 +113,7 @@ pub mod servo_control {
     /// Pass `true` for HIGH and `false` for LOW.
     #[tauri::command]
     pub fn change_direction(state: bool) -> Result<String, String> {
+        println!("chaning state");
         let mut controller = ServoController::new(1, 2, 23)?;
         if state {
             controller.direction_pin.set_high();
