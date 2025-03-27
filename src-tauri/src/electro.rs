@@ -53,6 +53,7 @@ pub mod servo_control {
         /// Rotates the servo for a given number of cycles.
         pub fn rotate_servo(&mut self, times: u32) {
             println!("Rotating stepper motor for {} times", times);
+            self.direction_pin.set_high();
             for _ in 0..times {
                 self.output_pin.set_high();
                 thread::sleep(Duration::from_micros(469));
@@ -97,7 +98,7 @@ pub mod servo_control {
 
     #[tauri::command]
     pub fn rotate_servo(times: u32) -> Result<String, String> {
-        let mut servo = ServoController::new(12, 16, 4)?;
+        let mut servo = ServoController::new(12, 16, 23)?;
         servo.rotate_servo(times);
         println!("Rotated servo");
         Ok(format!("Rotated servo {} times", times))
