@@ -97,8 +97,7 @@ pub mod servo_control {
 
     #[tauri::command]
     pub fn rotate_servo(times: u32) -> Result<String, String> {
-        let mut servo = ServoController::new(12, 16, 23)?;
-        servo.direction_pin.set_high()
+        let mut servo = ServoController::new(12, 16, 4)?;
         servo.rotate_servo(times);
         println!("Rotated servo");
         Ok(format!("Rotated servo {} times", times))
