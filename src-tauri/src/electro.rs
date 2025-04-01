@@ -133,7 +133,7 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn check_limit_switch_debug() -> Result<String, String> {
+    pub fn check_limit_switch() -> Result<String, String> {
         with_servo(|servo| {
             for _ in 0..10 { // check 10 times then return
                 let pressed = servo.is_limit_switch_pressed();
