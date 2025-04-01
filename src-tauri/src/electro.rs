@@ -5,25 +5,25 @@ pub mod servo_control {
 
     #[derive(Debug)]
     pub struct ServoController {
-        output_pin: OutputPin,  // Pin for servo pulses
-        input_pin: InputPin,    // Limit switch for calibration
+        pulse_pin: OutputPin,  // Pin for servo pulses
+        limit_switch_pin: InputPin,    // Limit switch for calibration
         direction_pin: OutputPin, // Pin to control direction
     }
 
     impl ServoController {
         /// Creates a new ServoController with the given GPIO pins.
-        /// `output_pin_pin` is used for servo pulses,
-        /// `input_pin_pin` for the limit switch,
-        /// and `direction_pin_pin` for setting direction.
-        pub fn new(output_pin_pin: u8, input_pin_pin: u8, direction_pin_pin: u8) -> Result<Self, String> {
-            println!("Initializing stepper motor on output pin: {}, input pin: {}, direction pin: {}", output_pin_pin, input_pin_pin, direction_pin_pin);
+        /// `pulse_pin_number` is used for servo pulses,
+        /// `limit_switch_number` for the limit switch,
+        /// and `direction_pin_number` for setting direction.
+        pub fn new(pulse_pin_number: u8, limit_switch_pin_number: u8, direction_pin_pin: u8) -> Result<Self, String> {
+            println!("Initializing stepper motor on output pin: {}, input pin: {}, direction pin: {}", pulse_pin_number, limit_switch_pin_number, direction_pin_number);
             
             let gpio = Gpio::new().map_err(|e| e.to_string())?;
-            let output_pin = gpio.get(output_pin_pin).map_err(|e| e.to_string())?.into_output();
-            let input_pin = gpio.get(input_pin_pin).map_err(|e| e.to_string())?.into_input();
-            let direction_pin = gpio.get(direction_pin_pin).map_err(|e| e.to_string())?.into_output();
+            let pulse_pin = gpio.get(pulse_pin_number).map_err(|e| e.to_string())?.into_output();
+            let limit_switch_pin = gpio.get(limit_switch_pin_number).map_err(|e| e.to_string())?.into_input();
+            let direction_pin = gpio.get(direction_pin_number).map_err(|e| e.to_string())?.into_output();
 
-            Ok(ServoController { output_pin, input_pin, direction_pin })
+            Ok(ServoController { pulse_pin, limit_switch_pin, direction_pin })
         }
     
         /// Sets the servo to the specified angle.
@@ -35,17 +35,17 @@ pub mod servo_control {
             let duty = pulse_width * 1000.0; // Convert to microseconds
     
             // Activate servo pulse
-            self.output_pin.set_high();
+            self.pulse_pin.set_high();
             thread::sleep(Duration::from_micros(duty as u64));
     
             // Complete cycle (20ms total)
-            self.output_pin.set_low();
+            self.pulse_pin.set_low();
             thread::sleep(Duration::from_millis(20) - Duration::from_micros(duty as u64));
         }
 
         /// Reads the limit switch state.
         pub fn is_limit_switch_pressed(&self) -> bool {
-            let pressed = !self.input_pin.is_high(); // Limit switch active when LOW
+            let pressed = !self.limit_switch_pin.is_high(); // Limit switch active when LOW
             println!("Limit switch state: {}", if pressed { "PRESSED" } else { "NOT PRESSED" });
             pressed
         }
@@ -55,9 +55,9 @@ pub mod servo_control {
             println!("Rotating stepper motor for {} times", times);
             self.direction_pin.set_high();
             for _ in 0..times {
-                self.output_pin.set_high();
+                self.pulse_pin.set_high();
                 thread::sleep(Duration::from_micros(469));
-                self.output_pin.set_low();
+                self.pulse_pin.set_low();
                 thread::sleep(Duration::from_micros(469));
             }
         }
@@ -66,10 +66,10 @@ pub mod servo_control {
         pub fn calibrate(&mut self) -> Result<String, String> {
             println!("Starting calibration...");
 
-            while self.input_pin.is_low() { // Rotate until the limit switch is triggered
-                self.output_pin.set_high();
+            while self.limit_switch_pin.is_low() { // Rotate until the limit switch is triggered
+                self.pulse_pin.set_high();
                 thread::sleep(Duration::from_micros(469));
-                self.output_pin.set_low();
+                self.pulse_pin.set_low();
                 thread::sleep(Duration::from_micros(469));
             }
 
@@ -89,12 +89,7 @@ pub mod servo_control {
         }
     }
     
-    #[tauri::command]
-    pub fn set_servo_angle(angle: u8) -> Result<String, String> {
-        let mut servo = ServoController::new(12, 16, 4)?; // Example: output: GPIO12, input: GPIO16, direction: GPIO14
-        servo.set_angle(angle);
-        Ok(format!("Servo set to {} degrees", angle))
-    }
+   
 
     #[tauri::command]
     pub fn rotate_servo(times: u32) -> Result<String, String> {
@@ -133,7 +128,7 @@ pub mod servo_control {
         let mut servo = ServoController::new(6, 13, 4)?;
     
         // Set the output pin HIGH to provide 3.3V
-        servo.output_pin.set_high();
+        servo.pulse_pin.set_high();
         println!("Output pin set to HIGH");
     
         // Allow time for the signal to stabilize
@@ -142,7 +137,7 @@ pub mod servo_control {
         // Confirm stable reading from the limit switch
         let mut detected_high = false;
         for _ in 0..5 {
-            if servo.input_pin.is_high() {
+            if servo.limit_switch_pin.is_high() {
                 detected_high = true;
                 break;
             }
@@ -175,10 +170,6 @@ pub mod servo_control {
         Err("Stepper motor control not supported on this platform".to_string())
     }
 
-    #[tauri::command]
-    pub fn blink_led(times: u32) -> Result<String, String> {
-        Err("Blinking not supported on this platform".to_string())
-    }
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
