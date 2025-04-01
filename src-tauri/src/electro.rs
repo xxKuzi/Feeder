@@ -26,7 +26,7 @@ pub mod motor_system {
 
             let gpio = Gpio::new().map_err(|e| e.to_string())?;
             let pulse_pin = gpio.get(pulse_pin_number).map_err(|e| e.to_string())?.into_output();
-            let limit_switch_pin = gpio.get(limit_switch_pin_number).map_err(|e| e.to_string())?.into_input_pulldown();
+            let limit_switch_pin = gpio.get(limit_switch_pin_number).map_err(|e| e.to_string())?.into_input_pullup();
             let direction_pin = gpio.get(direction_pin_number).map_err(|e| e.to_string())?.into_output();
             let enable_pin = gpio.get(enable_pin_number).map_err(|e| e.to_string())?.into_output();
 
@@ -139,9 +139,9 @@ pub mod motor_system {
             let pressed = servo.is_limit_switch_pressed();
             let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
             println!("Limit switch state: {}", status);
-            Ok(format!("Limit switch is {}", status));
             thread::sleep(Duration::from_millis(500));
         }
+            Ok(format!("Limit switch is {}", status))
         })
     }
 
