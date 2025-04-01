@@ -26,7 +26,7 @@ pub mod motor_system {
 
             let gpio = Gpio::new().map_err(|e| e.to_string())?;
             let pulse_pin = gpio.get(pulse_pin_number).map_err(|e| e.to_string())?.into_output();
-            let limit_switch_pin = gpio.get(limit_switch_pin_number).map_err(|e| e.to_string())?.into_input_pullup();
+            let limit_switch_pin = gpio.get(limit_switch_pin_number).map_err(|e| e.to_string())?.into_input();
             let direction_pin = gpio.get(direction_pin_number).map_err(|e| e.to_string())?.into_output();
             let enable_pin = gpio.get(enable_pin_number).map_err(|e| e.to_string())?.into_output();
 
