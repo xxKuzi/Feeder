@@ -15,7 +15,6 @@ export default function Modes() {
     openModal,
     calibrate,
     checkLimitSwitch,
-    changeDirection,
   } = useData();
   const [categories, setCategories] = useState([0, 1]);
   const navigate = useNavigate();
