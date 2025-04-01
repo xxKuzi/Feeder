@@ -88,7 +88,7 @@ pub mod motor_system {
 
         if guard.is_none() {
             println!("Servo not initialized – performing auto-init...");
-            let servo = ServoController::new(12, 21, 23, 16)?; // default GPIOs
+            let servo = ServoController::new(12, 24, 23, 16)?; // default GPIOs
             *guard = Some(servo);
         }
 
@@ -141,6 +141,9 @@ pub mod motor_system {
             Ok(format!("Limit switch is {}", status))
         })
     }
+
+    
+
 }
 
 #[cfg(not(target_os = "linux"))]
