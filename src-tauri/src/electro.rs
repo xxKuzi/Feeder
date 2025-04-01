@@ -112,7 +112,7 @@ pub mod motor_system {
 
            // if servo.limit_switch_pin.is_high() {
                 println!("Limit switch is HIGH (not pressed) – enabling motor");
-                servo.enable_pin.set_high();
+               // servo.enable_pin.set_high();
             // } else {
             //     println!("Limit switch is LOW (pressed) – ABORTING for safety");
             //     return Err("Safety check failed: Limit switch is pressed".into());
