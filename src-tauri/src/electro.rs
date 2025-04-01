@@ -134,17 +134,15 @@ pub mod motor_system {
 
     #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
-        
-        loop {with_servo(|servo| {
-            
+        with_servo(|servo| {
+            loop {
             let pressed = servo.is_limit_switch_pressed();
             let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
             println!("Limit switch state: {}", status);
-            Ok(format!("Limit switch is {}", status))
+            Ok(format!("Limit switch is {}", status));
             thread::sleep(Duration::from_millis(500));
-        
+        }
         })
-    }
     }
 
     
