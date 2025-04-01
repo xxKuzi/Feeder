@@ -121,7 +121,7 @@ pub mod motor_system {
                servo.enable_pin.set_low();
             } else {
                 println!("Limit switch is LOW (pressed) – ABORTING for safety");
-                servo.enable_pin.high();                            
+                servo.enable_pin.set_high();                            
             }
 
             servo.rotate_servo(times);
