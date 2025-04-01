@@ -16,22 +16,22 @@ export type Record = {
 export const columns: ColumnDef<Record>[] = [
   {
     accessorKey: "user",
-    header: "User",
+    header: "Hráč",
   },
   {
     accessorKey: "made",
-    header: "Made",
+    header: "Proměnil",
   },
   {
     accessorKey: "taken",
-    header: "Taken",
+    header: "Vstřelil",
   },
   {
     accessorKey: "percentage",
-    header: "Percentage",
+    header: "Úspěšnost",
   },
   {
     accessorKey: "createdAt",
-    header: "Date",
+    header: "Datum střelby",
   },
 ];

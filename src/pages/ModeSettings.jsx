@@ -18,9 +18,9 @@ export default function ModeSettings() {
 
   const defaultLabels = {
     category: [
-      { index: 1, label: "Two-point" },
-      { index: 2, label: "Three-point" },
-      { index: 3, label: "Free-throws" },
+      { index: 1, label: "Střely za 2 body" },
+      { index: 2, label: "Střely za 3 body" },
+      { index: 3, label: "Trestné hody" },
     ],
     repetition: [5, 10, 15, 20, 30],
     intervals: [2, 3, 5, 8, 10],
@@ -92,7 +92,7 @@ export default function ModeSettings() {
       <div className="h-full w-full bg-white shadow-md rounded-lg p-6 space-y-4">
         {/* Name Field */}
         <div className="form-group flex flex-col">
-          <label className="text-sm font-medium text-gray-700">Name</label>
+          <label className="text-sm font-medium text-gray-700">Jméno</label>
           <input
             type="text"
             name="name"
@@ -112,7 +112,7 @@ export default function ModeSettings() {
 
         {/* Category */}
         <div className="form-group flex flex-col mt-4">
-          <label className="text-sm font-medium text-gray-700">Category</label>
+          <label className="text-sm font-medium text-gray-700">Categorie</label>
           <div className="flex space-x-4 mt-2">
             {defaultLabels.category.map(({ index, label }) => (
               <button
@@ -132,18 +132,20 @@ export default function ModeSettings() {
         </div>
 
         {/* Field Simulation (Separated) */}
-        <label className="text-sm mt-8 font-medium text-gray-700">Points</label>
-        <FieldSimulation
-          formData={formData}
-          setFormData={setFormData}
-          previousData={previousData}
-        />
+        <div className="flex flex-col items-start justify-center mt-4">
+          <label className="text-sm mb-1 font-medium text-gray-700">
+            Místa střelby
+          </label>
+          <FieldSimulation
+            formData={formData}
+            setFormData={setFormData}
+            previousData={previousData}
+          />
+        </div>
 
         {/* Repetition */}
         <div className="form-group flex flex-col mt-4">
-          <label className="text-sm font-medium text-gray-700">
-            Repetition
-          </label>
+          <label className="text-sm font-medium text-gray-700">Počet kol</label>
           <div className="flex space-x-4 mt-2">
             {defaultLabels.repetition.map((value) => (
               <button
@@ -176,7 +178,9 @@ export default function ModeSettings() {
 
         {/* Interval Selection */}
         <div className="form-group flex flex-col">
-          <label className="text-sm font-medium text-gray-700">Interval</label>
+          <label className="text-sm font-medium text-gray-700">
+            Interval mezi střelami (s)
+          </label>
           <div className="flex space-x-4 mt-2">
             {defaultLabels.intervals.map((value) => (
               <button

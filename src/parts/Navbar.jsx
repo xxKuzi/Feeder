@@ -18,13 +18,13 @@ const iconsMap = {
 
 // Navbar links array
 const navLinks = [
-  { path: "/profiles", icon: "CgProfile", label: "Profiles", size: 40 },
+  { path: "/profiles", icon: "CgProfile", label: "Profily", size: 40 },
   { path: "/", icon: "IoHomeOutline", label: "Home", size: 40 },
   { path: "/menu", icon: "CiDumbbell", label: "Menu", size: 50 },
   {
     path: "/statistics",
     icon: "IoNewspaperOutline",
-    label: "Statistics",
+    label: "Statistiky",
     size: 40,
   },
 ];
@@ -71,7 +71,7 @@ export default function Navbar() {
           })}
         </div>
         <Link to="/testing" className="text-center underline text-blue-500">
-          testing
+          testování
         </Link>
 
         {/* Clock Section */}
