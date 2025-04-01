@@ -252,15 +252,6 @@ export function Memory({ children }) {
     }
   };
 
-  const changeDirection = async (direction) => {
-    console.log("changing direction to: ", direction);
-    try {
-      await invoke("change_direction", { state: direction });
-    } catch (error) {
-      console.error("Failed to update motor/servo value:", error);
-    }
-  };
-
   const contextData = {
     statistics,
     updateStatistics,
@@ -289,7 +280,6 @@ export function Memory({ children }) {
     rotateServo,
     calibrate,
     checkLimitSwitch,
-    changeDirection,
   };
 
   return (
