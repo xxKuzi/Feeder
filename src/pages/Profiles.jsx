@@ -111,13 +111,15 @@ export default function Profiles() {
                       cancel: true,
                     },
 
-                    headline: "Changing Data",
-                    question: "Chose new data",
+                    headline: "Změna dat",
+                    question:
+                      "Můžeš si profil přejmenovat nebo si změnit číslo dresu",
 
                     input: true,
                     numberOfInputs: 2,
                     inputData: { name: user.name, number: user.number },
                     inputPlaceholders: ["name", "number"],
+                    //rename it - inputPlaceholders: ["Jméno hráče", "Číslo dresu"],
                     confirmHandle: (newData) => {
                       renameUser(
                         user.userId,

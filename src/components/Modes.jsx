@@ -201,7 +201,7 @@ export default function Modes() {
             onClick={() => calibrate()}
             className="button button__submit mr-4"
           >
-            Calibrate
+            Kalibrovat
           </button>
           <Link to="/mode-settings">
             <button className="button button__positive">Přidat mode</button>
