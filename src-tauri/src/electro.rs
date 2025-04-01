@@ -54,10 +54,15 @@ pub mod motor_system {
             }
 
             for _ in 0..times.abs() {
+                if self.limit_switch_pin.is_low() {
+                    self.enable_pin.set_high();
+                }                
+                else{     
                 self.pulse_pin.set_high();
                 thread::sleep(Duration::from_micros(469));
                 self.pulse_pin.set_low();
                 thread::sleep(Duration::from_micros(469));
+                }
             }
         }
 
@@ -110,18 +115,18 @@ pub mod motor_system {
         with_servo(|servo| {
             println!("Checking safety condition...");
 
-           // if servo.limit_switch_pin.is_high() {
-                println!("Limit switch is HIGH (not pressed) – enabling motor");
-               // servo.enable_pin.set_high();
-            // } else {
-            //     println!("Limit switch is LOW (pressed) – ABORTING for safety");
-            //     return Err("Safety check failed: Limit switch is pressed".into());
-            // }
+
+            //First check
+           if servo.limit_switch_pin.is_high() {                
+               servo.enable_pin.set_low();
+            } else {
+                println!("Limit switch is LOW (pressed) – ABORTING for safety");
+                servo.enable_pin.high();                            
+            }
 
             servo.rotate_servo(times);
 
-            //println!("Disabling motor after rotation");
-            //servo.enable_pin.set_low();
+            
 
             Ok(format!("Rotated servo {} steps (with safety)", times))
         })
