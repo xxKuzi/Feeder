@@ -133,15 +133,15 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn check_limit_switch() -> Result<String, String> {
+    pub fn check_limit_switch_debug() -> Result<String, String> {
         with_servo(|servo| {
-            loop {
-            let pressed = servo.is_limit_switch_pressed();
-            let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
-            println!("Limit switch state: {}", status);
-            thread::sleep(Duration::from_millis(500));
-        }
-            Ok(format!("Limit switch is {}", status))
+            for _ in 0..10 { // check 10 times then return
+                let pressed = servo.is_limit_switch_pressed();
+                let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
+                println!("Limit switch state: {}", status);
+                thread::sleep(Duration::from_millis(500));
+            }
+            Ok("Finished debug loop".to_string())
         })
     }
 
