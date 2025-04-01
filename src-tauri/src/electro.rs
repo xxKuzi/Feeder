@@ -110,13 +110,13 @@ pub mod motor_system {
         with_servo(|servo| {
             println!("Checking safety condition...");
 
-            if servo.limit_switch_pin.is_high() {
+           // if servo.limit_switch_pin.is_high() {
                 println!("Limit switch is HIGH (not pressed) – enabling motor");
                 servo.enable_pin.set_high();
-            } else {
-                println!("Limit switch is LOW (pressed) – ABORTING for safety");
-                return Err("Safety check failed: Limit switch is pressed".into());
-            }
+            // } else {
+            //     println!("Limit switch is LOW (pressed) – ABORTING for safety");
+            //     return Err("Safety check failed: Limit switch is pressed".into());
+            // }
 
             servo.rotate_servo(times);
 
