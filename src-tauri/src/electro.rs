@@ -120,8 +120,8 @@ pub mod motor_system {
 
             servo.rotate_servo(times);
 
-            println!("Disabling motor after rotation");
-            servo.enable_pin.set_low();
+            //println!("Disabling motor after rotation");
+            //servo.enable_pin.set_low();
 
             Ok(format!("Rotated servo {} steps (with safety)", times))
         })
