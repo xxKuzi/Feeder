@@ -78,6 +78,18 @@ export default function MotorTest() {
 
         <button
           className={`button button__positive`}
+          onClick={() => rotateServo(15)}
+        >
+          15 degrees to left
+        </button>
+        <button
+          className={`button button__positive`}
+          onClick={() => rotateServo(-15)}
+        >
+          15 degrees to right
+        </button>
+        <button
+          className={`button button__positive`}
           onClick={() => rotateServo(45)}
         >
           45 degrees to left

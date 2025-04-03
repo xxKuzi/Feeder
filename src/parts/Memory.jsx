@@ -230,7 +230,7 @@ export function Memory({ children }) {
 
   const rotateServo = async (degrees) => {
     try {
-      await invoke("rotate_servo", { times: (6400 / 360) * degrees });
+      await invoke("rotate_servo", { times: (6400 / 360) * degrees * 3 });
     } catch (error) {
       console.error("Failed to update motor/servo value:", error);
     }
