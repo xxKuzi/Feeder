@@ -68,8 +68,9 @@ pub mod motor_system {
 
         pub fn calibrate(&mut self) -> Result<String, String> {
             println!("Starting calibration...");
+            self.direction_pin.set_low(); //rotate to right
 
-            while self.limit_switch_pin.is_high() {
+            while self.limit_switch_pin.is_low() {
                 self.pulse_pin.set_high();
                 thread::sleep(Duration::from_micros(469));
                 self.pulse_pin.set_low();
@@ -77,7 +78,7 @@ pub mod motor_system {
             }
 
             println!("Calibration complete: Limit switch activated.");
-            Ok("Calibration Complete".to_string())
+            Ok("true".to_string())
         }
     }
 
@@ -156,6 +157,7 @@ pub mod motor_system {
 
 #[cfg(not(target_os = "linux"))]
 pub mod motor_system {
+    use std::{thread, time::Duration, sync::Mutex};
     #[tauri::command]
     pub fn init_servo() -> Result<String, String> {
         Err("Servo control not supported on this platform".to_string())
@@ -173,6 +175,8 @@ pub mod motor_system {
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
-        Err("Calibration not supported on this platform".to_string())
+        thread::sleep(Duration::from_millis(2000));
+        Ok("true".to_string())
+        //Err("Calibration not supported on this platform".to_string())
     }
 }

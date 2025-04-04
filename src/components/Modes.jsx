@@ -14,7 +14,7 @@ export default function Modes() {
     loadModes,
     openModal,
     calibrate,
-    checkLimitSwitch,
+    calibrationState,
   } = useData();
   const [categories, setCategories] = useState([0, 1]);
   const navigate = useNavigate();
@@ -191,16 +191,20 @@ export default function Modes() {
         <p className="headline">Menu</p>
         <div className="flex items-center justify-center absolute right-0">
           <button
-            onClick={() => checkLimitSwitch()}
-            className="button button__negative mr-4"
-          >
-            check switch
-          </button>
-          <button
             onClick={() => calibrate()}
-            className="button button__submit mr-4"
+            className={`button mr-4 ${
+              calibrationState === "true"
+                ? "bg-blue-500"
+                : calibrationState === "false"
+                ? "bg-red-600"
+                : "bg-green-400"
+            }`}
           >
-            Kalibrovat
+            {calibrationState === "true"
+              ? "Kalibrováno✅"
+              : calibrationState === "false"
+              ? "Kalibrovat❌"
+              : "Kalibrování➡️"}
           </button>
           <Link to="/mode-settings">
             <button className="button button__positive">Přidat mode</button>
