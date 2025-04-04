@@ -25,6 +25,7 @@ export function Memory({ children }) {
   const [modes, setModes] = useState([{ name: "XYZ" }]);
   const [globalAngle, setGlobalAngle] = useState(0);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
+  const [calibrationState, setCalibrationState] = useState("false"); //false, running, true
 
   useEffect(() => {
     loadCurrentData();
@@ -237,9 +238,15 @@ export function Memory({ children }) {
   };
 
   const calibrate = async () => {
+    setCalibrationState("running");
     try {
-      await invoke("calibrate_stepper_motor");
+      const state = await invoke("calibrate_stepper_motor");
+      if (state === "true") {
+        setGlobalAngle(0);
+        setCalibrationState("true");
+      }
     } catch (error) {
+      setCalibrationState("false");
       console.error("Failed to calibrate stepper motor:", error);
     }
   };
@@ -280,6 +287,8 @@ export function Memory({ children }) {
     rotateServo,
     calibrate,
     checkLimitSwitch,
+    calibrationState,
+    setCalibrationState,
   };
 
   return (

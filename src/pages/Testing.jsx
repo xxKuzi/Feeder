@@ -6,13 +6,26 @@ import BluetoothControls from "@/components/BluetoothControls.tsx";
 
 export default function Testing() {
   const [text, setText] = useState(["a", "b"]);
-  const { openModal, showKeyboard } = useData();
+  const { openModal, showKeyboard, checkLimitSwitch, setCalibrationState } =
+    useData();
 
   return (
-    <div>
+    <div className="flex flex-col items-center justify-center">
       Testing
       {/* <KeyboardSite /> */}
       <MotorTest />
+      <button
+        onClick={() => checkLimitSwitch()}
+        className="button button__negative mr-4"
+      >
+        check switch
+      </button>
+      <button
+        onClick={() => setCalibrationState("false")}
+        className="button button__negative mr-4"
+      >
+        calibration false
+      </button>
       <button
         onClick={() =>
           openModal({
