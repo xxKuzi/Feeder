@@ -55,7 +55,7 @@ const BluetoothControls = () => {
   }, []);
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div className="px-16 py-8 mt-8 rounded-xl border-gray-300 border-2 ">
       <h1 className="px-6 py-4 text-xl text-center border-2 border-blue1 rounded-xl">
         Current Workout State: {workoutState}
       </h1>

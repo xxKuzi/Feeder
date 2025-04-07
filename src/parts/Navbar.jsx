@@ -70,13 +70,12 @@ export default function Navbar() {
             );
           })}
         </div>
-        <Link to="/testing" className="text-center underline text-blue-500">
-          testování
-        </Link>
 
         {/* Clock Section */}
         <div className="h-32 flex-col flex justify-end items-center text-center">
-          <Clock />
+          <Link to="/testing">
+            <Clock />
+          </Link>
         </div>
       </div>
     </div>

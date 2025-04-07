@@ -192,18 +192,18 @@ export default function Modes() {
         <div className="flex items-center justify-center absolute right-0">
           <button
             onClick={() => calibrate()}
-            className={`button mr-4 ${
+            className={`button mr-4 text-white duration-300 ${
               calibrationState === "true"
                 ? "bg-blue-500"
                 : calibrationState === "false"
-                ? "bg-red-600"
+                ? "bg-black"
                 : "bg-green-400"
             }`}
           >
             {calibrationState === "true"
               ? "Kalibrováno✅"
               : calibrationState === "false"
-              ? "Kalibrovat❌"
+              ? "Vyžaduje kalibraci❗"
               : "Kalibrování➡️"}
           </button>
           <Link to="/mode-settings">
