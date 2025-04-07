@@ -28,7 +28,7 @@ export default function MotorTest() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-4">
+    <div className="flex flex-col items-center justify-center mt-8 rounded-xl bg-gray-100 px-4 py-2">
       <h1 className="text-2xl font-bold mb-4">Motor & Servo Control</h1>
 
       {/* Servo Control */}
@@ -65,41 +65,37 @@ export default function MotorTest() {
       >
         STOP PROGRAM
       </button>
-      <p>Motor Control</p>
-      <div className="flex space-x-4 justify-center items-center ">
-        <button
-          className={`button ${
-            running ? "button__positive" : "button__negative"
-          }`}
-          onClick={() => setRunning((prev) => !prev)}
-        >
-          {running ? "Running..." : "Stopped"}
-        </button>
-
-        <button
-          className={`button button__positive`}
-          onClick={() => rotateServo(15)}
-        >
-          15 degrees to left
-        </button>
-        <button
-          className={`button button__positive`}
-          onClick={() => rotateServo(-15)}
-        >
-          15 degrees to right
-        </button>
-        <button
-          className={`button button__positive`}
-          onClick={() => rotateServo(45)}
-        >
-          45 degrees to left
-        </button>
-        <button
-          className={`button button__positive`}
-          onClick={() => rotateServo(-45)}
-        >
-          45 degrees to right
-        </button>
+      <h2 className="text-xl">Stepper motor control</h2>
+      <div className="mt-4 flex gap-4 justify-center  items-center ">
+        <div className="flex items-center flex-col justify-center gap-4">
+          <button
+            className={`button button__positive`}
+            onClick={() => rotateServo(15)}
+          >
+            15 degrees to left
+          </button>
+          <button
+            className={`button button__positive`}
+            onClick={() => rotateServo(-15)}
+          >
+            15 degrees to right
+          </button>
+        </div>
+        <div className="h-32 border-[1px] border-gray-400 rounded"></div>
+        <div className="flex items-center flex-col justify-center gap-4">
+          <button
+            className={`button button__positive`}
+            onClick={() => rotateServo(45)}
+          >
+            45 degrees to left
+          </button>
+          <button
+            className={`button button__positive`}
+            onClick={() => rotateServo(-45)}
+          >
+            45 degrees to right
+          </button>
+        </div>
       </div>
     </div>
   );
