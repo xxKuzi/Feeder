@@ -1,7 +1,6 @@
 import React from "react";
 import Section from "../components/Section";
 import { FaPowerOff } from "react-icons/fa6";
-import Manual from "@/parts/Manual";
 
 export default function Home() {
   return (
@@ -28,7 +27,6 @@ export default function Home() {
           }}
         />
       </div>
-      <Manual />
     </div>
   );
 }
