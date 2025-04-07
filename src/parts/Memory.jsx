@@ -26,6 +26,7 @@ export function Memory({ children }) {
   const [globalAngle, setGlobalAngle] = useState(0);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
   const [calibrationState, setCalibrationState] = useState("false"); //false, running, true
+  const [developerMode, setDeveloperMode] = useState(false);
 
   useEffect(() => {
     loadCurrentData();
@@ -259,6 +260,26 @@ export function Memory({ children }) {
     }
   };
 
+  const unlockDeveloperMode = () => {
+    openModal({
+      buttons: {
+        confirm: true,
+        cancel: true,
+      },
+
+      headline: "Developer mode",
+      question: "Pro odemknutí vývojářského modu zadejte heslo",
+
+      input: true,
+      numberOfInputs: 1,
+      inputData: { password: "" },
+      inputPlaceholders: ["password"],
+      confirmHandle: (newData) => {
+        renameUser(user.userId, newData["name"], Number(newData["number"]));
+      },
+    });
+  };
+
   const contextData = {
     statistics,
     updateStatistics,
@@ -289,6 +310,8 @@ export function Memory({ children }) {
     checkLimitSwitch,
     calibrationState,
     setCalibrationState,
+    developerMode,
+    unlockDeveloperMode,
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useData } from "../parts/Memory.jsx";
 import KeyboardOverlay from "../parts/Keyboard";
 import MotorTest from "../components/MotorTest.tsx";
@@ -8,8 +8,17 @@ import { invoke } from "@tauri-apps/api/core";
 
 export default function Testing() {
   const [text, setText] = useState(["a", "b"]);
-  const { openModal, showKeyboard, checkLimitSwitch, setCalibrationState } =
-    useData();
+  const {
+    openModal,
+    showKeyboard,
+    checkLimitSwitch,
+    setCalibrationState,
+    unlockDeveloperMode,
+  } = useData();
+
+  useEffect(() => {
+    unlockDeveloperMode();
+  }, []);
 
   return (
     <div className="relative flex flex-col items-center justify-center">

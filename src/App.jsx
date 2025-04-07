@@ -11,6 +11,7 @@ import Statistics from "./pages/Statistics";
 import Result from "./pages/Result";
 import ModeSettings from "./pages/ModeSettings";
 import Testing from "./pages/Testing";
+import Manual from "./pages/Manual";
 
 function App() {
   const location = useLocation(); // Get the current route
@@ -31,6 +32,7 @@ function App() {
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/result" element={<Result />} />
           <Route path="/mode-settings" element={<ModeSettings />} />
+          <Route path="/manual" element={<Manual />} />
           <Route path="/testing" element={<Testing />} />
         </Routes>
       </div>
