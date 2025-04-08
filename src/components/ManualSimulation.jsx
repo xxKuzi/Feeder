@@ -13,6 +13,10 @@ export default function ManualSimulation({
   const MAX_POINTS = 5;
 
   useEffect(() => {
+    console.log(points);
+  });
+
+  useEffect(() => {
     if (previousData !== null && previousData) {
       const radius = 180; // Half of 360px width
       let tempPoints = previousData.angles.map((angle, i) => {

@@ -41,7 +41,8 @@ const Modal = forwardRef((_, ref) => {
       input = false,
       numberOfInputs = 0,
       inputData = [""],
-      inputPlaceholders = ["1"],
+      inputPlaceholders = ["age"], //for order of inputs (input array can have different order of elements than in modal window)
+      placeholders = ["Age"], //Visible placeholders
     }) => {
       setModalProps({
         buttons: {
@@ -82,6 +83,7 @@ const Modal = forwardRef((_, ref) => {
         numberOfInputs,
         inputData,
         inputPlaceholders,
+        placeholders,
       });
       setInput(inputData);
       setIsOpen(true);
@@ -135,7 +137,7 @@ const Modal = forwardRef((_, ref) => {
                       key={i}
                       className="flex items-center justify-center gap-4 text-start"
                     >
-                      <p className="w-32">{modalProps.inputPlaceholders[i]}</p>
+                      <p className="w-32">{modalProps.placeholders[i]}</p>
                       <input
                         className="input w-[200px]"
                         value={input[modalProps.inputPlaceholders[i]]}

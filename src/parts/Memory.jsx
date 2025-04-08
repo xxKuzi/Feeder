@@ -274,6 +274,7 @@ export function Memory({ children }) {
       numberOfInputs: 1,
       inputData: { password: "" },
       inputPlaceholders: ["password"],
+      placeholders: ["Heslo"],
       confirmHandle: (newData) => {
         renameUser(user.userId, newData["name"], Number(newData["number"]));
       },
