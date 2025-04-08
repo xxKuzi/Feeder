@@ -43,13 +43,14 @@ export default function Navbar() {
     <div className="flex flex-col items-center justify-center bg-gray-100 fixed top-0 left-0 w-[135px]">
       <div className="text-md justify-between h-screen flex py-2 px-2 flex-col">
         {/* Profile Section */}
-        <Link to="/profiles">
-          <div className="h-32">
+
+        <div className="h-32">
+          <Link className="group" to="/profiles">
             <div className="flex gap-2 items-center justify-start">
               <CgProfile
                 size={25}
                 className={`duration-300 ${
-                  page === "/profiles" && "text-[#2463eb]"
+                  page === "/profiles" && "text-default_blue"
                 }`}
               />
               <p className="text-xl">#{profile.number}</p>
@@ -57,8 +58,12 @@ export default function Navbar() {
             <p className="text-2xl font-semibold max-w-[115px] text-wrap">
               {profile.name}
             </p>
-          </div>
-        </Link>
+            <div className="relative w-[100px]">
+              <div className="absolute w-[0px] h-[0px] group-hover:w-full border-2 rounded-md duration-300 border-gray-100 group-hover:border-blue-400"></div>
+            </div>
+          </Link>
+        </div>
+
         {/* Navigation Links */}
         <div className="flex flex-col gap-4 justify-center">
           {navLinks.map(({ path, icon, label, size }) => {

@@ -9,6 +9,7 @@ export default {
         spaceMono: ["SpaceMono", "monospace"],
       },
       colors: {
+        default_blue: "#2463eb",
         orange1: "rgb(241, 119, 32)",
         yellow1: "rgb(255, 166, 48)",
         white1: "rgb(235, 235, 235)",

@@ -119,7 +119,7 @@ export default function Profiles() {
                     numberOfInputs: 2,
                     inputData: { name: user.name, number: user.number },
                     inputPlaceholders: ["name", "number"],
-                    //rename it - inputPlaceholders: ["Jméno hráče", "Číslo dresu"],
+                    placeholders: ["Jméno hráče", "Číslo dresu"],
                     confirmHandle: (newData) => {
                       renameUser(
                         user.userId,
