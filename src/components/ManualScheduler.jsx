@@ -10,8 +10,8 @@ export default function ManualSchedular({ formData, setFormData }) {
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <div className="flex items-center justify-center gap-4">
-        <label className="text-sm font-medium text-gray-700">
+      <div className="flex items-center justify-between w-[500px]">
+        <label className="font-medium text-nowrap text-gray-700 w-[110px]">
           Interval střelby
         </label>
         <input
@@ -21,7 +21,7 @@ export default function ManualSchedular({ formData, setFormData }) {
           max="15"
           value={formData.interval || 5}
           onChange={(e) => updateFormData(e.target.name, e.target.value)}
-          className="w-full"
+          className="w-64"
         />
         <input
           type="number"
@@ -38,8 +38,8 @@ export default function ManualSchedular({ formData, setFormData }) {
           className="w-16 border border-gray-300 rounded p-1"
         />
       </div>
-      <div className="flex items-center justify-center gap-4">
-        <label className="text-sm font-medium text-gray-700">
+      <div className="flex items-center justify-between w-[500px]">
+        <label className="font-medium text-nowrap text-gray-700 w-[110px]">
           Počet opakování
         </label>
         <input
@@ -49,7 +49,7 @@ export default function ManualSchedular({ formData, setFormData }) {
           max="100"
           value={formData.repetition}
           onChange={(e) => updateFormData(e.target.name, e.target.value)}
-          className="w-full"
+          className="w-64"
         />
         <input
           type="number"

@@ -4,6 +4,7 @@ import KeyboardOverlay from "../parts/Keyboard";
 import MotorTest from "../components/MotorTest.tsx";
 import BluetoothControls from "@/components/BluetoothControls.tsx";
 import { FaPowerOff } from "react-icons/fa6";
+import { FaSignOutAlt } from "react-icons/fa";
 import { invoke } from "@tauri-apps/api/core";
 
 export default function Testing() {
@@ -13,11 +14,15 @@ export default function Testing() {
     showKeyboard,
     checkLimitSwitch,
     setCalibrationState,
+    developerMode,
     unlockDeveloperMode,
+    singOutDeveloperMode,
   } = useData();
 
   useEffect(() => {
-    unlockDeveloperMode();
+    if (!developerMode) {
+      unlockDeveloperMode();
+    }
   }, []);
 
   return (
@@ -31,6 +36,17 @@ export default function Testing() {
       >
         <div className="flex mt-6 justify-center items-center">
           <p className="mr-2 text-xl">Vypnout</p> <FaPowerOff size={20} />
+        </div>
+      </button>
+      <button
+        onClick={() => {
+          singOutDeveloperMode();
+        }}
+        className="absolute right-4 top-12"
+      >
+        <div className="flex mt-6 justify-center items-center">
+          <p className="mr-2 text-xl">Odhlásit Developer Mode</p>{" "}
+          <FaSignOutAlt size={20} />
         </div>
       </button>
       <MotorTest />

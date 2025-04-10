@@ -3,28 +3,30 @@ import { useData } from "../parts/Memory";
 import { show } from "@tauri-apps/api/app";
 
 export default function ManualSimulation({ formData, setFormData }) {
-  const { showKeyboard } = useData();
+  const { showKeyboard, globalAngle } = useData();
   const [point, setPoint] = useState({});
   const MM_PER_PIXEL = (6.75 / 180) * 1000; // Scale factor
   const [dragIndex, setDragIndex] = useState(null); //for ability to lay down the point
 
-  useEffect(() => {
-    console.log("new point: ", point);
-  }, [point]);
+  // useEffect(() => {
+  //   console.log("new point: ", point);
+  // }, [point]);
 
   useEffect(() => {
+    // setFormData((prev) => ({ ...prev, angle: globalAngle }));
+    console.log("setting new angle: ", globalAngle);
     const radius = 180; // Half of 360px width
 
     const distanceMM = formData.distance; // Distance is stored in mm
     const distancePx = distanceMM / MM_PER_PIXEL; // Convert to pixels
-    const radianAngle = (formData.angle * Math.PI) / 180; // Convert angle to radians
+    const radianAngle = (globalAngle * Math.PI) / 180; // Convert angle to radians
 
     // Convert to (x, y) based on the center of the semi-circle
     const x = radius + distancePx * Math.cos(radianAngle);
     const y = distancePx * Math.sin(radianAngle);
 
-    const tempPoint = { x, y, angle: formData.angle, distance: distanceMM }; // Keep distance in mm
-
+    const tempPoint = { x, y, angle: globalAngle, distance: distanceMM }; // Keep distance in mm
+    console.log("tempPoint: ", tempPoint);
     setPoint(tempPoint);
   }, []);
 
@@ -97,6 +99,7 @@ export default function ManualSimulation({ formData, setFormData }) {
   useEffect(() => {
     const angle = point.angle;
     const distance = point.distance;
+    console.log("angle: ", point.angle);
     setFormData((prev) => ({ ...prev, angle, distance }));
   }, [point]); // Runs whenever point change
 
@@ -126,7 +129,7 @@ export default function ManualSimulation({ formData, setFormData }) {
       <div className="space-y-2 mt-8">
         <div className="flex items-center justify-center gap-8">
           <div className="flex flex-col items-center justify-center">
-            <label className="text-sm font-medium text-gray-700">Úhel:</label>
+            <label className="text-md font-medium text-gray-700">Úhel:</label>
             <div className="flex items-center justify-center gap-4">
               <input
                 type="range"
@@ -152,7 +155,7 @@ export default function ManualSimulation({ formData, setFormData }) {
             </div>
           </div>
           <div className="flex flex-col items-center justify-center">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-md font-medium text-gray-700">
               Vzdálenost:
             </label>
             <div className="flex items-center justify-center gap-4">
