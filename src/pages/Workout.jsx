@@ -142,7 +142,7 @@ export default function Workout() {
     const dif = ending - starting;
     console.log("updating Stepper motor angle by: ", dif, " to: ", ending);
     console.log("global angle: ", globalAngle);
-    // rotateServo(dif);
+    // rotateStepperMotor(dif);
   };
   const changeMotorSpeed = (ending) => {
     // console.log("updating Stepper motor speed to: ", ending);
