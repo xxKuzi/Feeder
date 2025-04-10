@@ -24,6 +24,10 @@ export default function Modes() {
     findAllCategories();
   }, [modes]);
 
+  useEffect(() => {
+    console.log(calibrationState);
+  }, [calibrationState]);
+
   const startWorkout = (data) => {
     setWorkoutData(data);
     navigate("/workout");
@@ -213,6 +217,7 @@ export default function Modes() {
       </div>
 
       {/* <Category headline={"Unordered"} category={0} /> */}
+      {/* Category 4 - Manual */}
       <Category headline={"Střely za 2 body"} category={1} />
       <Category headline={"Střely za 3 body"} category={2} />
       <Category headline={"Trestné hody"} category={3} />

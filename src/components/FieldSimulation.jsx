@@ -6,9 +6,11 @@ export default function FieldSimulation({
   formData,
   setFormData,
   previousData, //previousData (not null) - edit mode (otherwise new mode) - only for loading previous value on beginning
+  points,
+  setPoints,
 }) {
   const { showKeyboard } = useData();
-  const [points, setPoints] = useState([]);
+
   const [dragIndex, setDragIndex] = useState(null);
   const MAX_POINTS = 5;
 
@@ -54,18 +56,23 @@ export default function FieldSimulation({
     const circle = e.target.closest(".circle");
     const rect = circle.getBoundingClientRect();
     const radius = rect.width / 2;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
 
     if (y >= 0 && y <= radius) {
       let angle = calculateAngle(x - radius, y, radius);
       let distancePx = calculateDistance(x, y, radius);
+      let distanceMeters = distancePx * MM_PER_PIXEL;
 
-      let distanceMeters = distancePx * MM_PER_PIXEL; // Convert to meters
       if (distanceMeters > 6750) {
-        console.log("distanceMeters ", distanceMeters);
-        return;
-      } // Prevent going beyond max distance
+        // Clamp distance and recalculate x, y at max radius
+        distanceMeters = 6750;
+        const clampedDistancePx = distanceMeters / MM_PER_PIXEL;
+        const radianAngle = (angle * Math.PI) / 180;
+
+        x = radius + clampedDistancePx * Math.cos(radianAngle);
+        y = clampedDistancePx * Math.sin(radianAngle);
+      }
 
       setPoints((prev) => {
         const updated = [...prev];
@@ -161,7 +168,7 @@ export default function FieldSimulation({
             </label>
             <input
               type="number"
-              value={point.distance}
+              value={Math.round(point.distance)}
               readOnly
               onFocus={(e) =>
                 showKeyboard(e, (newValue) =>

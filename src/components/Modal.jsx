@@ -18,6 +18,7 @@ const Modal = forwardRef((_, ref) => {
       buttons = {},
 
       areaHandle = () => setIsOpen(false),
+      crossEnabled = true,
 
       cancelLabel = "Cancel",
       cancelColor = "bg-gray-400",
@@ -54,6 +55,9 @@ const Modal = forwardRef((_, ref) => {
         },
 
         buttonConfig: {
+          cross: {
+            enabled: crossEnabled,
+          },
           area: {
             handle: areaHandle,
           },
@@ -106,7 +110,6 @@ const Modal = forwardRef((_, ref) => {
         <div
           onClick={() => {
             modalProps.buttonConfig.area.handle();
-            closeModal();
           }}
           className="ml-[135px] fixed z-50 inset-0 flex justify-center items-center bg-black/20 duration-1000 transition-colors "
         >
@@ -114,15 +117,17 @@ const Modal = forwardRef((_, ref) => {
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-xl shadow px-10 py-6 transition-all scale-100 opacity-100"
           >
-            <button
-              onClick={closeModal}
-              aria-label="Close"
-              className="absolute top-2 right-2 p-1 rounded-lg text-gray-400 bg-white hover:bg-gray-50 hover:text-gray-600"
-            >
-              ✕
-            </button>
+            {modalProps.buttonConfig.cross.enabled && (
+              <button
+                onClick={closeModal}
+                aria-label="Close"
+                className="absolute top-2 right-2 p-1 rounded-lg text-gray-400 bg-white hover:bg-gray-50 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
             <div className="flex text-center flex-col items-center justify-center">
-              <div className="mx-auto mb-6 w-48">
+              <div className="mb-6 w-6s4">
                 <p className="text-xl font-bold text-gray-800">
                   {modalProps.headline}
                 </p>

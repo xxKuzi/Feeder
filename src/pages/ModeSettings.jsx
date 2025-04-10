@@ -15,6 +15,7 @@ export default function ModeSettings() {
     angles: [30, 170, 90],
     distances: [3000, 6000, 5000],
   });
+  const [points, setPoints] = useState([]);
 
   const defaultLabels = {
     category: [
@@ -140,6 +141,8 @@ export default function ModeSettings() {
             formData={formData}
             setFormData={setFormData}
             previousData={previousData}
+            points={points}
+            setPoints={setPoints}
           />
         </div>
 
@@ -178,9 +181,20 @@ export default function ModeSettings() {
 
         {/* Interval Selection */}
         <div className="form-group flex flex-col">
-          <label className="text-sm font-medium text-gray-700">
-            Interval mezi střelami (s)
-          </label>
+          <div className="flex items-center justify-between text-center">
+            <label className="text-sm font-medium text-gray-700">
+              Interval mezi střelami (s)
+            </label>
+            <button
+              className={
+                "text-blue-600 text-end mt-2 px-2 py-1 rounded-lg duration-300 " +
+                (customInterval ? "text-white bg-blue-600" : "text-blue-600")
+              }
+              onClick={() => setCustomInterval((prev) => !prev)}
+            >
+              Custom
+            </button>
+          </div>
           <div className="flex space-x-4 mt-2">
             {defaultLabels.intervals.map((value) => (
               <button
@@ -205,9 +219,51 @@ export default function ModeSettings() {
                   handleIntervalChange(0, Number(newValue))
                 )
               }
-              readOnly
+              onChange={() => {}}
               className="border border-gray-300 rounded p-2 w-20"
             />
+          </div>
+
+          <div>
+            {points.slice(0, points.length - 1).map((_, i) => (
+              <div
+                key={i}
+                className={`flex space-x-4 mt-2 transform transition-all duration-500 ease-out ${
+                  customInterval
+                    ? "translate-y-0 opacity-100 max-h-screen "
+                    : "-translate-y-full opacity-0 max-h-0"
+                }`}
+                style={{ overflow: "hidden" }}
+              >
+                {defaultLabels.intervals.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => handleIntervalChange(i + 1, value)}
+                    className={`px-4 py-2 rounded transition-opacity duration-00 ease-out ${
+                      formData.intervals[i + 1] === value
+                        ? "bg-blue-600 text-white" // Delay on active button
+                        : "bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {value}
+                  </button>
+                ))}
+                <input
+                  type="number"
+                  min="1"
+                  step={1}
+                  value={formData.intervals[i + 1] || ""}
+                  onFocus={(e) =>
+                    showKeyboard(e, () =>
+                      handleIntervalChange(i + 1, Number(e.target.value))
+                    )
+                  }
+                  onChange={() => {}}
+                  className="border border-gray-300 rounded p-2 w-20 transition-transform duration-500 ease-out delay-300" // Delay only for the input
+                />
+              </div>
+            ))}
           </div>
         </div>
 

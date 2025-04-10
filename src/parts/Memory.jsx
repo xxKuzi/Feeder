@@ -27,6 +27,13 @@ export function Memory({ children }) {
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
   const [calibrationState, setCalibrationState] = useState("false"); //false, running, true
   const [developerMode, setDeveloperMode] = useState(false);
+  const [calibration, setCalibration] = useState(false);
+  const [manualMemory, setManualMemory] = useState({
+    repetition: 10,
+    interval: 5,
+    distance: 0,
+    angle: 90,
+  });
 
   useEffect(() => {
     loadCurrentData();
@@ -232,19 +239,34 @@ export function Memory({ children }) {
 
   const rotateServo = async (degrees) => {
     try {
-      await invoke("rotate_servo", { times: (6400 / 360) * degrees * 3 });
+      await invoke("rotate_stepper_motor", {
+        times: (6400 / 360) * degrees * 3,
+      });
     } catch (error) {
       console.error("Failed to update motor/servo value:", error);
     }
   };
 
-  const calibrate = async () => {
+  const calibrate = () => {
     setCalibrationState("running");
+    setCalibration((prev) => !prev);
+  };
+
+  useEffect(() => {
+    performCalibration();
+  }, [calibration]);
+
+  const performCalibration = async () => {
     try {
       const state = await invoke("calibrate_stepper_motor");
+      console.log("state", state);
       if (state === "true") {
         setGlobalAngle(0);
-        setCalibrationState("true");
+        console.log("successfully calibrated");
+
+        setTimeout(() => {
+          setCalibrationState("true");
+        }, 1000);
       }
     } catch (error) {
       setCalibrationState("false");
@@ -275,11 +297,23 @@ export function Memory({ children }) {
       inputData: { password: "" },
       inputPlaceholders: ["password"],
       placeholders: ["Heslo"],
-      confirmHandle: (newData) => {
-        renameUser(user.userId, newData["name"], Number(newData["number"]));
+      areaHandle: () => {},
+      crossEnabled: false,
+      cancelHandle: () => {
+        navigate("/");
+      },
+      confirmHandle: (data) => {
+        console.log("data", data);
+        if (data.password === "jkl") {
+          setDeveloperMode(true);
+        } else {
+          navigate("/");
+        }
       },
     });
   };
+
+  const toggleServo = async () => {};
 
   const contextData = {
     statistics,
@@ -313,6 +347,9 @@ export function Memory({ children }) {
     setCalibrationState,
     developerMode,
     unlockDeveloperMode,
+    toggleServo,
+    manualMemory,
+    setManualMemory,
   };
 
   return (

@@ -44,7 +44,7 @@ pub mod motor_system {
             pressed
         }
 
-        pub fn rotate_servo(&mut self, times: i32) {
+        pub fn rotate_stepper_motor(&mut self, times: i32) {
             println!("Rotating stepper motor for {} steps", times);
 
             if times >= 0 {
@@ -112,7 +112,7 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn rotate_servo(times: i32) -> Result<String, String> {
+    pub fn rotate_stepper_motor(times: i32) -> Result<String, String> {
         with_servo(|servo| {
             println!("Checking safety condition...");
 
@@ -125,7 +125,7 @@ pub mod motor_system {
                 servo.enable_pin.set_high();                            
             }
 
-            servo.rotate_servo(times);
+            servo.rotate_stepper_motor(times);
 
             
 
@@ -169,13 +169,13 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn rotate_servo(_times: i32) -> Result<String, String> {
+    pub fn rotate_stepper_motor(_times: i32) -> Result<String, String> {
         Err("Stepper motor control not supported on this platform".to_string())
     }
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
-        thread::sleep(Duration::from_millis(2000));
+        // thread::sleep(Duration::from_millis(2000));
         Ok("true".to_string())
         //Err("Calibration not supported on this platform".to_string())
     }

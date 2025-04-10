@@ -59,7 +59,13 @@ export default function Navbar() {
               {profile.name}
             </p>
             <div className="relative w-[100px]">
-              <div className="absolute w-[0px] h-[0px] group-hover:w-full border-2 rounded-md duration-300 border-gray-100 group-hover:border-blue-400"></div>
+              <div
+                className={`absolute w-[0px] group-hover:w-full border-2 rounded-md duration-300  ${
+                  page === "/profiles"
+                    ? "w-full border-blue-400"
+                    : "border-gray-100 group-hover:border-blue-300"
+                }`}
+              ></div>
             </div>
           </Link>
         </div>
