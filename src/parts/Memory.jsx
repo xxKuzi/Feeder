@@ -237,13 +237,13 @@ export function Memory({ children }) {
     console.log("slowing down");
   };
 
-  const rotateServo = async (degrees) => {
+  const rotateStepperMotor = async (degrees) => {
     try {
       await invoke("rotate_stepper_motor", {
         times: (6400 / 360) * degrees * 3,
       });
     } catch (error) {
-      console.error("Failed to update motor/servo value:", error);
+      console.error("Failed to update stepper motor value:", error);
     }
   };
 
@@ -278,7 +278,7 @@ export function Memory({ children }) {
     try {
       await invoke("check_limit_switch");
     } catch (error) {
-      console.error("Failed to calibrate stepper motor:", error);
+      console.error("Failed to check limit switch:", error);
     }
   };
 
@@ -340,7 +340,7 @@ export function Memory({ children }) {
     openModal,
     showKeyboard,
     slowdownMotor,
-    rotateServo,
+    rotateStepperMotor,
     calibrate,
     checkLimitSwitch,
     calibrationState,

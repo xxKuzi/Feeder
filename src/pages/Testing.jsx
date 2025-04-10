@@ -34,6 +34,10 @@ export default function Testing() {
         </div>
       </button>
       <MotorTest />
+      <BluetoothControls />
+      <p className="mt-32">
+        --------------------------------------------------------------------------------------------------------------------------------
+      </p>
       <div className="flex items-center justify-center gap-4 mt-6">
         <button
           onClick={() => checkLimitSwitch()}
@@ -71,7 +75,6 @@ export default function Testing() {
           className="p-2 border rounded"
         />
       </div>
-      <BluetoothControls />
     </div>
   );
 }

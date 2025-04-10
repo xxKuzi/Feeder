@@ -5,14 +5,14 @@ pub mod motor_system {
     use once_cell::sync::Lazy;
 
     #[derive(Debug)]
-    pub struct ServoController {
-        pulse_pin: OutputPin,        // Pin for servo pulses
+    pub struct Controller {
+        pulse_pin: OutputPin,        // Pin for pulses
         limit_switch_pin: InputPin,  // Limit switch for calibration/safety
         direction_pin: OutputPin,    // Pin to control direction
         enable_pin: OutputPin,       // Pin to enable/disable the motor
     }
 
-    impl ServoController {
+    impl Controller {
         pub fn new(
             pulse_pin_number: u8,
             limit_switch_pin_number: u8,
@@ -30,7 +30,7 @@ pub mod motor_system {
             let direction_pin = gpio.get(direction_pin_number).map_err(|e| e.to_string())?.into_output();
             let enable_pin = gpio.get(enable_pin_number).map_err(|e| e.to_string())?.into_output();
 
-            Ok(ServoController {
+            Ok(Controller {
                 pulse_pin,
                 limit_switch_pin,
                 direction_pin,
@@ -83,66 +83,66 @@ pub mod motor_system {
     }
 
     // 🔁 Shared static instance
-    static SERVO_INSTANCE: Lazy<Mutex<Option<ServoController>>> = Lazy::new(|| Mutex::new(None));
+    static CONTROLLER_INSTANCE: Lazy<Mutex<Option<Controller>>> = Lazy::new(|| Mutex::new(None));
 
     // 🧠 Auto-initializing access wrapper
-    fn with_servo<F, R>(f: F) -> Result<R, String>
+    fn with_controller<F, R>(f: F) -> Result<R, String>
     where
-        F: FnOnce(&mut ServoController) -> Result<R, String>,
+        F: FnOnce(&mut Controller) -> Result<R, String>,
     {
-        let mut guard = SERVO_INSTANCE.lock().unwrap();
+        let mut guard = CONTROLLER_INSTANCE.lock().unwrap();
 
         if guard.is_none() {
             println!("Servo not initialized – performing auto-init...");
-            let servo = ServoController::new(12, 24, 23, 16)?; // default GPIOs
-            *guard = Some(servo);
+            let instance = Controller::new(12, 24, 23, 16)?; // default GPIOs
+            *guard = Some(instance);
         }
 
-        if let Some(ref mut servo) = *guard {
-            f(servo)
+        if let Some(ref mut instance) = *guard {
+            f(instance)
         } else {
-            Err("Failed to initialize ServoController".to_string())
+            Err("Failed to initialize Controller".to_string())
         }
     }
 
-    // 🧪 Optional manual init (now just calls with_servo)
+    // 🧪 Optional manual init (now just calls with_controller)
     #[tauri::command]
-    pub fn init_servo() -> Result<String, String> {
-        with_servo(|_| Ok("Servo auto-initialized or already initialized".to_string()))
+    pub fn init_instance() -> Result<String, String> {
+        with_controller(|_| Ok("Servo auto-initialized or already initialized".to_string()))
     }
 
     #[tauri::command]
     pub fn rotate_stepper_motor(times: i32) -> Result<String, String> {
-        with_servo(|servo| {
+        with_controller(|instance| {
             println!("Checking safety condition...");
 
 
             //First check
-           if servo.limit_switch_pin.is_high() {                
-               servo.enable_pin.set_low();
+           if instance.limit_switch_pin.is_high() {                
+               instance.enable_pin.set_low();
             } else {
                 println!("Limit switch is LOW (pressed) – ABORTING for safety");
-                servo.enable_pin.set_high();                            
+                instance.enable_pin.set_high();                            
             }
 
-            servo.rotate_stepper_motor(times);
+            instance.rotate_stepper_motor(times);
 
             
 
-            Ok(format!("Rotated servo {} steps (with safety)", times))
+            Ok(format!("Rotated stepper motor {} steps (with safety)", times))
         })
     }
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
-        with_servo(|servo| servo.calibrate())
+        with_controller(|instance| instance.calibrate())
     }
 
     #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
-        with_servo(|servo| {
+        with_controller(|instance| {
             for _ in 0..10 { // check 10 times then return
-                let pressed = servo.is_limit_switch_pressed();
+                let pressed = instance.is_limit_switch_pressed();
                 let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
                 println!("Limit switch state: {}", status);
                 thread::sleep(Duration::from_millis(500));
@@ -159,13 +159,13 @@ pub mod motor_system {
 pub mod motor_system {
     use std::{thread, time::Duration, sync::Mutex};
     #[tauri::command]
-    pub fn init_servo() -> Result<String, String> {
-        Err("Servo control not supported on this platform".to_string())
+    pub fn init_instance() -> Result<String, String> {
+        Err("You can not init instance supported on this platform".to_string())
     }
 
     #[tauri::command]
     pub fn check_limit_switch() -> Result<String, String> {
-        Err("Servo control not supported on this platform".to_string())
+        Err("Checking limit switch state is not supported on this platform".to_string())
     }
 
     #[tauri::command]
