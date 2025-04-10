@@ -26,14 +26,16 @@ export function Memory({ children }) {
   const [globalAngle, setGlobalAngle] = useState(0);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
   const [calibrationState, setCalibrationState] = useState("false"); //false, running, true
+  const [globalServoState, setGlobalServoState] = useState(false);
   const [developerMode, setDeveloperMode] = useState(false);
-  const [calibration, setCalibration] = useState(false);
+  const [refresh, setRefresh] = useState(false);
   const [manualMemory, setManualMemory] = useState({
     repetition: 10,
     interval: 5,
     distance: 0,
     angle: 90,
   });
+  //at the beginning IT IS NOT VALID
 
   useEffect(() => {
     loadCurrentData();
@@ -249,12 +251,14 @@ export function Memory({ children }) {
 
   const calibrate = () => {
     setCalibrationState("running");
-    setCalibration((prev) => !prev);
+    setRefresh((prev) => !prev);
   };
 
   useEffect(() => {
+    toggleServo(true);
+    setGlobalServoState(true);
     performCalibration();
-  }, [calibration]);
+  }, [refresh]);
 
   const performCalibration = async () => {
     try {
@@ -313,7 +317,14 @@ export function Memory({ children }) {
     });
   };
 
-  const toggleServo = async () => {};
+  const singOutDeveloperMode = () => {
+    setDeveloperMode(false);
+    navigate("/");
+  };
+
+  const toggleServo = async (newState) => {
+    setGlobalServoState(newState);
+  };
 
   const contextData = {
     statistics,
@@ -347,9 +358,11 @@ export function Memory({ children }) {
     setCalibrationState,
     developerMode,
     unlockDeveloperMode,
+    globalServoState,
     toggleServo,
     manualMemory,
     setManualMemory,
+    singOutDeveloperMode,
   };
 
   return (

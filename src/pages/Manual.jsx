@@ -5,22 +5,24 @@ import ManualScheduler from "@/components/ManualScheduler";
 import { useNavigate } from "react-router-dom";
 
 export default function Manual() {
-  const [isDisabled, setIsDisabled] = useState(false);
+  const [isPositionDisabled, setIsPositionDisabled] = useState(false);
+  const [isPassDisabled, setIsPassDisabled] = useState(false);
   const [saveDelay, setSaveDelay] = useState(false);
   const {
     globalAngle,
     setGlobalAngle,
     globalMotorSpeed,
-    rotateServo,
+    rotateStepperMotor,
     setWorkoutData,
     manualMemory,
     setManualMemory,
+    toggleServo,
   } = useData();
   const navigate = useNavigate();
 
   const changeAngle = () => {
     let difference = manualMemory.angle - globalAngle;
-    rotateServo(difference);
+    rotateStepperMotor(difference);
     setGlobalAngle(manualMemory.angle);
     // manualMemory.distance - globalMotorSpeed
 
@@ -31,13 +33,22 @@ export default function Manual() {
     }, 3000);
   };
 
+  const pass = () => {
+    setIsPassDisabled(true);
+    toggleServo(true);
+    setTimeout(() => {
+      setIsPassDisabled(false);
+      toggleServo(false);
+    }, 2000);
+  };
+
   //Check if saveDelay is false
   useEffect(() => {
     if (globalAngle !== manualMemory.angle && !saveDelay) {
       // add also speed / distance
-      setIsDisabled(false);
+      setIsPositionDisabled(false);
     } else {
-      setIsDisabled(true);
+      setIsPositionDisabled(true);
     }
   }, [manualMemory, saveDelay]);
 
@@ -66,17 +77,31 @@ export default function Manual() {
       <div className="space-x-4">
         <button
           className={`button__positive button mt-8 ${
-            isDisabled ? "bg-gray-200 text-gray-400 hover:bg-gray-200" : ""
+            isPositionDisabled
+              ? "bg-gray-200 text-gray-400 hover:bg-gray-200"
+              : ""
           }`}
-          disabled={isDisabled}
+          disabled={isPositionDisabled}
           onClick={changeAngle}
         >
           Vyzkoušet pozici
         </button>
-        <button className="button button__submit mt-4" onClick={startWorkout}>
-          Start
+        <button
+          className={`button__positive button mt-8 ${
+            isPassDisabled ? "bg-gray-200 text-gray-400 hover:bg-gray-200" : ""
+          }`}
+          disabled={isPassDisabled}
+          onClick={pass}
+        >
+          Vyzkoušet přihrávku
         </button>
       </div>
+      <button
+        className="button px-10 py-4 button__submit mt-4"
+        onClick={startWorkout}
+      >
+        Start
+      </button>
     </div>
   );
 }
