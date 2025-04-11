@@ -108,7 +108,6 @@ export default function Workout() {
 
   //At the end
   const end = async () => {
-    console.log(statistics);
     navigate("/result", {
       state: {
         category: workoutData.category,
