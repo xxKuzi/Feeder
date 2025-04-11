@@ -108,8 +108,12 @@ export default function Workout() {
 
   //At the end
   const end = async () => {
-    await addRecord(statistics.made, statistics.taken);
-    navigate("/result");
+    console.log(statistics);
+    navigate("/result", {
+      state: {
+        category: workoutData.category,
+      },
+    });
   };
 
   //WHEN COUNTDOWN ENDS
@@ -140,11 +144,7 @@ export default function Workout() {
   };
 
   const changeMotorAngle = (starting, ending) => {
-    console.log("starting: ", starting);
-    console.log("ending: ", ending);
     const dif = ending - starting;
-    console.log("updating Stepper motor angle by: ", dif);
-    // console.log("global angle: ", globalAngle);
     rotateStepperMotor(dif);
   };
   const changeMotorSpeed = (ending) => {
