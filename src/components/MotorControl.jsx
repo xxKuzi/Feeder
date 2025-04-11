@@ -121,6 +121,7 @@ export default function MotorControl({
         let newRound = prev + 1;
         if (newRound >= motorData.repetition) {
           runningRef.current = false;
+          console.log("Workout finished");
           end();
         }
         return newRound;
