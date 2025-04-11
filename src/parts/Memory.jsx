@@ -27,7 +27,7 @@ export function Memory({ children }) {
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
   const [calibrationState, setCalibrationState] = useState("false"); //false, running, true
   const [globalServoState, setGlobalServoState] = useState(false);
-  const [developerMode, setDeveloperMode] = useState(false);
+  const [developerMode, setDeveloperMode] = useState(true);
   const [refresh, setRefresh] = useState(false);
   const [manualMemory, setManualMemory] = useState({
     repetition: 10,
