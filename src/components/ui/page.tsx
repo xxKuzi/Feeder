@@ -25,7 +25,8 @@ export default function DemoPage() {
         percentage: Math.round((record.made / record.taken) * 100) + "%",
       };
     });
-    console.log("data :", data);
+    // console.log("data :", data);
+    const reversedData = data.reverse();
     setData(data);
   }, [records]);
 
@@ -35,7 +36,7 @@ export default function DemoPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 mt-8">
       <DataTable columns={columns} data={data} />
     </div>
   );
