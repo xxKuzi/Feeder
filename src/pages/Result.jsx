@@ -14,7 +14,6 @@ export default function Result() {
   useEffect(() => {
     if (hasSaved.current) return;
     hasSaved.current = true;
-    console.log("Category: ", category);
     const save = async () => {
       await addRecord(made, taken);
     };
