@@ -54,17 +54,16 @@ pub mod motor_system {
             }
 
             for _ in 0..times.abs() {
-                // if self.limit_switch_pin.is_low() {
-                //     self.enable_pin.set_high();
-                    
-                //     println!("Limit switch is LOW (pressed) INSIDE");
-                // }                
-                // else{     
-                self.pulse_pin.set_high();
-                thread::sleep(Duration::from_micros(469));
-                self.pulse_pin.set_low();
-                thread::sleep(Duration::from_micros(469));
-                // }
+                if self.limit_switch_pin.is_high() {
+                    self.pulse_pin.set_high();
+                    thread::sleep(Duration::from_micros(469));
+                    self.pulse_pin.set_low();
+                    thread::sleep(Duration::from_micros(469));
+                }                
+                else{                     
+                    self.enable_pin.set_high();                    
+                    println!("Limit switch is LOW (pressed) INSIDE");
+                }
             }
         }
 
