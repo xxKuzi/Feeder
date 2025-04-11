@@ -17,7 +17,6 @@ export default function Testing() {
     developerMode,
     unlockDeveloperMode,
     singOutDeveloperMode,
-    setGlobalAngle,
   } = useData();
 
   useEffect(() => {
@@ -67,12 +66,6 @@ export default function Testing() {
           className="button button__negative"
         >
           calibration false
-        </button>
-        <button
-          onClick={() => setGlobalAngle(90)}
-          className="button button__negative"
-        >
-          calibration 90
         </button>
       </div>
       <div className="flex flex-col items-center justify-center bg-gray-200 rounded-xl mt-10 px-4 py-2">
