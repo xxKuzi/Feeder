@@ -78,7 +78,7 @@ pub mod motor_system {
             }
 
             println!("Calibration complete: Limit switch activated.");
-            Ok("true".to_string())
+            Ok("end_place".to_string())
         }
     }
 
@@ -170,13 +170,14 @@ pub mod motor_system {
 
     #[tauri::command]
     pub fn rotate_stepper_motor(_times: i32) -> Result<String, String> {
-        Err("Stepper motor control not supported on this platform".to_string())
+        Ok("Rotated stepper motor 4800 steps (with safety)".to_string())
+        // Err("Stepper motor control not supported on this platform".to_string())
     }
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
         // thread::sleep(Duration::from_millis(2000));
-        Ok("true".to_string())
+        Ok("end_place".to_string())
         //Err("Calibration not supported on this platform".to_string())
     }
 }
