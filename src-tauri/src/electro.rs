@@ -56,7 +56,8 @@ pub mod motor_system {
             for _ in 0..times.abs() {
                 if self.limit_switch_pin.is_low() {
                     self.enable_pin.set_high();
-                    console.log("Limit switch is LOW (pressed) INSIDE");
+                    
+                    println!("Limit switch is LOW (pressed) INSIDE");
                 }                
                 else{     
                 self.pulse_pin.set_high();
