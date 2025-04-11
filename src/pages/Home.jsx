@@ -20,9 +20,9 @@ export default function Home() {
         />
         <Section
           data={{
-            name: "Naposledy použito",
+            name: "Manulní ovládání",
             img: "clock.jpg",
-            link: "/menu",
+            link: "/manual",
             color: "white",
           }}
         />

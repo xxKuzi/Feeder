@@ -20,7 +20,7 @@ export function Memory({ children }) {
     intervals: [5],
   });
   const [profile, setProfile] = useState({ userId: 0, name: "XYZ" });
-  const [records, setRecords] = useState([{}]);
+  const [records, setRecords] = useState([]);
   const [users, setUsers] = useState([{ name: "XYZ" }]);
   const [modes, setModes] = useState([{ name: "XYZ" }]);
   const [globalAngle, setGlobalAngle] = useState(0);
@@ -43,10 +43,6 @@ export function Memory({ children }) {
     loadUsers();
     loadModes();
   }, []);
-
-  useEffect(() => {
-    console.log("GLOBAL MEMORY ANGLE: CHANGED: ", globalAngle);
-  }, [globalAngle]);
 
   useEffect(() => {
     if (users[0].name !== "XYZ") {
@@ -242,7 +238,7 @@ export function Memory({ children }) {
   const rotateStepperMotor = async (degrees) => {
     try {
       await invoke("rotate_stepper_motor", {
-        times: (6400 / 360) * degrees * 3,
+        times: Math.round((6400 / 360) * degrees * 3),
       });
     } catch (error) {
       console.error("Failed to update stepper motor value:", error);
@@ -263,10 +259,8 @@ export function Memory({ children }) {
   const performCalibration = async () => {
     try {
       const state = await invoke("calibrate_stepper_motor");
-      console.log("state", state);
       if (state === "true") {
         setGlobalAngle(0);
-        console.log("successfully calibrated");
 
         setTimeout(() => {
           setCalibrationState("true");
