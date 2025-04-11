@@ -199,16 +199,20 @@ export default function Modes() {
             className={`button mr-4 text-white duration-300 ${
               calibrationState === "true"
                 ? "bg-blue-500"
-                : calibrationState === "false"
-                ? "bg-black"
-                : "bg-green-400"
+                : calibrationState === "end_place"
+                ? "bg-yellow-300"
+                : calibrationState === "running"
+                ? "bg-green-400"
+                : "bg-black"
             }`}
           >
             {calibrationState === "true"
               ? "Kalibrováno✅"
-              : calibrationState === "false"
-              ? "Vyžaduje kalibraci❗"
-              : "Kalibrování➡️"}
+              : calibrationState === "end_place"
+              ? "Konec nalezen"
+              : calibrationState === "running"
+              ? "Kalibrování➡️"
+              : "Vyžaduje kalibraci❗"}
           </button>
           <Link to="/mode-settings">
             <button className="button button__positive">Přidat mode</button>

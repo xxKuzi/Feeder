@@ -237,33 +237,49 @@ export function Memory({ children }) {
 
   const rotateStepperMotor = async (degrees) => {
     try {
-      await invoke("rotate_stepper_motor", {
+      const result = await invoke("rotate_stepper_motor", {
         times: Math.round((6400 / 360) * degrees * 3),
       });
+      return result;
     } catch (error) {
       console.error("Failed to update stepper motor value:", error);
+      return null;
     }
   };
 
   const calibrate = () => {
     setCalibrationState("running");
-    setRefresh((prev) => !prev);
+    setRefresh(false);
+    setTimeout(() => {
+      setRefresh(true);
+    }, 1000);
   };
 
   useEffect(() => {
-    toggleServo(true);
-    setGlobalServoState(true);
-    performCalibration();
+    if (refresh) {
+      //set global servo to true
+      toggleServo(true);
+      setGlobalServoState(true);
+      performCalibration();
+    }
   }, [refresh]);
 
   const performCalibration = async () => {
     try {
       const state = await invoke("calibrate_stepper_motor");
-      if (state === "true") {
-        setGlobalAngle(0);
 
-        setTimeout(() => {
-          setCalibrationState("true");
+      if (state === "end_place") {
+        setCalibrationState("end_place");
+        setTimeout(async () => {
+          const defaultPosition = await rotateStepperMotor(90);
+          console.log("defaultPosition", defaultPosition);
+
+          if (
+            defaultPosition === "Rotated stepper motor 4800 steps (with safety)"
+          ) {
+            setCalibrationState("true");
+          }
+          setGlobalAngle(90);
         }, 1000);
       }
     } catch (error) {
