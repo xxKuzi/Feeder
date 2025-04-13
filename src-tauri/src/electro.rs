@@ -116,7 +116,7 @@ pub mod motor_system {
 
         if guard.is_none() {
             println!("Servo not initialized – performing auto-init...");
-            let instance = Controller::new(12, 24, 23, 16)?; // default GPIOs
+            let instance = Controller::new(12, 24, 1, 23, 16)?; // default GPIOs
             *guard = Some(instance);
         }
 
