@@ -29,16 +29,7 @@ export default function Testing() {
   return (
     <div className="relative flex flex-col items-center justify-center">
       <h1 className="headline mt-8">Testing</h1>
-      <button
-        onClick={() => {
-          invoke("exit_app");
-        }}
-        className="absolute right-4 top-4"
-      >
-        <div className="flex mt-6 justify-center items-center">
-          <p className="mr-2 text-xl">Vypnout</p> <FaPowerOff size={20} />
-        </div>
-      </button>
+
       <button
         onClick={() => {
           singOutDeveloperMode();

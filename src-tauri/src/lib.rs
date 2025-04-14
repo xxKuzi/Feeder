@@ -7,7 +7,7 @@ use log::{info, error, warn};
 use bluetooth::{get_workout_state, init_ble, pause_workout, start_workout, AppState};
 use sql::{
     connect_to_database, add_record, add_user, load_users, select_user, delete_user,
-    load_current_data, load_records, rename_user, add_mode, load_modes, delete_mode, update_mode,
+    load_current_data, load_records, rename_user, add_mode, load_modes, delete_mode, update_mode, save_angle, save_last_calibration
 };
 use electro::motor_system::{rotate_stepper_motor, calibrate_stepper_motor, check_limit_switch};
 
@@ -78,7 +78,9 @@ pub async fn run() {
         get_workout_state,
         rotate_stepper_motor,
         calibrate_stepper_motor,
-        check_limit_switch,        
+        check_limit_switch,     
+        save_angle,
+        save_last_calibration,
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

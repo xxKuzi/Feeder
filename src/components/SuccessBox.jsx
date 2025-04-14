@@ -52,9 +52,11 @@ const SuccessBox = ({ records, days, headline }) => {
 
           <div className="relative">
             <p className="text-5xl mt-2 font-bold">{boxData.successRate}</p>
-            <p className="-right-5 bottom-0 text-xl absolute text-gray-600">
-              %
-            </p>
+            {boxData.successRate && (
+              <p className="-right-5 bottom-0 text-xl absolute text-gray-600">
+                %
+              </p>
+            )}
           </div>
 
           <div className="flex text-2xl items-center justify-between w-[200px]">
