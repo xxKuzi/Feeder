@@ -32,7 +32,7 @@ export function Memory({ children }) {
   const [manualMemory, setManualMemory] = useState({
     repetition: 10,
     interval: 5,
-    distance: 0,
+    distance: 3700,
     angle: 90,
   });
   //at the beginning IT IS NOT VALID
@@ -279,7 +279,9 @@ export function Memory({ children }) {
             defaultPosition ===
             "Rotated stepper motor 4800 steps (safety: false)"
           ) {
-            setCalibrationState("true");
+            setTimeout(() => {
+              setCalibrationState("true");
+            }, 5000);
           }
           setGlobalAngle(90);
         }, 1000);
