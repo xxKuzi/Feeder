@@ -119,10 +119,17 @@ export function Memory({ children }) {
       : setStatistics((prev) => ({ ...prev, taken: prev.taken + 1 }));
   };
 
-  async function addRecord(made, taken) {
+  async function addRecord(name, category, made, taken) {
+    console.log("addRecord", name, category, made, taken);
     try {
       await invoke("add_record", {
-        data: { made, taken, user_id: profile.userId },
+        data: {
+          name,
+          category,
+          made,
+          taken,
+          user_id: profile.userId,
+        },
       });
       console.log("Record added successfully");
     } catch (error) {

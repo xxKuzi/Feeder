@@ -6,7 +6,7 @@ export default function Result() {
   const { records, slowdownMotor, statistics, addRecord } = useData();
   const location = useLocation();
   const { made, taken } = statistics;
-  const { category } = location.state || { category: 0 };
+  const { category, name } = location.state || { category: 0, name: "" };
   const hasSaved = useRef(false);
 
   const accuracy = taken > 0 ? made / taken : 0;
@@ -15,7 +15,9 @@ export default function Result() {
     if (hasSaved.current) return;
     hasSaved.current = true;
     const save = async () => {
-      await addRecord(made, taken);
+      console.log("category", category);
+      console.log("name", name);
+      await addRecord(name, category, made, taken);
     };
 
     save();

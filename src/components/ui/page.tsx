@@ -25,7 +25,7 @@ export default function DemoPage() {
         percentage: Math.round((record.made / record.taken) * 100) + "%",
       };
     });
-    // console.log("data :", data);
+    console.log("data :", data);
     const reversedData = data.reverse();
     setData(data);
   }, [records]);

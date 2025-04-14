@@ -6,6 +6,8 @@ import { ColumnDef } from "@tanstack/react-table";
 // You can use a Zod schema here if you want.
 export type Record = {
   userId: number;
+  name: string;
+  category: string;
   made: number;
   taken: number;
   percentage: string;
@@ -17,6 +19,14 @@ export const columns: ColumnDef<Record>[] = [
   {
     accessorKey: "user",
     header: "Hráč",
+  },
+  {
+    accessorKey: "name",
+    header: "Mod",
+  },
+  {
+    accessorKey: "category",
+    header: "Kategorie",
   },
   {
     accessorKey: "made",

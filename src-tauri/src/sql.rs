@@ -49,6 +49,8 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
     CREATE TABLE IF NOT EXISTS records
     (
         records_id      INTEGER PRIMARY KEY NOT NULL,
+        name            TEXT NOT NULL,
+        category        INTEGER NOT NULL,
         made            INTEGER NOT NULL,
         taken           INTEGER NOT NULL,
         user_id         INTEGER,
@@ -80,8 +82,8 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
     INSERT INTO users (user_id, name, number)    VALUES (1, 'Default', 69);
     INSERT INTO data (user_id)                VALUES (1);
     INSERT INTO modes (mode_id, category, name, predefined)                VALUES (0, 0, 'DEFAULT random New', true);
-    INSERT INTO modes (category, name, predefined)                VALUES (1, 'DEFAULT Two Point', true);
-    INSERT INTO modes (category, name, predefined)                VALUES (2, 'DEFAULT Three Point', true);
+    INSERT INTO modes (category, name, predefined)                VALUES (1, 'Two Point', true);
+    INSERT INTO modes (category, name, predefined, distances)                VALUES (2, 'Three Point', true, '[6650, 6500, 6700]');
     ";
 
     sqlx::query(&qry).execute(&*pool).await // Execute the query
@@ -179,7 +181,7 @@ pub struct User {
     user_id: u32,
     name: String,
     number: Option<u32>,
-    created_at: String, // Adjust if you prefer a DateTime type
+    created_at: String, 
 }
 
 #[tauri::command]
@@ -231,8 +233,10 @@ pub async fn load_current_data() -> Result<Vec<CurrentUser>, String> {
 // Data structures and Tauri commands
 #[derive(Serialize, Deserialize)]
 pub struct ShotData {
+    name: String,
+    category: i32,
     made: u32,
-    taken: u32,
+    taken: u32,    
     user_id: u32,
 }
 
@@ -247,10 +251,12 @@ pub async fn add_record(data: ShotData) -> Result<(), String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "INSERT INTO records (made, taken, user_id) VALUES (?, ?, ?)";
+    let qry = "INSERT INTO records (name, category, made, taken, user_id ) VALUES (?, ?, ?, ?, ?)";
     let result = sqlx::query(&qry)
+        .bind(data.name)        
+        .bind(data.category)    
         .bind(data.made)
-        .bind(data.taken)
+        .bind(data.taken)        
         .bind(data.user_id)
         .execute(&*pool)
         .await;

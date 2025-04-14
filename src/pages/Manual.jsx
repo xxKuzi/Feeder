@@ -54,7 +54,7 @@ export default function Manual() {
   const startWorkout = (data) => {
     data = {
       name: "Manual",
-      category: "4",
+      category: manualMemory.distance > 6500 ? 2 : 1,
       angles: [manualMemory.angle],
       distances: [manualMemory.distance],
       intervals: [manualMemory.interval],
