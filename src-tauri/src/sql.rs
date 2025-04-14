@@ -83,7 +83,7 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
     INSERT INTO data (user_id)                VALUES (1);
     INSERT INTO modes (mode_id, category, name, predefined)                VALUES (0, 0, 'DEFAULT random New', true);
     INSERT INTO modes (category, name, predefined)                VALUES (1, 'Two Point', true);
-    INSERT INTO modes (category, name, predefined, distances)                VALUES (2, 'Three Point', true, '[6650, 6500, 6700]');
+    INSERT INTO modes (category, name, predefined, distances)                VALUES (2, 'Three Point', true, '[6650,6500,6700]');
     ";
 
     sqlx::query(&qry).execute(&*pool).await // Execute the query
