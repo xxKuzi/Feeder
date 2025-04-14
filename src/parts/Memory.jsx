@@ -235,10 +235,11 @@ export function Memory({ children }) {
     console.log("slowing down");
   };
 
-  const rotateStepperMotor = async (degrees) => {
+  const rotateStepperMotor = async (degrees, safety = true) => {
     try {
       const result = await invoke("rotate_stepper_motor", {
         times: Math.round((6400 / 360) * degrees * 3),
+        safety,
       });
       return result;
     } catch (error) {
@@ -271,7 +272,7 @@ export function Memory({ children }) {
       if (state === "end_place") {
         setCalibrationState("end_place");
         setTimeout(async () => {
-          const defaultPosition = await rotateStepperMotor(90);
+          const defaultPosition = await rotateStepperMotor(90, false);
           console.log("defaultPosition", defaultPosition);
 
           if (
