@@ -59,7 +59,7 @@ pub mod motor_system {
             }
         
             let steps = times.abs();
-            let accel_steps = 50.min(steps); // Number of steps over which to accelerate
+            let accel_steps = 200.min(steps); // Number of steps over which to accelerate
             let max_delay = 1000; // Start delay in microseconds (slowest)
             let min_delay = 469;  // Final delay in microseconds (target speed)
         
@@ -154,7 +154,7 @@ pub fn rotate_stepper_motor(times: i32) -> Result<String, String> {
         }
 
 
-        instance.enable_pin.set_high(); //HIGH - disable motor
+       // instance.enable_pin.set_high(); //HIGH - disable motor - NOT USED 
         Ok(format!("Rotated stepper motor {} steps (with safety)", times))
     })
 }
