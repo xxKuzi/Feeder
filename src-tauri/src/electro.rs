@@ -141,8 +141,8 @@ pub mod motor_system {
     
     #[tauri::command]
     pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
-        std::thread::spawn(move || {
-            if let Err(e) = with_controller(|instance| {
+        let handle = std::thread::spawn(move || {
+            with_controller(|instance| {
                 println!("Checking safety condition...");
     
                 instance.enable_pin.set_low(); // LOW - motor works
@@ -159,14 +159,19 @@ pub mod motor_system {
                     instance.rotate_stepper_motor(times, safety);
                 }
     
-                Ok::<(), String>(()) // Explicit return type
-            }) {
-                println!("Stepper error: {}", e);
-            }
+                Ok::<(), String>(())
+            })
         });
     
-        Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
+        match handle.join() {
+            Ok(result) => match result {
+                Ok(_) => Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety)),
+                Err(e) => Err(format!("Stepper error: {}", e)),
+            },
+            Err(_) => Err("Thread panicked during stepper rotation".to_string()),
+        }
     }
+    
     
     
 
@@ -175,14 +180,19 @@ pub mod motor_system {
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
-        std::thread::spawn(|| {
-            if let Err(e) = with_controller(|instance| instance.calibrate()) {
-                println!("Calibration error: {}", e);
-            }
+        let handle = std::thread::spawn(|| {
+            with_controller(|instance| instance.calibrate())
         });
     
-        Ok("end_place".to_string())
+        match handle.join() {
+            Ok(result) => match result {
+                Ok(_) => Ok("end_place".to_string()),
+                Err(e) => Err(format!("Calibration error: {}", e)),
+            },
+            Err(_) => Err("Thread panicked during calibration".to_string()),
+        }
     }
+    
     
     
 
