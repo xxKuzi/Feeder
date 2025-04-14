@@ -199,10 +199,10 @@ pub mod motor_system {
                 Ok::<_, String>("Finished debug loop".to_string())
             }).unwrap_or_else(|e| {
                 println!("Error: {}", e);
-                Err(e)
             });
         });
     }
+    
     
 
     
