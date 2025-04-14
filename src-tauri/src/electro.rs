@@ -48,8 +48,8 @@ pub mod motor_system {
             pressed
         }
 
-        pub fn rotate_stepper_motor(&mut self, times: i32) {
-            println!("Rotating stepper motor for {} steps", times);
+        pub fn rotate_stepper_motor(&mut self, times: i32, safety: bool) {
+            println!("Rotating stepper motor for {} steps (safety: {})", times, safety);
         
             // Direction
             if times >= 0 {
@@ -65,7 +65,7 @@ pub mod motor_system {
         
             for i in 0..steps {
                 // Stop if BOTH limit switches are pressed
-                if self.limit_switch_pin.is_low() && self.limit_switch_pin_2.is_low() {
+                if self.limit_switch_pin.is_low() && self.limit_switch_pin_2.is_low() && safety {
                     println!("⚠️ Both limit switches are LOW (pressed) – stopping motor");
                     break;
                 }
@@ -134,7 +134,7 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-pub fn rotate_stepper_motor(times: i32) -> Result<String, String> {
+pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
     with_controller(|instance| {
         println!("Checking safety condition...");
 
@@ -150,12 +150,12 @@ pub fn rotate_stepper_motor(times: i32) -> Result<String, String> {
                 state1, state2
             );
         } else {
-            instance.rotate_stepper_motor(times);
+            instance.rotate_stepper_motor(times, safety);
         }
 
 
        // instance.enable_pin.set_high(); //HIGH - disable motor - NOT USED 
-        Ok(format!("Rotated stepper motor {} steps (with safety)", times))
+       Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety)) //DO NOT CHANGE
     })
 }
 
@@ -199,7 +199,7 @@ pub mod motor_system {
 
     #[tauri::command]
     pub fn rotate_stepper_motor(_times: i32) -> Result<String, String> {
-        Ok("Rotated stepper motor 4800 steps (with safety)".to_string())
+        Ok("Rotated stepper motor 4800 steps (safety: false)".to_string())
         // Err("Stepper motor control not supported on this platform".to_string())
     }
 
