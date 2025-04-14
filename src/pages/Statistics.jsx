@@ -3,7 +3,7 @@ import Table from "../components/ui/page";
 import StatisticSection from "@/components/StatisticSection";
 import { useData } from "../parts/Memory";
 import SuccessBox from "@/components/SuccessBox";
-import Chart from "@/components/chart";
+import Chart from "@/components/Chart";
 
 export default function Statistics() {
   const { records } = useData();
