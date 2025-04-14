@@ -268,6 +268,8 @@ pub async fn add_record(data: ShotData) -> Result<(), String> {
 #[derive(Serialize, Deserialize, Debug, FromRow)]
 pub struct Record {
     records_id: u32,
+    name: String,
+    category: i32,
     made: i32,
     taken: i32,
     user_id: u32,
@@ -279,7 +281,7 @@ pub async fn load_records() -> Result<Vec<Record>, String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "SELECT records_id, made, taken, user_id, created_at FROM records";
+    let qry = "SELECT records_id, name, category, made, taken, user_id, created_at FROM records";
     let users = sqlx::query_as::<_, Record>(qry)
         .fetch_all(&*pool)
         .await;

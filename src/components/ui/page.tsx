@@ -13,6 +13,13 @@ export default function DemoPage() {
   };
 
   useEffect(() => {
+    const categoryDatabase: { [key: number]: string } = {
+      1: "Dvoubodové střely",
+      2: "Tříbodové střely",
+      3: "Trestné hody",
+    };
+    const getCategoryName = (index: number) => categoryDatabase[index];
+
     //Getting and Editing data for table
     const data = records.map((record: Record) => {
       const realUser = users.find(
@@ -23,6 +30,8 @@ export default function DemoPage() {
         ...record,
         user: realUser.name,
         percentage: Math.round((record.made / record.taken) * 100) + "%",
+        name: record.name.charAt(0).toUpperCase() + record.name.slice(1),
+        category: getCategoryName(record.category),
       };
     });
     console.log("data :", data);
