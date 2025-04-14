@@ -1,10 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import Section from "../components/Section";
 import { FaPowerOff } from "react-icons/fa6";
+import { invoke } from "@tauri-apps/api/core";
+import CalibrationMenu from "@/components/CalibrationMenu";
 
 export default function Home() {
+  const [shutdown, setShutdown] = useState(false);
   return (
-    <div className="flex flex-col items-center h-screen justify-center">
+    <div className="relative flex flex-col items-center h-screen justify-center">
+      <button
+        onClick={() => {
+          setShutdown(true);
+          //SAVE VALUES
+          setTimeout(() => {
+            invoke("exit_app");
+          }, 3000);
+        }}
+        className="absolute right-4 top-4"
+      >
+        <div className="flex mt-6 justify-center items-center">
+          <p
+            className={`mr-2 text-xl ${
+              shutdown ? "w-0 h-0 text-transparent" : ""
+            }`}
+          >
+            Vypnout
+          </p>{" "}
+          <FaPowerOff
+            size={20}
+            className={`duration-300 ${
+              shutdown ? "w-16 h-16 text-red-600" : ""
+            }`}
+          />
+        </div>
+      </button>
       <p className="headline">Home</p>
 
       <div className="flex items-center justify-center gap-16">

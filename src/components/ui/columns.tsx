@@ -24,7 +24,7 @@ export const columns: ColumnDef<Record>[] = [
   },
   {
     accessorKey: "taken",
-    header: "Vstřelil",
+    header: "Vystřelil",
   },
   {
     accessorKey: "percentage",

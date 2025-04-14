@@ -195,7 +195,18 @@ export default function Modes() {
         <p className="headline">Menu</p>
         <div className="flex items-center justify-center absolute right-0">
           <button
-            onClick={() => calibrate()}
+            onClick={() =>
+              calibrationState === "true"
+                ? openModal({
+                    headline: "Opakovaná kalibrace",
+                    question: "Opravdu chcete znovu kalibrovat?",
+                    buttons: { confirm: true, cancel: true },
+                    confirmHandle: () => {
+                      calibrate();
+                    },
+                  })
+                : calibrate()
+            }
             className={`button mr-4 text-white duration-300 ${
               calibrationState === "true"
                 ? "bg-blue-500"
