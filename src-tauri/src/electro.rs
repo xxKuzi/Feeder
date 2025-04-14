@@ -51,33 +51,37 @@ pub mod motor_system {
         pub fn rotate_stepper_motor(&mut self, times: i32, safety: bool) {
             println!("Rotating stepper motor for {} steps (safety: {})", times, safety);
         
-            // Direction
+            // Set direction
             if times >= 0 {
-                self.direction_pin.set_high(); // Forward
+                self.direction_pin.set_high(); 
             } else {
-                self.direction_pin.set_low(); // Backward
+                self.direction_pin.set_low(); 
             }
         
             let steps = times.abs();
-            let accel_steps = 200.min(steps); // Number of steps over which to accelerate
+            let accel_steps = 200.min(steps / 2); // Acceleration and deceleration both fit in motion
             let max_delay = 1000; // Start delay in microseconds (slowest)
-            let min_delay = 469;  // Final delay in microseconds (target speed)
+            let min_delay = 469;  // Final delay in microseconds (fastest)
         
             for i in 0..steps {
-                // Stop if BOTH limit switches are pressed
                 if self.limit_switch_pin.is_low() && self.limit_switch_pin_2.is_low() && safety {
                     println!("⚠️ Both limit switches are LOW (pressed) – stopping motor");
                     break;
                 }
         
-                // Compute delay with linear acceleration
+                // Compute delay with acceleration & deceleration
                 let delay = if i < accel_steps {
-                    let step_ratio = i as f64 / accel_steps as f64;
-                    let delay = max_delay as f64 - (step_ratio * (max_delay - min_delay) as f64);
-                    delay as u64
+                    // Accelerating
+                    let ratio = i as f64 / accel_steps as f64;
+                    max_delay as f64 - ratio * (max_delay - min_delay) as f64
+                } else if i >= steps - accel_steps {
+                    // Decelerating
+                    let ratio = (steps - i) as f64 / accel_steps as f64;
+                    max_delay as f64 - ratio * (max_delay - min_delay) as f64
                 } else {
-                    min_delay
-                };
+                    // Constant speed
+                    min_delay as f64
+                } as u64;
         
                 self.pulse_pin.set_high();
                 thread::sleep(Duration::from_micros(delay));
@@ -85,6 +89,7 @@ pub mod motor_system {
                 thread::sleep(Duration::from_micros(delay));
             }
         }
+        
         
 
         pub fn calibrate(&mut self) -> Result<String, String> {
