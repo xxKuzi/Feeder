@@ -194,37 +194,6 @@ export default function Modes() {
       <div className="w-full flex justify-center relative">
         <p className="headline">Menu</p>
         <div className="flex items-center justify-center absolute right-0">
-          <button
-            onClick={() =>
-              calibrationState === "true"
-                ? openModal({
-                    headline: "Opakovaná kalibrace",
-                    question: "Opravdu chcete znovu kalibrovat?",
-                    buttons: { confirm: true, cancel: true },
-                    confirmHandle: () => {
-                      calibrate();
-                    },
-                  })
-                : calibrate()
-            }
-            className={`button mr-4 text-white duration-300 ${
-              calibrationState === "true"
-                ? "bg-blue-500"
-                : calibrationState === "end_place"
-                ? "bg-yellow-300"
-                : calibrationState === "running"
-                ? "bg-green-400"
-                : "bg-black"
-            }`}
-          >
-            {calibrationState === "true"
-              ? "Kalibrováno✅"
-              : calibrationState === "end_place"
-              ? "Konec nalezen"
-              : calibrationState === "running"
-              ? "Kalibrování➡️"
-              : "Vyžaduje kalibraci❗"}
-          </button>
           <Link to="/mode-settings">
             <button className="button button__positive">Přidat mode</button>
           </Link>

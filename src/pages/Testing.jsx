@@ -18,6 +18,7 @@ export default function Testing() {
     unlockDeveloperMode,
     singOutDeveloperMode,
     setGlobalAngle,
+    openCalibration,
   } = useData();
 
   useEffect(() => {
@@ -66,6 +67,12 @@ export default function Testing() {
           calibration 90
         </button>
       </div>
+      <button
+        onClick={() => openCalibration()}
+        className="button button__positive mt-6"
+      >
+        open calibration
+      </button>
       <div className="flex flex-col items-center justify-center bg-gray-200 rounded-xl mt-10 px-4 py-2">
         <h1 className="text-2xl font-bold">Keyboard & Input Testing</h1>
         <input
