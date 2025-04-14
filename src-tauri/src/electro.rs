@@ -22,7 +22,7 @@ pub mod motor_system {
             enable_pin_number: u8,
         ) -> Result<Self, String> {
             println!(
-                "Initializing stepper motor: pulse={}, limit={}, dir={}, enable={}",
+                "Initializing stepper motor: pulse={}, limit={}, limit2{}, dir={}, enable={}",
                 pulse_pin_number, limit_switch_pin_number, limit_switch_pin_2_number, direction_pin_number, enable_pin_number
             );
 
@@ -116,7 +116,7 @@ pub mod motor_system {
 
         if guard.is_none() {
             println!("Servo not initialized – performing auto-init...");
-            let instance = Controller::new(12, 24, 1, 23, 16)?; // default GPIOs
+            let instance = Controller::new(12, 24, 1, 23, 16)?; // default GPIOs //
             *guard = Some(instance);
         }
 
