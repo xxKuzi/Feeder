@@ -7,12 +7,14 @@ import React, {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 const DataContext = createContext();
-import Modal from "../components/Modal.jsx";
+import Modal from "./Modal.jsx";
+import Calibration from "./Calibration.jsx";
 import { useNavigate } from "react-router-dom";
 import KeyboardOverlay from "../parts/Keyboard";
 
 export function Memory({ children }) {
   const modalRef = useRef();
+  const calibrationRef = useRef();
   const keyboardRef = useRef(null);
   const navigate = useNavigate();
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
@@ -98,6 +100,7 @@ export function Memory({ children }) {
     }
 
     //examines if last calibration is older than 7 days
+
     const isOld = () => {
       const lastCalibration = new Date(userDataRust.last_calibration);
       const now = Date.now();
@@ -108,11 +111,12 @@ export function Memory({ children }) {
     //Calibration only REQUIRED if angle is 666 or if it is older than 7 days
     const needsCalibration = userDataRust.angle === 666 || isOld();
     if (needsCalibration) {
-      console.log("Calibration required");
+      openCalibration();
     } else {
       setGlobalAngle(userDataRust.angle);
+      setCalibrationState("true");
+      toggleServo(true);
       setLastCalibration(userDataRust.last_calibration);
-      console.log("Calibration NOT required");
     }
     saveAngle(666);
   };
@@ -310,6 +314,7 @@ export function Memory({ children }) {
           ) {
             setTimeout(() => {
               setCalibrationState("true");
+              saveLastCalibration();
             }, 5000);
           }
           setGlobalAngle(90);
@@ -377,6 +382,20 @@ export function Memory({ children }) {
     }
   };
 
+  const openCalibration = () => {
+    calibrationRef.current.openModal();
+  };
+
+  const saveLastCalibration = async () => {
+    try {
+      await invoke("save_last_calibration", {
+        date: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Failed to set last calibration:", error);
+    }
+  };
+
   const contextData = {
     statistics,
     updateStatistics,
@@ -415,12 +434,14 @@ export function Memory({ children }) {
     setManualMemory,
     singOutDeveloperMode,
     saveAngle,
+    openCalibration,
   };
 
   return (
     <DataContext.Provider value={contextData}>
       <Modal ref={modalRef} />
-      <KeyboardOverlay ref={keyboardRef}></KeyboardOverlay>
+      <Calibration ref={calibrationRef} />
+      <KeyboardOverlay ref={keyboardRef} />
 
       {children}
     </DataContext.Provider>

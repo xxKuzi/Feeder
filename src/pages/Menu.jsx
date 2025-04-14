@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useData } from "../parts/Memory";
-import Modal from "../components/Modal.jsx";
+import Modal from "../parts/Modal.jsx";
 import Modes from "../components/Modes.jsx";
 import ModeSettings from "../pages/ModeSettings";
 import { useNavigate } from "react-router-dom";
