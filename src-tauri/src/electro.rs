@@ -142,12 +142,12 @@ pub mod motor_system {
     #[tauri::command]
     pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
         std::thread::spawn(move || {
-            with_controller(|instance| {
+            if let Err(e) = with_controller(|instance| {
                 println!("Checking safety condition...");
     
                 instance.enable_pin.set_low(); // LOW - motor works
     
-                if instance.limit_switch_pin.is_low() && safety || instance.limit_switch_pin_2.is_low() && safety {
+                if (instance.limit_switch_pin.is_low() || instance.limit_switch_pin_2.is_low()) && safety {
                     let state1 = if instance.limit_switch_pin.is_low() { "PRESSED" } else { "NOT PRESSED" };
                     let state2 = if instance.limit_switch_pin_2.is_low() { "PRESSED" } else { "NOT PRESSED" };
     
@@ -159,12 +159,15 @@ pub mod motor_system {
                     instance.rotate_stepper_motor(times, safety);
                 }
     
-                Ok(())
-            }).unwrap_or_else(|e| println!("Stepper error: {}", e));
+                Ok::<(), String>(()) // Explicit return type
+            }) {
+                println!("Stepper error: {}", e);
+            }
         });
     
         Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
     }
+    
     
 
 
@@ -173,29 +176,34 @@ pub mod motor_system {
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
         std::thread::spawn(|| {
-            with_controller(|instance| {
-                instance.calibrate()
-            }).unwrap_or_else(|e| println!("Calibration error: {}", e));
+            if let Err(e) = with_controller(|instance| instance.calibrate()) {
+                println!("Calibration error: {}", e);
+            }
         });
     
         Ok("Calibrating stepper motor...".to_string())
     }
     
+    
 
     #[tauri::command]
     pub fn check_limit_switch() {
         std::thread::spawn(|| {
-            with_controller(|instance| {
-                for _ in 0..10 { // check 10 times then return
+            let _ = with_controller(|instance| {
+                for _ in 0..10 {
                     let pressed = instance.is_limit_switch_pressed();
                     let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
                     println!("Limit switch state: {}", status);
                     std::thread::sleep(std::time::Duration::from_millis(500));
                 }
                 Ok::<_, String>("Finished debug loop".to_string())
-            }).unwrap_or_else(|e| println!("Error: {}", e));
+            }).unwrap_or_else(|e| {
+                println!("Error: {}", e);
+                Err(e)
+            });
         });
     }
+    
 
     
 
