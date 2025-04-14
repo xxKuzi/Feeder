@@ -26,6 +26,7 @@ export function Memory({ children }) {
   const [globalAngle, setGlobalAngle] = useState(90);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
   const [calibrationState, setCalibrationState] = useState("false"); //false, running, true
+  const [lastCalibration, setLastCalibration] = useState("0");
   const [globalServoState, setGlobalServoState] = useState(false);
   const [developerMode, setDeveloperMode] = useState(true);
   const [refresh, setRefresh] = useState(false);
@@ -85,6 +86,8 @@ export function Memory({ children }) {
 
   const loadCurrentData = async () => {
     let userDataRust = (await invoke("load_current_data"))[0]; //because it returns an object in an array
+
+    //Load user data
     const userData = {
       userId: userDataRust.user_id,
       name: userDataRust.name,
@@ -93,12 +96,30 @@ export function Memory({ children }) {
     if (userData) {
       updateProfile(userData);
     }
+
+    //examines if last calibration is older than 7 days
+    const isOld = () => {
+      const lastCalibration = new Date(userDataRust.last_calibration);
+      const now = Date.now();
+      const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+      return now - lastCalibration.getTime() > oneWeekInMs;
+    };
+
+    //Calibration only REQUIRED if angle is 666 or if it is older than 7 days
+    const needsCalibration = userDataRust.angle === 666 || isOld();
+    if (needsCalibration) {
+      console.log("Calibration required");
+    } else {
+      setGlobalAngle(userDataRust.angle);
+      setLastCalibration(userDataRust.last_calibration);
+      console.log("Calibration NOT required");
+    }
+    saveAngle(666);
   };
 
   const loadRecords = async () => {
     const rustRecords = await invoke("load_records");
     let loadedRecords = convertKeysToCamelCase(rustRecords);
-    console.log("loadedRecords", loadedRecords);
     setRecords(loadedRecords);
   };
 
@@ -348,6 +369,14 @@ export function Memory({ children }) {
     setGlobalServoState(newState);
   };
 
+  const saveAngle = async (angle) => {
+    try {
+      await invoke("save_angle", { angle: angle });
+    } catch (error) {
+      console.error("Failed to set angle:", error);
+    }
+  };
+
   const contextData = {
     statistics,
     updateStatistics,
@@ -385,6 +414,7 @@ export function Memory({ children }) {
     manualMemory,
     setManualMemory,
     singOutDeveloperMode,
+    saveAngle,
   };
 
   return (

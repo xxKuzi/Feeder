@@ -62,7 +62,8 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
     (
         data_id         INTEGER PRIMARY KEY NOT NULL,
         user_id         INTEGER,
-        updated_at      DATETIME DEFAULT (datetime('now', 'localtime'))
+        angle           INTEGER DEFAULT 0,
+        last_calibration DATETIME DEFAULT (datetime('now', 'localtime'))    
     );     
 
     CREATE TABLE IF NOT EXISTS modes
@@ -161,6 +162,34 @@ pub async fn select_user(user_id: i32) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn save_angle(angle: i32) -> Result<(), String> {  
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    sqlx::query("UPDATE data SET angle = $1 WHERE data_id = 1")
+        .bind(angle)
+        .execute(&*pool)
+        .await
+        .map(|_| ()) // Map success to Ok(())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn save_last_calibration(date: String) -> Result<(), String> {  
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    sqlx::query("UPDATE data SET last_calibration = $1 WHERE data_id = 1")
+        .bind(date)
+        .execute(&*pool)
+        .await
+        .map(|_| ()) // Map success to Ok(())
+        .map_err(|e| e.to_string())
+}
+
+
+
+#[tauri::command]
 pub async fn rename_user(user_id: i32, new_name: String, new_number: i32) -> Result<(), String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
@@ -202,14 +231,16 @@ pub async fn load_users() -> Result<Vec<User>, String> {
 
 
 #[derive(Serialize, Deserialize, Debug, FromRow)]
-pub struct CurrentUser {
+pub struct SavedData {
     user_id: u32,
     name: String,
-    number: u32
+    number: u32,
+    angle: i32,
+    last_calibration: String,
 }
 
 #[tauri::command]
-pub async fn load_current_data() -> Result<Vec<CurrentUser>, String> {
+pub async fn load_current_data() -> Result<Vec<SavedData>, String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
@@ -217,14 +248,16 @@ pub async fn load_current_data() -> Result<Vec<CurrentUser>, String> {
     SELECT 
         u.user_id AS user_id, 
         u.name AS name,       
-        u.number AS number
+        u.number AS number,
+        d.angle AS angle,
+        d.last_calibration AS last_calibration
     FROM users u 
     INNER JOIN data d ON u.user_id = d.user_id 
     WHERE d.data_id = 1
     "#;
 
       // Directly return the result of the query with error mapping
-      sqlx::query_as::<_, CurrentUser>(qry)
+      sqlx::query_as::<_, SavedData>(qry)
       .fetch_all(&*pool)
       .await
       .map_err(|e| e.to_string()) // Map errors to String
