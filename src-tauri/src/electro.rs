@@ -138,51 +138,63 @@ pub mod motor_system {
         with_controller(|_| Ok("Servo auto-initialized or already initialized".to_string()))
     }
 
+    
     #[tauri::command]
-pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
-    with_controller(|instance| {
-        println!("Checking safety condition...");
-
-        instance.enable_pin.set_low(); //LOW - motor works
-
-         // If one of them is pressed
-        if instance.limit_switch_pin.is_low() && safety || instance.limit_switch_pin_2.is_low() && safety{
-            let state1 = if instance.limit_switch_pin.is_low() { "PRESSED" } else { "NOT PRESSED" };
-            let state2 = if instance.limit_switch_pin_2.is_low() { "PRESSED" } else { "NOT PRESSED" };
-            
-            println!(
-                "⚠️ One of the limit switches is LOW (pressed) – ABORTING for safety\nLimit Switch 1: {}, Limit Switch 2: {}",
-                state1, state2
-            );
-        } else {
-            instance.rotate_stepper_motor(times, safety);
-        }
-
-
-       // instance.enable_pin.set_high(); //HIGH - disable motor - NOT USED 
-       Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety)) //DO NOT CHANGE
-    })
-}
+    pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
+        std::thread::spawn(move || {
+            with_controller(|instance| {
+                println!("Checking safety condition...");
+    
+                instance.enable_pin.set_low(); // LOW - motor works
+    
+                if instance.limit_switch_pin.is_low() && safety || instance.limit_switch_pin_2.is_low() && safety {
+                    let state1 = if instance.limit_switch_pin.is_low() { "PRESSED" } else { "NOT PRESSED" };
+                    let state2 = if instance.limit_switch_pin_2.is_low() { "PRESSED" } else { "NOT PRESSED" };
+    
+                    println!(
+                        "⚠️ One of the limit switches is LOW (pressed) – ABORTING for safety\nLimit Switch 1: {}, Limit Switch 2: {}",
+                        state1, state2
+                    );
+                } else {
+                    instance.rotate_stepper_motor(times, safety);
+                }
+    
+                Ok(())
+            }).unwrap_or_else(|e| println!("Stepper error: {}", e));
+        });
+    
+        Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
+    }
+    
 
 
     
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
-        with_controller(|instance| instance.calibrate())
+        std::thread::spawn(|| {
+            with_controller(|instance| {
+                instance.calibrate()
+            }).unwrap_or_else(|e| println!("Calibration error: {}", e));
+        });
+    
+        Ok("Calibrating stepper motor...".to_string())
     }
+    
 
     #[tauri::command]
-    pub fn check_limit_switch() -> Result<String, String> {
-        with_controller(|instance| {
-            for _ in 0..10 { // check 10 times then return
-                let pressed = instance.is_limit_switch_pressed();
-                let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
-                println!("Limit switch state: {}", status);
-                thread::sleep(Duration::from_millis(500));
-            }
-            Ok("Finished debug loop".to_string())
-        })
+    pub fn check_limit_switch() {
+        std::thread::spawn(|| {
+            with_controller(|instance| {
+                for _ in 0..10 { // check 10 times then return
+                    let pressed = instance.is_limit_switch_pressed();
+                    let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
+                    println!("Limit switch state: {}", status);
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                }
+                Ok::<_, String>("Finished debug loop".to_string())
+            }).unwrap_or_else(|e| println!("Error: {}", e));
+        });
     }
 
     
