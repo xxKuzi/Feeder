@@ -11,7 +11,6 @@ export default function Workout() {
   const {
     statistics,
     shoot,
-    addRecord,
     updateStatistics,
     workoutData,
     globalAngle,
@@ -111,6 +110,7 @@ export default function Workout() {
     navigate("/result", {
       state: {
         category: workoutData.category,
+        name: workoutData.name,
       },
     });
   };
