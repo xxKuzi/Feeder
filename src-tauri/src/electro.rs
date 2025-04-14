@@ -189,24 +189,20 @@ pub mod motor_system {
     #[tauri::command]
     pub fn check_limit_switch() {
         std::thread::spawn(|| {
-            let _ = with_controller(|instance| {
+            if let Err(e) = with_controller(|instance| {
                 for _ in 0..10 {
                     let pressed = instance.is_limit_switch_pressed();
                     let status = if pressed { "PRESSED (0)" } else { "NOT PRESSED (1)" };
                     println!("Limit switch state: {}", status);
                     std::thread::sleep(std::time::Duration::from_millis(500));
                 }
-                Ok::<_, String>("Finished debug loop".to_string())
-            }).unwrap_or_else(|e| {
+                Ok("Finished debug loop".to_string())
+            }) {
                 println!("Error: {}", e);
-            });
+            }
         });
     }
-    
-    
-
-    
-
+                
 }
 
 #[cfg(not(target_os = "linux"))]
