@@ -98,6 +98,7 @@ export function Memory({ children }) {
   const loadRecords = async () => {
     const rustRecords = await invoke("load_records");
     let loadedRecords = convertKeysToCamelCase(rustRecords);
+    console.log("loadedRecords", loadedRecords);
     setRecords(loadedRecords);
   };
 

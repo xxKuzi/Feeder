@@ -7,7 +7,7 @@ import { ColumnDef } from "@tanstack/react-table";
 export type Record = {
   userId: number;
   name: string;
-  category: string;
+  category: number;
   made: number;
   taken: number;
   percentage: string;
