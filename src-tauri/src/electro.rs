@@ -141,8 +141,8 @@ pub mod motor_system {
     
     #[tauri::command]
     pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
-        let handle = std::thread::spawn(move || {
-            with_controller(|instance| {
+        std::thread::spawn(move || {
+            if let Err(e) = with_controller(|instance| {
                 println!("Checking safety condition...");
     
                 instance.enable_pin.set_low(); // LOW - motor works
@@ -159,19 +159,14 @@ pub mod motor_system {
                     instance.rotate_stepper_motor(times, safety);
                 }
     
-                Ok::<(), String>(())
-            })
+                Ok::<(), String>(()) // Explicit return type
+            }) {
+                println!("Stepper error: {}", e);
+            }
         });
     
-        match handle.join() {
-            Ok(result) => match result {
-                Ok(_) => Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety)),
-                Err(e) => Err(format!("Stepper error: {}", e)),
-            },
-            Err(_) => Err("Thread panicked during stepper rotation".to_string()),
-        }
+        Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
     }
-    
     
     
 
