@@ -3,7 +3,6 @@ import Table from "../components/ui/page";
 import StatisticSection from "@/components/StatisticSection";
 import { useData } from "../parts/Memory";
 import SuccessBox from "@/components/SuccessBox";
-import Chart from "@/components/chart";
 
 export default function Statistics() {
   const { records } = useData();
@@ -17,7 +16,6 @@ export default function Statistics() {
         <SuccessBox headline={"30 dní"} records={records} days={30} />
         <SuccessBox headline={"6 měsíců"} records={records} days={182} />
       </div>
-      <Chart records={records} />
       <Table />
     </div>
   );
