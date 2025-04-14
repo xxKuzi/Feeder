@@ -141,7 +141,7 @@ pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> 
         instance.enable_pin.set_low(); //LOW - motor works
 
          // If one of them is pressed
-        if instance.limit_switch_pin.is_low() || instance.limit_switch_pin_2.is_low() {
+        if instance.limit_switch_pin.is_low() && safety || instance.limit_switch_pin_2.is_low() && safety{
             let state1 = if instance.limit_switch_pin.is_low() { "PRESSED" } else { "NOT PRESSED" };
             let state2 = if instance.limit_switch_pin_2.is_low() { "PRESSED" } else { "NOT PRESSED" };
             
