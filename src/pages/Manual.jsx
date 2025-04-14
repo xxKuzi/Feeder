@@ -24,7 +24,6 @@ export default function Manual() {
     let difference = manualMemory.angle - globalAngle;
     rotateStepperMotor(difference);
     setGlobalAngle(manualMemory.angle);
-    // manualMemory.distance - globalMotorSpeed
 
     // Disable the button for 3 seconds
     setSaveDelay(true);

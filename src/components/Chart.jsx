@@ -33,10 +33,41 @@ const Chart = ({ records }) => {
       const taken = monthRecords.reduce((sum, rec) => sum + rec.taken, 0);
       const successRate = taken === 0 ? 0 : Math.round((made / taken) * 100);
 
-      const monthName = start.toLocaleString("default", { month: "short" });
+      const monthName = start.toLocaleString("default", { month: "long" });
+
+      function getCzechMonthName(monthName) {
+        switch (monthName) {
+          case "January":
+            return "Leden";
+          case "February":
+            return "Únor";
+          case "March":
+            return "Březen";
+          case "April":
+            return "Duben";
+          case "May":
+            return "Květen";
+          case "June":
+            return "Červen";
+          case "July":
+            return "Červenec";
+          case "August":
+            return "Srpen";
+          case "September":
+            return "Září";
+          case "October":
+            return "Říjen";
+          case "November":
+            return "Listopad";
+          case "December":
+            return "Prosinec";
+          default:
+            return monthName;
+        }
+      }
 
       monthlyData.unshift({
-        name: monthName,
+        name: getCzechMonthName(monthName),
         made,
         taken,
         successRate,
@@ -61,9 +92,9 @@ const Chart = ({ records }) => {
         <YAxis />
         <Tooltip />
         <Legend />
-        <Bar dataKey="made" fill="#4ade80" name="Made" />
-        <Bar dataKey="taken" fill="#60a5fa" name="Taken" />
-        <Bar dataKey="successRate" fill="#fbbf24" name="Success %" />
+        <Bar dataKey="made" fill="#4ade80" name="Proměněno" />
+        <Bar dataKey="taken" fill="#60a5fa" name="Vystřeleno" />
+        <Bar dataKey="successRate" fill="#fbbf24" name="Úspěšnost %" />
       </BarChart>
     </ResponsiveContainer>
   );

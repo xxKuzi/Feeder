@@ -23,7 +23,7 @@ export function Memory({ children }) {
   const [records, setRecords] = useState([]);
   const [users, setUsers] = useState([{ name: "XYZ" }]);
   const [modes, setModes] = useState([{ name: "XYZ" }]);
-  const [globalAngle, setGlobalAngle] = useState(0);
+  const [globalAngle, setGlobalAngle] = useState(90);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
   const [calibrationState, setCalibrationState] = useState("false"); //false, running, true
   const [globalServoState, setGlobalServoState] = useState(false);
@@ -33,7 +33,7 @@ export function Memory({ children }) {
     repetition: 10,
     interval: 5,
     distance: 3700,
-    angle: 90,
+    angle: 0, //USED ONLY FOR CHANGING ANGLE (NOT FOR CALIBRATION)
   });
   //at the beginning IT IS NOT VALID
 
