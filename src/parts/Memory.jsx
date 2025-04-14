@@ -276,7 +276,8 @@ export function Memory({ children }) {
           console.log("defaultPosition", defaultPosition);
 
           if (
-            defaultPosition === "Rotated stepper motor 4800 steps (with safety)"
+            defaultPosition ===
+            "Rotated stepper motor 4800 steps (safety: false)"
           ) {
             setCalibrationState("true");
           }
