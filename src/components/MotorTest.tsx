@@ -47,42 +47,6 @@ export default function MotorTest() {
       <div className="mt-4 flex gap-4 justify-center  items-center ">
         <div className="flex items-center flex-col justify-center gap-4">
           <button
-            disabled={globalAngle > 175}
-            className={`button button__positive ${
-              globalAngle > 175
-                ? "bg-gray-200 text-gray-400 hover:bg-gray-200"
-                : ""
-            }`}
-            onClick={() => changeMotorAngle(5)}
-          >
-            5 degrees to left
-          </button>
-          <button
-            disabled={globalAngle > 165}
-            className={`button button__positive ${
-              globalAngle > 165
-                ? "bg-gray-200 text-gray-400 hover:bg-gray-200"
-                : ""
-            }`}
-            onClick={() => changeMotorAngle(15)}
-          >
-            15 degrees to left
-          </button>
-          <button
-            disabled={globalAngle > 135}
-            className={`button button__positive ${
-              globalAngle > 135
-                ? "bg-gray-200 text-gray-400 hover:bg-gray-200"
-                : ""
-            }`}
-            onClick={() => changeMotorAngle(45)}
-          >
-            45 degrees to left
-          </button>
-        </div>
-        <div className="h-32 border-[1px] border-gray-400 rounded"></div>
-        <div className="flex items-center flex-col justify-center gap-4">
-          <button
             disabled={globalAngle < 5}
             className={`button button__positive ${
               globalAngle < 5
@@ -91,7 +55,7 @@ export default function MotorTest() {
             }`}
             onClick={() => changeMotorAngle(-5)}
           >
-            5 degrees to right
+            5 degrees to left
           </button>
           <button
             disabled={globalAngle < 15}
@@ -102,7 +66,7 @@ export default function MotorTest() {
             }`}
             onClick={() => changeMotorAngle(-15)}
           >
-            15 degrees to right
+            15 degrees to left
           </button>
           <button
             disabled={globalAngle < 45}
@@ -112,6 +76,42 @@ export default function MotorTest() {
                 : ""
             }`}
             onClick={() => changeMotorAngle(-45)}
+          >
+            45 degrees to left
+          </button>
+        </div>
+        <div className="h-32 border-[1px] border-gray-400 rounded"></div>
+        <div className="flex items-center flex-col justify-center gap-4">
+          <button
+            disabled={globalAngle > 175}
+            className={`button button__positive ${
+              globalAngle > 175
+                ? "bg-gray-200 text-gray-400 hover:bg-gray-200"
+                : ""
+            }`}
+            onClick={() => changeMotorAngle(5)}
+          >
+            5 degrees to right
+          </button>
+          <button
+            disabled={globalAngle > 165}
+            className={`button button__positive ${
+              globalAngle > 165
+                ? "bg-gray-200 text-gray-400 hover:bg-gray-200"
+                : ""
+            }`}
+            onClick={() => changeMotorAngle(15)}
+          >
+            15 degrees to right
+          </button>
+          <button
+            disabled={globalAngle > 135}
+            className={`button button__positive ${
+              globalAngle > 135
+                ? "bg-gray-200 text-gray-400 hover:bg-gray-200"
+                : ""
+            }`}
+            onClick={() => changeMotorAngle(45)}
           >
             45 degrees to right
           </button>
