@@ -11,6 +11,7 @@ pub mod motor_system {
         limit_switch_pin_2: InputPin, // Second limit switch (
         direction_pin: OutputPin,    // Pin to control direction
         enable_pin: OutputPin,       // Pin to enable/disable the motor
+        servo_pin: OutputPin,        // GPIO 13 for servo motor
     }
 
     impl Controller {
@@ -32,6 +33,7 @@ pub mod motor_system {
             let limit_switch_pin_2 = gpio.get(limit_switch_pin_2_number).map_err(|e| e.to_string())?.into_input_pullup();
             let direction_pin = gpio.get(direction_pin_number).map_err(|e| e.to_string())?.into_output();
             let enable_pin = gpio.get(enable_pin_number).map_err(|e| e.to_string())?.into_output();
+            let servo_pin = gpio.get(13).map_err(|e| e.to_string())?.into_output(); // GPIO 13
 
             let controller = Controller {
                 pulse_pin,
@@ -39,6 +41,7 @@ pub mod motor_system {
                 limit_switch_pin_2,
                 direction_pin,
                 enable_pin,
+                servo_pin,
             };
             
             controller.warmup_limit_switch_pins();             
@@ -103,8 +106,6 @@ pub mod motor_system {
         
             Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
         }
-        
-        
 
         pub fn calibrate(&mut self) -> Result<String, String> {
             println!("Starting calibration...");
@@ -120,6 +121,27 @@ pub mod motor_system {
 
             println!("Calibration complete: Limit switch activated.");
             Ok("end_place".to_string())
+        }
+
+        pub fn move_servo_to_angle(&mut self, angle: u8, duration_ms: u64) {
+            let pulse_width_us = {
+                let min_pulse = 1000;
+                let max_pulse = 2000;
+                let clamped = angle.clamp(0, 180);
+                min_pulse + ((max_pulse - min_pulse) as u64 * clamped as u64) / 180
+            };
+
+            let period_ms = 20;
+            let num_pulses = duration_ms / period_ms;
+
+            println!("🔁 Moving to {}° ({:.1}ms pulse) for {}ms", angle, pulse_width_us as f32 / 1000.0, duration_ms);
+
+            for _ in 0..num_pulses {
+                self.servo_pin.set_high();
+                thread::sleep(Duration::from_micros(pulse_width_us));
+                self.servo_pin.set_low();
+                thread::sleep(Duration::from_millis(period_ms - (pulse_width_us / 1000)));
+            }
         }
     }
 
@@ -152,10 +174,8 @@ pub mod motor_system {
         with_controller(|_| Ok("Servo auto-initialized or already initialized".to_string()))
     }
 
-    
     #[tauri::command]
     pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
-        // Run everything in a separate thread, as before
         let handle = std::thread::spawn(move || {
             with_controller(|instance| {
                 println!("Checking safety condition...");
@@ -171,30 +191,21 @@ pub mod motor_system {
                         state1, state2
                     );
     
-                    // ✅ Just return a custom OK message here
                     return Ok("Aborted: Limit switch already pressed at start.".to_string());
                 }
     
-                // Proceed with normal motor rotation
                 instance.rotate_stepper_motor(times, safety);
     
                 Ok("Stepper rotation started.".to_string())
             })
         });
     
-        // Join the thread and return the result
         match handle.join() {
             Ok(Ok(_)) => Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety)),
             Ok(Err(e)) => Err(format!("Stepper motor error: {}", e)),
             Err(_) => Err("Thread panicked during motor rotation".to_string()),
         }
     }
-    
-    
-    
-
-
-    
 
     #[tauri::command]
     pub fn calibrate_stepper_motor() -> Result<String, String> {
@@ -210,9 +221,6 @@ pub mod motor_system {
             Err(_) => Err("Thread panicked during calibration".to_string()),
         }
     }
-    
-    
-    
 
     #[tauri::command]
     pub fn check_limit_switch() {
@@ -230,8 +238,17 @@ pub mod motor_system {
             }
         });
     }
-                
+
+    #[tauri::command]
+pub fn move_servo(angle: u8) -> Result<String, String> {
+    let duration_ms = 1000;
+    with_controller(|instance| {
+        instance.move_servo_to_angle(angle, duration_ms);
+        Ok(format!("Moved servo to {} degrees for {}ms", angle, duration_ms))
+    })
+}            
 }
+
 
 #[cfg(not(target_os = "linux"))]
 pub mod motor_system {
@@ -258,4 +275,9 @@ pub mod motor_system {
         Ok("end_place".to_string())
         //Err("Calibration not supported on this platform".to_string())
     }
+
+    #[tauri::command]
+    pub fn move_servo(angle: u8) -> Result<String, String> {
+        Ok("end_place".to_string())
+    }   
 }
