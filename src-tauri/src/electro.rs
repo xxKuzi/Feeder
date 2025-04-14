@@ -181,7 +181,7 @@ pub mod motor_system {
             }
         });
     
-        Ok("Calibrating stepper motor...".to_string())
+        Ok("end_place".to_string())
     }
     
     
