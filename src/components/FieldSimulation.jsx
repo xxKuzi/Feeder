@@ -60,7 +60,8 @@ export default function FieldSimulation({
     let y = e.clientY - rect.top;
 
     if (y >= 0 && y <= radius) {
-      let angle = calculateAngle(x - radius, y, radius);
+      let rawAngle = calculateAngle(x - radius, y, radius);
+      let angle = Math.min(Math.max(rawAngle, 2), 178); // Clamp to 2–178
       let distancePx = calculateDistance(x, y, radius);
       let distanceMeters = distancePx * MM_PER_PIXEL;
 
@@ -156,7 +157,7 @@ export default function FieldSimulation({
               readOnly
               onFocus={(e) =>
                 showKeyboard(e, (newValue) =>
-                  newValue <= 180 && newValue >= 0
+                  newValue <= 178 && newValue >= 2
                     ? handlePointChange(index, "angle", newValue)
                     : null
                 )

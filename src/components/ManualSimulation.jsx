@@ -45,7 +45,8 @@ export default function ManualSimulation({ formData, setFormData }) {
     let y = e.clientY - rect.top;
 
     if (y >= 0 && y <= radius) {
-      let angle = calculateAngle(x - radius, y, radius);
+      let rawAngle = calculateAngle(x - radius, y, radius);
+      let angle = Math.min(Math.max(rawAngle, 2), 178); // Clamp to 2–178
       let distancePx = calculateDistance(x, y, radius);
       let distanceMeters = distancePx * MM_PER_PIXEL;
 
@@ -133,8 +134,8 @@ export default function ManualSimulation({ formData, setFormData }) {
             <div className="flex items-center justify-center gap-4">
               <input
                 type="range"
-                min="0"
-                max="180"
+                min="2"
+                max="178"
                 value={point.angle}
                 onChange={(e) => handlePointChange("angle", e.target.value)}
                 className="w-full"
@@ -145,7 +146,7 @@ export default function ManualSimulation({ formData, setFormData }) {
                 readOnly
                 onFocus={(e) =>
                   showKeyboard(e, (newValue) =>
-                    newValue <= 180 && newValue >= 0
+                    newValue <= 178 && newValue >= 2
                       ? handlePointChange("angle", newValue)
                       : null
                   )
