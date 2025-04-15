@@ -14,7 +14,7 @@ export default function Section(props) {
           backgroundSize: "cover",
           color: color === "white" ? "white" : "black",
         }}
-        className="border-2 rounded-xl w-[320px] h-[300px] flex flex-col items-center justify-center mt-16"
+        className="border-2 rounded-xl w-[240px] h-[240px] flex flex-col items-center justify-center mt-16"
       >
         <p className="text-2xl font-semibold">{name}</p>
       </Link>

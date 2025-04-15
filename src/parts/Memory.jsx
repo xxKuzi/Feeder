@@ -116,9 +116,19 @@ export function Memory({ children }) {
       setGlobalAngle(userDataRust.angle);
       setCalibrationState("true");
       toggleServo(true);
-      setLastCalibration(userDataRust.last_calibration);
+      updateLastCalibration(userDataRust.last_calibration);
     }
     saveAngle(666);
+  };
+
+  const updateLastCalibration = (rawTime) => {
+    const date = new Date(rawTime);
+    const localTime = date.toLocaleString("cs-CZ", {
+      timeZone: "Europe/Prague",
+      hour12: false,
+    });
+
+    setLastCalibration(localTime);
   };
 
   const loadRecords = async () => {
@@ -387,6 +397,8 @@ export function Memory({ children }) {
   };
 
   const saveLastCalibration = async () => {
+    let date = new Date().toISOString();
+    updateLastCalibration(date);
     try {
       await invoke("save_last_calibration", {
         date: new Date().toISOString(),
@@ -394,6 +406,7 @@ export function Memory({ children }) {
     } catch (error) {
       console.error("Failed to set last calibration:", error);
     }
+    loadCurrentData();
   };
 
   const contextData = {
@@ -435,6 +448,7 @@ export function Memory({ children }) {
     singOutDeveloperMode,
     saveAngle,
     openCalibration,
+    lastCalibration,
   };
 
   return (
