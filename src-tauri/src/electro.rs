@@ -33,13 +33,27 @@ pub mod motor_system {
             let direction_pin = gpio.get(direction_pin_number).map_err(|e| e.to_string())?.into_output();
             let enable_pin = gpio.get(enable_pin_number).map_err(|e| e.to_string())?.into_output();
 
-            Ok(Controller {
+            let controller = Controller {
                 pulse_pin,
                 limit_switch_pin,
                 limit_switch_pin_2,
                 direction_pin,
                 enable_pin,
-            })
+            };
+            
+            controller.warmup_limit_switch_pins();             
+            
+            Ok(controller)
+        }
+
+        fn warmup_limit_switch_pins(&self) {
+            println!("Warming up limit switch pins (priming pull-ups)...");
+            for i in 0..3 {
+                let state1 = if self.limit_switch_pin.is_low() { "LOW (PRESSED)" } else { "HIGH (NOT PRESSED)" };
+                let state2 = if self.limit_switch_pin_2.is_low() { "LOW (PRESSED)" } else { "HIGH (NOT PRESSED)" };
+                println!("  Read {}: Limit Switch 1 = {}, Limit Switch 2 = {}", i + 1, state1, state2);
+                thread::sleep(Duration::from_millis(100));
+            }
         }
 
         pub fn is_limit_switch_pressed(&self) -> bool {
