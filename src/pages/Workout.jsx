@@ -6,6 +6,8 @@ import { listen } from "@tauri-apps/api/event";
 import MotorControl from "../components/MotorControl.jsx";
 import Pause from "../components/Pause";
 import Countdown from "../components/Countdown";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 export default function Workout() {
   const {
@@ -32,8 +34,46 @@ export default function Workout() {
   const isRunningRef = useRef(); //main variable
   const countdownRef = useRef(null); //ref to INITIAL CountDown
   const pauseCountdownRef = useRef(null); //ref to PAUSE Countdown
+  const [isOpen, setIsOpen] = useState(false);
 
   const navigate = useNavigate(); //used for navigation between pages
+
+  const appWebview = getCurrentWebviewWindow();
+  // console.log("appwebview", appWebview);
+
+  appWebview.listen("state-changed", (event) => {
+    // localStorage.setItem("console-message", event.payload);
+    console.log("payload", event.payload);
+
+    if (event.payload === "on") {
+      pauseCountdownRef.current.startCountdown(2);
+      setIsOpen(false);
+    } else if (event.payload === "off") {
+      isRunningRef.current = false;
+      setIsOpen(true);
+    } else {
+      setWorkoutState("bad argument");
+    }
+  });
+
+  const pauseWorkout = async () => {
+    try {
+      await invoke("pause_workout");
+      console.log("PAUSING");
+      // Optionally, update the state immediately.
+    } catch (err) {
+      console.error("Error pausing workout:", err);
+    }
+  };
+
+  const startWorkout = async () => {
+    try {
+      await invoke("start_workout");
+      // Optionally, you can update the state immediately.
+    } catch (err) {
+      console.error("Error starting workout:", err);
+    }
+  };
 
   //BLUETOOTH
   useEffect(() => {
@@ -55,6 +95,7 @@ export default function Workout() {
   // after delay after resume
   const onPauseResume = () => {
     isRunningRef.current = true;
+    startWorkout(); //BLUETOOTH
     setNewWorkout(false);
     setRefresh((prev) => !prev);
   };
@@ -65,6 +106,7 @@ export default function Workout() {
     setReset(true); //changes angle and motorSpeed to first value in array
     countdownRef.current.startCountdown(4); //Shows counter for 4s
     updateStatistics(0, 0); //reset statistics
+    startWorkout(); //BLUETOOTH
     setFullTime(
       workoutData.intervals.length > 1
         ? workoutData.repetition *
@@ -119,6 +161,7 @@ export default function Workout() {
   const CountdownEnd = () => {
     releaseBall();
     setStopButton(true);
+    startWorkout(); //BLUETOOTH
     isRunningRef.current = true;
     setNewWorkout(true); //for newWorkout in MotorControl
     setRefresh((prev) => !prev);
@@ -173,15 +216,24 @@ export default function Workout() {
         <Pause
           enabled={stopButton}
           handleClick={() => {
+            setIsOpen(true);
             isRunningRef.current = false;
+            pauseWorkout(); //BLUETOOTH
           }}
           handleResume={() => {
+            setIsOpen(false);
             pauseCountdownRef.current.startCountdown(2);
           }}
           handleReset={() => {
+            setIsOpen(false);
             initialization();
           }}
-          handleExit={() => navigate("/menu")}
+          handleExit={() => {
+            setIsOpen(false);
+            navigate("/menu");
+          }}
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
         />
       </div>
       <p className="text-4xl font-bold mt-10">{workoutData.name}</p>
