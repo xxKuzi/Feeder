@@ -7,9 +7,9 @@ export default function FullscreenPopup({
   handleResume,
   handleReset,
   handleExit,
+  isOpen,
+  setIsOpen,
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div className="relative">
       <button
