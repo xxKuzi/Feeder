@@ -110,7 +110,7 @@ export function Memory({ children }) {
 
     //Calibration only REQUIRED if angle is 666 or if it is older than 7 days
     const needsCalibration = userDataRust.angle === 666 || isOld();
-    if (false) {
+    if (needsCalibration) {
       openCalibration();
     } else {
       setGlobalAngle(userDataRust.angle);
