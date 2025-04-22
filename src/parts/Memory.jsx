@@ -110,15 +110,16 @@ export function Memory({ children }) {
 
     //Calibration only REQUIRED if angle is 666 or if it is older than 7 days
     const needsCalibration = userDataRust.angle === 666 || isOld();
-    if (needsCalibration) {
+    //ALWAYS TRUE WE DO NOT KNOW IF SOMEONE DID NOT MOVE IT
+    if (false) {
       openCalibration();
     } else {
-      setGlobalAngle(userDataRust.angle);
-      setCalibrationState("true");
-      toggleServo(true);
-      updateLastCalibration(userDataRust.last_calibration);
+      //NEVER HAPPENS NOW
+      // setGlobalAngle(userDataRust.angle);
+      // setCalibrationState("true");
+      // toggleServo(true);
+      // updateLastCalibration(userDataRust.last_calibration);
     }
-    saveAngle(666);
   };
 
   const updateLastCalibration = (rawTime) => {
