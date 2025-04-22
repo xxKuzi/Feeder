@@ -1,8 +1,11 @@
 pub mod sql;
 pub mod electro;
 pub mod bluetooth;
+pub mod limit_switch;
 use tauri::Emitter;
 use log::{info, error, warn};
+
+use limit_switch::watch_limit_switch;
 
 use bluetooth::{get_workout_state, init_ble, pause_workout, start_workout, AppState};
 use sql::{
@@ -56,6 +59,8 @@ pub async fn run() {
            .expect("Failed to initialize BLE peripheral");
        // Register the BLE state so commands can access it.
         app.manage(ble_state);
+
+        watch_limit_switch();
         Ok(())
     })
     .plugin(tauri_plugin_shell::init())
