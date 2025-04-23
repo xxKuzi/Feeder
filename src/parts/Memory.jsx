@@ -27,7 +27,7 @@ export function Memory({ children }) {
   const [modes, setModes] = useState([{ name: "XYZ" }]);
   const [globalAngle, setGlobalAngle] = useState(90);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
-  const [calibrationState, setCalibrationState] = useState("false"); //false, running, true
+  const [calibrationState, setCalibrationState] = useState("false"); //false, running, end_place, true
   const [lastCalibration, setLastCalibration] = useState("0");
   const [globalServoState, setGlobalServoState] = useState(false);
   const [developerMode, setDeveloperMode] = useState(true);
@@ -287,6 +287,7 @@ export function Memory({ children }) {
       });
       if (result === "Aborted: Limit switch already pressed at start.") {
         console.log("calibration needed");
+        setCalibrationState("false");
         openCalibration();
       }
       return result;
