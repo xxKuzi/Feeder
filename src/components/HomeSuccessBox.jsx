@@ -52,7 +52,9 @@ const SuccessBox = ({ records, days, headline }) => {
           <p className="text-xl mt-4">{headline}</p>
 
           <div className="relative">
-            <p className="text-5xl mt-2 font-bold">{boxData.successRate}</p>
+            <p className="text-5xl mt-2 font-bold">
+              {boxData.successRate || 0 + "%"}
+            </p>
             {boxData.successRate && (
               <p className="-right-5 bottom-0 text-xl absolute text-gray-600">
                 %

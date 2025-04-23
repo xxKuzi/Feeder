@@ -62,7 +62,7 @@ pub mod motor_system {
             pressed
         }
 
-        pub fn rotate_stepper_motor(&mut self, times: i32, safety: bool) {
+        pub fn rotate_stepper_motor(&mut self, times: i32, safety: bool) -> Result<String, String> {
             println!("Rotating stepper motor for {} steps (safety: {})", times, safety);
         
             // Set direction
@@ -73,27 +73,25 @@ pub mod motor_system {
             }
         
             let steps = times.abs();
-            let accel_steps = 200.min(steps / 2); // Acceleration and deceleration both fit in motion
-            let max_delay = 1000; // Start delay in microseconds (slowest)
-            let min_delay = 469;  // Final delay in microseconds (fastest)
+            let accel_steps = 200.min(steps / 2);
+            let max_delay = 1000;
+            let min_delay = 469;
         
             for i in 0..steps {
-                if self.limit_switch_pin.is_low() && self.limit_switch_pin_2.is_low() && safety {
-                    println!("⚠️ Both limit switches are LOW (pressed) – stopping motor");
-                    break;
+                if (self.limit_switch_pin.is_low() || self.limit_switch_pin_2.is_low()) && safety {
+                    let state1 = if self.limit_switch_pin.is_low() { "PRESSED" } else { "NOT PRESSED" };
+                    let state2 = if self.limit_switch_pin_2.is_low() { "PRESSED" } else { "NOT PRESSED" };
+                    println!("⚠️ Limit switch triggered – stopping rotation\nLimit Switch 1: {}, Limit Switch 2: {}", state1, state2);
+                    return Ok("Stopped early due to limit switch being triggered".to_string());
                 }
         
-                // Compute delay with acceleration & deceleration
                 let delay = if i < accel_steps {
-                    // Accelerating
                     let ratio = i as f64 / accel_steps as f64;
                     max_delay as f64 - ratio * (max_delay - min_delay) as f64
                 } else if i >= steps - accel_steps {
-                    // Decelerating
                     let ratio = (steps - i) as f64 / accel_steps as f64;
                     max_delay as f64 - ratio * (max_delay - min_delay) as f64
                 } else {
-                    // Constant speed
                     min_delay as f64
                 } as u64;
         
@@ -102,6 +100,8 @@ pub mod motor_system {
                 self.pulse_pin.set_low();
                 thread::sleep(Duration::from_micros(delay));
             }
+        
+            Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
         }
         
         
@@ -155,8 +155,9 @@ pub mod motor_system {
     
     #[tauri::command]
     pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
-        std::thread::spawn(move || {
-            if let Err(e) = with_controller(|instance| {
+        // Run everything in a separate thread, as before
+        let handle = std::thread::spawn(move || {
+            with_controller(|instance| {
                 println!("Checking safety condition...");
     
                 instance.enable_pin.set_low(); // LOW - motor works
@@ -169,18 +170,26 @@ pub mod motor_system {
                         "⚠️ One of the limit switches is LOW (pressed) – ABORTING for safety\nLimit Switch 1: {}, Limit Switch 2: {}",
                         state1, state2
                     );
-                } else {
-                    instance.rotate_stepper_motor(times, safety);
+    
+                    // ✅ Just return a custom OK message here
+                    return Ok("Aborted: Limit switch already pressed at start.".to_string());
                 }
     
-                Ok::<(), String>(()) // Explicit return type
-            }) {
-                println!("Stepper error: {}", e);
-            }
+                // Proceed with normal motor rotation
+                instance.rotate_stepper_motor(times, safety);
+    
+                Ok("Stepper rotation started.".to_string())
+            })
         });
     
-        Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
+        // Join the thread and return the result
+        match handle.join() {
+            Ok(Ok(_)) => Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety)),
+            Ok(Err(e)) => Err(format!("Stepper motor error: {}", e)),
+            Err(_) => Err("Thread panicked during motor rotation".to_string()),
+        }
     }
+    
     
     
 

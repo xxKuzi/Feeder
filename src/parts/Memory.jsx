@@ -285,6 +285,10 @@ export function Memory({ children }) {
         times: Math.round((6400 / 360) * degrees * 3),
         safety,
       });
+      if (result === "Aborted: Limit switch already pressed at start.") {
+        console.log("calibration needed");
+        openCalibration();
+      }
       return result;
     } catch (error) {
       console.error("Failed to update stepper motor value:", error);
