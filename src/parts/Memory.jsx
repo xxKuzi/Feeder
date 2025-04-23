@@ -45,7 +45,16 @@ export function Memory({ children }) {
     loadRecords();
     loadUsers();
     loadModes();
+    initMotorInstance();
   }, []);
+
+  const initMotorInstance = async () => {
+    try {
+      await invoke("init_instance");
+    } catch (err) {
+      console.error("Error in init instance:", err);
+    }
+  };
 
   useEffect(() => {
     if (users[0].name !== "XYZ") {
