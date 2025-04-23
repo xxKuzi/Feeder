@@ -1,6 +1,6 @@
 // --------- Platform-specific modules ---------
 #[cfg(target_os = "linux")]
-mod platform {
+pub mod platform {
     use rppal::gpio::Gpio;
     use std::thread;
     use std::time::Duration;
@@ -28,11 +28,10 @@ mod platform {
 }
 
 #[cfg(not(target_os = "linux"))]
-mod platform {
+pub mod platform {
     pub fn watch_limit_switch() {
         println!("🟡 Limit switch monitoring is disabled on non-Linux platforms.");
     }
 }
 
-// --------- Public interface ---------
-pub use platform::watch_limit_switch;
+
