@@ -399,7 +399,7 @@ export function Memory({ children }) {
     setGlobalServoState(newState);
     if (newState) {
       try {
-        await invoke("toggle_servo", { state: newState ? 0 : 360 });
+        await invoke("move_servo", { angle: newState ? 0 : 360 });
       } catch (error) {
         console.error("Failed to toggle servo:", error);
       }
