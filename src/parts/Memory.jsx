@@ -30,7 +30,7 @@ export function Memory({ children }) {
   const [calibrationState, setCalibrationState] = useState("false"); //false, running, end_place, true
   const [lastCalibration, setLastCalibration] = useState("0");
   const [globalServoState, setGlobalServoState] = useState(false);
-  const [developerMode, setDeveloperMode] = useState(true);
+  const [developerMode, setDeveloperMode] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [manualMemory, setManualMemory] = useState({
     repetition: 10,
@@ -120,7 +120,7 @@ export function Memory({ children }) {
     //Calibration only REQUIRED if angle is 666 or if it is older than 7 days
     const needsCalibration = userDataRust.angle === 666 || isOld();
     //ALWAYS TRUE WE DO NOT KNOW IF SOMEONE DID NOT MOVE IT
-    if (false) {
+    if (true) {
       openCalibration();
     } else {
       //NEVER HAPPENS NOW
