@@ -3,51 +3,60 @@ pub mod motor_system {
     use rppal::gpio::{Gpio, OutputPin, InputPin};    
     use std::{thread, time::Duration, sync::Mutex};
     use once_cell::sync::Lazy;
+    use rppal::pwm::{Pwm, Channel, Polarity};
+    
 
-    #[derive(Debug)]
-    pub struct Controller {
-        pulse_pin: OutputPin,        // Pin for pulses
-        limit_switch_pin: InputPin,  // Limit switch for calibration/safety
-        limit_switch_pin_2: InputPin, // Second limit switch (
-        direction_pin: OutputPin,    // Pin to control direction
-        enable_pin: OutputPin,       // Pin to enable/disable the motor
-        servo_pin: OutputPin,        // GPIO 13 for servo motor
+pub struct Controller {
+    pulse_pin: OutputPin,
+    limit_switch_pin: InputPin,
+    limit_switch_pin_2: InputPin,
+    direction_pin: OutputPin,
+    enable_pin: OutputPin,
+    // Store the hardware PWM directly:
+    servo_pin: Pwm,
+}
+
+impl Controller {
+    pub fn new(
+        pulse_pin_number: u8,
+        limit_switch_pin_number: u8,
+        limit_switch_pin_2_number: u8,
+        direction_pin_number: u8,
+        enable_pin_number: u8,
+        //servo pwm is hardcoded        
+    ) -> Result<Self, String> {
+        let gpio = Gpio::new().map_err(|e| e.to_string())?;
+        let pulse_pin = gpio.get(pulse_pin_number).map_err(|e| e.to_string())?.into_output();
+        let limit_switch_pin = gpio.get(limit_switch_pin_number).map_err(|e| e.to_string())?.into_input_pullup();
+        let limit_switch_pin_2 = gpio.get(limit_switch_pin_2_number).map_err(|e| e.to_string())?.into_input_pullup();
+        let direction_pin = gpio.get(direction_pin_number).map_err(|e| e.to_string())?.into_output();
+        let enable_pin = gpio.get(enable_pin_number).map_err(|e| e.to_string())?.into_output();
+        // Directly create the PWM for the servo:
+        let servo_pin = Pwm::with_frequency(Channel::Pwm1, 50.0, 0.075, Polarity::Normal, true)
+            .map_err(|e| e.to_string())?;
+        Ok(Controller {
+            pulse_pin,
+            limit_switch_pin,
+            limit_switch_pin_2,
+            direction_pin,
+            enable_pin,
+            servo_pin,
+        })
     }
+    
+        pub fn move_servo_to_angle(&mut self, angle: u8, duration_ms: u64) -> Result<(), String> {
+            // Calculate and set the duty cycle for the desired angle
+            println!("angle rust: {}", angle);
+            let duty = 0.025 + (angle.clamp(0, 180) as f64 / 180.0) * 0.10;
+            println!("moving  + {}",duty);
+            self.servo_pin.set_duty_cycle(duty).map_err(|e| e.to_string())?;
 
-    impl Controller {
-        pub fn new(
-            pulse_pin_number: u8,
-            limit_switch_pin_number: u8,
-            limit_switch_pin_2_number: u8,
-            direction_pin_number: u8,
-            enable_pin_number: u8,
-        ) -> Result<Self, String> {
-            println!(
-                "Initializing stepper motor: pulse={}, limit={}, limit2{}, dir={}, enable={}",
-                pulse_pin_number, limit_switch_pin_number, limit_switch_pin_2_number, direction_pin_number, enable_pin_number
-            );
-
-            let gpio = Gpio::new().map_err(|e| e.to_string())?;
-            let pulse_pin = gpio.get(pulse_pin_number).map_err(|e| e.to_string())?.into_output();
-            let limit_switch_pin = gpio.get(limit_switch_pin_number).map_err(|e| e.to_string())?.into_input_pullup();
-            let limit_switch_pin_2 = gpio.get(limit_switch_pin_2_number).map_err(|e| e.to_string())?.into_input_pullup();
-            let direction_pin = gpio.get(direction_pin_number).map_err(|e| e.to_string())?.into_output();
-            let enable_pin = gpio.get(enable_pin_number).map_err(|e| e.to_string())?.into_output();
-            let servo_pin = gpio.get(13).map_err(|e| e.to_string())?.into_output(); // GPIO 13
-
-            let controller = Controller {
-                pulse_pin,
-                limit_switch_pin,
-                limit_switch_pin_2,
-                direction_pin,
-                enable_pin,
-                servo_pin,
-            };
-            
-            controller.warmup_limit_switch_pins();             
-            
-            Ok(controller)
+            thread::sleep(Duration::from_millis(duration_ms));
+            Ok(())
         }
+
+
+
 
         fn warmup_limit_switch_pins(&self) {
             println!("Warming up limit switch pins (priming pull-ups)...");
@@ -123,26 +132,8 @@ pub mod motor_system {
             Ok("end_place".to_string())
         }
 
-        pub fn move_servo_to_angle(&mut self, angle: u8, duration_ms: u64) {
-            let pulse_width_us = {
-                let min_pulse = 1000;
-                let max_pulse = 2000;
-                let clamped = angle.clamp(0, 180);
-                min_pulse + ((max_pulse - min_pulse) as u64 * clamped as u64) / 180
-            };
-
-            let period_ms = 20;
-            let num_pulses = duration_ms / period_ms;
-
-            println!("🔁 Moving to {}° ({:.1}ms pulse) for {}ms", angle, pulse_width_us as f32 / 1000.0, duration_ms);
-
-            for _ in 0..num_pulses {
-                self.servo_pin.set_high();
-                thread::sleep(Duration::from_micros(pulse_width_us));
-                self.servo_pin.set_low();
-                thread::sleep(Duration::from_millis(period_ms - (pulse_width_us / 1000)));
-            }
-        }
+        
+            
     }
 
     // 🔁 Shared static instance
@@ -239,14 +230,35 @@ pub mod motor_system {
         });
     }
 
+
+
+    
     #[tauri::command]
-pub fn move_servo(angle: u8) -> Result<String, String> {
-    let duration_ms = 1000;
-    with_controller(|instance| {
-        instance.move_servo_to_angle(angle, duration_ms);
-        Ok(format!("Moved servo to {} degrees for {}ms", angle, duration_ms))
-    })
-}            
+    pub fn move_servo(angle: u8) -> Result<String, String> {
+        let duration_ms = 1000;
+        let handle = std::thread::spawn(move || {
+            // Create a standalone Servo object each time
+            let pwm = match Pwm::with_frequency(Channel::Pwm1, 50.0, 0.075, Polarity::Normal, true) {
+                Ok(p) => p,
+                Err(e) => return Err(format!("PWM init error: {e}")),
+            };
+    
+            let duty = 0.025 + (angle.clamp(0, 180) as f64 / 180.0) * 0.10;
+            if let Err(e) = pwm.set_duty_cycle(duty) {
+                return Err(format!("set_duty_cycle error: {e}"));
+            }
+            thread::sleep(Duration::from_millis(duration_ms));
+            Ok(format!("Moved servo to {} degrees for {}ms", angle, duration_ms))
+        });
+    
+        match handle.join() {
+            Ok(Ok(res)) => Ok(res),
+            Ok(Err(e)) => Err(e),
+            Err(_) => Err("Thread panicked during servo move".to_string()),
+        }
+    }
+        
+
 }
 
 
