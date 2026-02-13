@@ -138,6 +138,9 @@ impl Controller {
 
     // 🔁 Shared static instance
     static CONTROLLER_INSTANCE: Lazy<Mutex<Option<Controller>>> = Lazy::new(|| Mutex::new(None));
+    
+    // 📡 Persistent Arduino serial connection
+    static ARDUINO_PORT: Lazy<Mutex<Option<Box<dyn serialport::SerialPort>>>> = Lazy::new(|| Mutex::new(None));
 
     // 🧠 Auto-initializing access wrapper
     fn with_controller<F, R>(f: F) -> Result<R, String>
@@ -238,66 +241,61 @@ impl Controller {
         println!("move_servo called with angle: {}", angle);
         let command = if angle >= 90 { "on" } else { "off" };
         println!("Sending command '{}' to Arduino", command);
-        let handle = std::thread::spawn(move || send_arduino_command(command));
-
-        match handle.join() {
-            Ok(Ok(_)) => {
-                println!("Successfully sent '{}' to Arduino", command);
-                Ok(format!("Sent '{command}' to Arduino"))
-            },
-            Ok(Err(e)) => {
-                println!("Failed to send to Arduino: {}", e);
-                Err(e)
-            },
-            Err(_) => {
-                println!("Thread panicked during Arduino command");
-                Err("Thread panicked during Arduino command".to_string())
-            },
-        }
+        
+        // Non-blocking: spawn thread without joining
+        std::thread::spawn(move || {
+            if let Err(e) = send_arduino_command(command) {
+                println!("Arduino command error: {}", e);
+            }
+        });
+        
+        Ok(format!("Command '{}' queued (non-blocking)", command))
     }
 
     fn send_arduino_command(command: &str) -> Result<(), String> {
-        let port_path = std::env::var("ARDUINO_PORT").unwrap_or_else(|_| "/dev/ttyUSB0".to_string());
-        println!("Opening serial port: {}", port_path);
-        let mut port = serialport::new(&port_path, 9600)
-            .timeout(Duration::from_millis(2000))
-            .open()
-            .map_err(|e| format!("Failed to open serial port: {e}"))?;
+        let mut port_guard = ARDUINO_PORT.lock().unwrap();
+        
+        // Initialize connection if needed
+        if port_guard.is_none() {
+            let port_path = std::env::var("ARDUINO_PORT").unwrap_or_else(|_| "/dev/ttyUSB0".to_string());
+            println!("Opening serial port: {}", port_path);
+            let port = serialport::new(&port_path, 9600)
+                .timeout(Duration::from_millis(100))
+                .open()
+                .map_err(|e| format!("Failed to open serial port: {e}"))?;
 
-        println!("Waiting for Arduino to reset and boot...");
-        thread::sleep(Duration::from_millis(2000));
-
-        // Clear any startup messages from Arduino
-        let mut buffer = vec![0u8; 256];
-        if let Ok(n) = port.read(&mut buffer) {
-            let startup_msg = String::from_utf8_lossy(&buffer[..n]);
-            println!("Arduino startup message: {}", startup_msg);
+            println!("Waiting for Arduino to boot...");
+            thread::sleep(Duration::from_millis(2000));
+            
+            *port_guard = Some(port);
+            println!("Arduino connection established");
         }
-
-        println!("Sending command: '{}' (bytes: {:?})", command, command.as_bytes());
-        let cmd_with_newline = format!("{}\n", command);
-        port.write_all(cmd_with_newline.as_bytes())
-            .map_err(|e| format!("Failed to write to serial port: {e}"))?;
-        port.flush()
-            .map_err(|e| format!("Failed to flush serial port: {e}"))?;
         
-        println!("Command sent, waiting for Arduino response...");
-        thread::sleep(Duration::from_millis(100));
-        
-        // Read Arduino's response
-        let mut response_buffer = vec![0u8; 256];
-        match port.read(&mut response_buffer) {
-            Ok(n) => {
-                let response = String::from_utf8_lossy(&response_buffer[..n]);
-                println!("Arduino response: '{}'", response);
-            },
-            Err(e) => {
-                println!("No response from Arduino (timeout or error): {}", e);
+        if let Some(port) = port_guard.as_mut() {
+            // Clear any buffered data
+            let mut discard = vec![0u8; 256];
+            let _ = port.read(&mut discard);
+            
+            println!("Sending command: '{}'", command);
+            let cmd_with_newline = format!("{}\n", command);
+            port.write_all(cmd_with_newline.as_bytes())
+                .map_err(|e| format!("Failed to write: {e}"))?;
+            port.flush()
+                .map_err(|e| format!("Failed to flush: {e}"))?;
+            
+            // Quick response read (non-blocking timeout)
+            thread::sleep(Duration::from_millis(50));
+            let mut response = vec![0u8; 128];
+            if let Ok(n) = port.read(&mut response) {
+                let msg = String::from_utf8_lossy(&response[..n]);
+                println!("Arduino: {}", msg.trim());
             }
+            
+            println!("Command sent successfully");
+            Ok(())
+        } else {
+            Err("Failed to access serial port".to_string())
         }
-        
-        println!("Command sequence completed");
-        Ok(())
     }
         
 
