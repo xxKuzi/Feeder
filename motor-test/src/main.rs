@@ -74,7 +74,7 @@ fn send_arduino_command(port: &mut Box<dyn SerialPort>, command: &str) -> Result
     Ok(())
 }
 
-fn rotate_stepper(pins: &mut Pins, steps: i32, safety: bool) -> Result<(), String> {
+fn rotate_stepper(pins: &mut Pins, steps: i32, safety: bool) -> Result<String, String> {
     println!("Rotate request: steps={} safety={}", steps, safety);
     pins.enable.set_low();
 
@@ -127,7 +127,7 @@ fn rotate_stepper(pins: &mut Pins, steps: i32, safety: bool) -> Result<(), Strin
     Ok("Rotation complete".to_string())
 }
 
-fn calibrate(pins: &mut Pins) -> Result<(), String> {
+fn calibrate(pins: &mut Pins) -> Result<String, String> {
     println!("Calibration start");
     pins.enable.set_low();
     pins.direction.set_low();
@@ -229,12 +229,12 @@ fn main() {
                 let steps = parts[1].parse::<i32>().unwrap_or(0);
                 let safety = parts[2].parse::<bool>().unwrap_or(true);
                 match rotate_stepper(&mut pins, steps, safety) {
-                    Ok(msg) => println!("{}", msg),
+                    Ok(msg) => println!("{:?}", msg),
                     Err(e) => println!("Error: {}", e),
                 }
             }
             "calibrate" => match calibrate(&mut pins) {
-                Ok(msg) => println!("{}", msg),
+                Ok(msg) => println!("{:?}", msg),
                 Err(e) => println!("Error: {}", e),
             },
             "servo-pwm" => {

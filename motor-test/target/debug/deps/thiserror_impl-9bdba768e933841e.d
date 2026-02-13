@@ -1,0 +1,17 @@
+/home/pb25/Dokumenty/GitHub/Feeder/motor-test/target/debug/deps/libthiserror_impl-9bdba768e933841e.so: /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/lib.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/ast.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/attr.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/expand.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/fallback.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/fmt.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/generics.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/prop.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/scan_expr.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/unraw.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/valid.rs
+
+/home/pb25/Dokumenty/GitHub/Feeder/motor-test/target/debug/deps/thiserror_impl-9bdba768e933841e.d: /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/lib.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/ast.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/attr.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/expand.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/fallback.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/fmt.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/generics.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/prop.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/scan_expr.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/unraw.rs /home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/valid.rs
+
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/lib.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/ast.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/attr.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/expand.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/fallback.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/fmt.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/generics.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/prop.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/scan_expr.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/unraw.rs:
+/home/pb25/.cargo/registry/src/index.crates.io-6f17d22bba15001f/thiserror-impl-2.0.18/src/valid.rs:
+
+# env-dep:CARGO_PKG_VERSION_PATCH=18
