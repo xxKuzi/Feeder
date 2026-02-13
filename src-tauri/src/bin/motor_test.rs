@@ -76,7 +76,8 @@ mod motor_test {
         Ok(())
     }
 
-    fn rotate_stepper(pins: &mut Pins, steps: i32, safety: bool) -> Result<(), String> {
+    // CHANGED: Return type from Result<(), String> to Result<String, String>
+    fn rotate_stepper(pins: &mut Pins, steps: i32, safety: bool) -> Result<String, String> {
         println!("Rotate request: steps={} safety={}", steps, safety);
         pins.enable.set_low();
 
@@ -129,7 +130,8 @@ mod motor_test {
         Ok("Rotation complete".to_string())
     }
 
-    fn calibrate(pins: &mut Pins) -> Result<(), String> {
+    // CHANGED: Return type from Result<(), String> to Result<String, String>
+    fn calibrate(pins: &mut Pins) -> Result<String, String> {
         println!("Calibration start");
         pins.enable.set_low();
         pins.direction.set_low();
@@ -222,12 +224,14 @@ mod motor_test {
                     }
                     let steps = parts[1].parse::<i32>().unwrap_or(0);
                     let safety = parts[2].parse::<bool>().unwrap_or(true);
+                    // This works now because rotate_stepper returns Result<String, String>
                     match rotate_stepper(&mut pins, steps, safety) {
                         Ok(msg) => println!("{}", msg),
                         Err(e) => println!("Error: {}", e),
                     }
                 }
                 "calibrate" => {
+                    // This works now because calibrate returns Result<String, String>
                     match calibrate(&mut pins) {
                         Ok(msg) => println!("{}", msg),
                         Err(e) => println!("Error: {}", e),
@@ -241,7 +245,7 @@ mod motor_test {
                     let angle = parts[1].parse::<u8>().unwrap_or(0);
                     let ms = parts[2].parse::<u64>().unwrap_or(1000);
                     match move_servo_pwm(angle, ms) {
-                        Ok(()) => println!("Servo PWM move complete"),
+                        Ok(_) => println!("Servo PWM move complete"), // Changed from msg to _
                         Err(e) => println!("Error: {}", e),
                     }
                 }
