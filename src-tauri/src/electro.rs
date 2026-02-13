@@ -246,7 +246,7 @@ impl Controller {
     }
 
     fn send_arduino_command(command: &str) -> Result<(), String> {
-        let port_path = std::env::var("ARDUINO_PORT").unwrap_or_else(|_| "/dev/ttyACM0".to_string());
+        let port_path = std::env::var("ARDUINO_PORT").unwrap_or_else(|_| "/dev/ttyUSB0".to_string());
         let mut port = serialport::new(port_path, 9600)
             .timeout(Duration::from_secs(2))
             .open()
