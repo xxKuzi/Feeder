@@ -112,7 +112,7 @@ impl Controller {
                 self.pulse_pin.set_low();
                 thread::sleep(Duration::from_micros(delay));
             }
-        
+            println!("Rotated stepper motor for {} steps (safety: {})", times, safety);
             Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
         }
 
@@ -238,7 +238,7 @@ impl Controller {
     
     #[tauri::command]
     pub fn move_servo(angle: u8) -> Result<String, String> {
-        println!("move_servo called with angle: {}", angle);
+       println!("move_servo called with angle: {}", angle);
         let command = if angle >= 90 { "on" } else { "off" };
         println!("Sending command '{}' to Arduino", command);
         
