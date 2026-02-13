@@ -1,7 +1,7 @@
 #[cfg(target_os = "linux")]
 pub mod motor_system {
     use rppal::gpio::{Gpio, OutputPin, InputPin};    
-    use std::{thread, time::Duration, sync::Mutex, io::Write};
+    use std::{thread, time::Duration, sync::Mutex, io::{Write, Read}};
     use once_cell::sync::Lazy;
     use rppal::pwm::{Pwm, Channel, Polarity};
     
@@ -259,20 +259,44 @@ impl Controller {
     fn send_arduino_command(command: &str) -> Result<(), String> {
         let port_path = std::env::var("ARDUINO_PORT").unwrap_or_else(|_| "/dev/ttyUSB0".to_string());
         println!("Opening serial port: {}", port_path);
-        let mut port = serialport::new(port_path, 9600)
-            .timeout(Duration::from_secs(2))
+        let mut port = serialport::new(&port_path, 9600)
+            .timeout(Duration::from_millis(2000))
             .open()
             .map_err(|e| format!("Failed to open serial port: {e}"))?;
 
-        println!("Waiting for Arduino to reset...");
-        thread::sleep(Duration::from_millis(1200));
+        println!("Waiting for Arduino to reset and boot...");
+        thread::sleep(Duration::from_millis(2000));
 
-        println!("Writing command: {}", command);
-        port.write_all(format!("{command}\n").as_bytes())
+        // Clear any startup messages from Arduino
+        let mut buffer = vec![0u8; 256];
+        if let Ok(n) = port.read(&mut buffer) {
+            let startup_msg = String::from_utf8_lossy(&buffer[..n]);
+            println!("Arduino startup message: {}", startup_msg);
+        }
+
+        println!("Sending command: '{}' (bytes: {:?})", command, command.as_bytes());
+        let cmd_with_newline = format!("{}\n", command);
+        port.write_all(cmd_with_newline.as_bytes())
             .map_err(|e| format!("Failed to write to serial port: {e}"))?;
         port.flush()
             .map_err(|e| format!("Failed to flush serial port: {e}"))?;
-        println!("Command sent successfully");
+        
+        println!("Command sent, waiting for Arduino response...");
+        thread::sleep(Duration::from_millis(100));
+        
+        // Read Arduino's response
+        let mut response_buffer = vec![0u8; 256];
+        match port.read(&mut response_buffer) {
+            Ok(n) => {
+                let response = String::from_utf8_lossy(&response_buffer[..n]);
+                println!("Arduino response: '{}'", response);
+            },
+            Err(e) => {
+                println!("No response from Arduino (timeout or error): {}", e);
+            }
+        }
+        
+        println!("Command sequence completed");
         Ok(())
     }
         
