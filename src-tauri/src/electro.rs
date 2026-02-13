@@ -235,29 +235,44 @@ impl Controller {
     
     #[tauri::command]
     pub fn move_servo(angle: u8) -> Result<String, String> {
+        println!("move_servo called with angle: {}", angle);
         let command = if angle >= 90 { "on" } else { "off" };
+        println!("Sending command '{}' to Arduino", command);
         let handle = std::thread::spawn(move || send_arduino_command(command));
 
         match handle.join() {
-            Ok(Ok(_)) => Ok(format!("Sent '{command}' to Arduino")),
-            Ok(Err(e)) => Err(e),
-            Err(_) => Err("Thread panicked during Arduino command".to_string()),
+            Ok(Ok(_)) => {
+                println!("Successfully sent '{}' to Arduino", command);
+                Ok(format!("Sent '{command}' to Arduino"))
+            },
+            Ok(Err(e)) => {
+                println!("Failed to send to Arduino: {}", e);
+                Err(e)
+            },
+            Err(_) => {
+                println!("Thread panicked during Arduino command");
+                Err("Thread panicked during Arduino command".to_string())
+            },
         }
     }
 
     fn send_arduino_command(command: &str) -> Result<(), String> {
         let port_path = std::env::var("ARDUINO_PORT").unwrap_or_else(|_| "/dev/ttyUSB0".to_string());
+        println!("Opening serial port: {}", port_path);
         let mut port = serialport::new(port_path, 9600)
             .timeout(Duration::from_secs(2))
             .open()
             .map_err(|e| format!("Failed to open serial port: {e}"))?;
 
+        println!("Waiting for Arduino to reset...");
         thread::sleep(Duration::from_millis(1200));
 
+        println!("Writing command: {}", command);
         port.write_all(format!("{command}\n").as_bytes())
             .map_err(|e| format!("Failed to write to serial port: {e}"))?;
         port.flush()
             .map_err(|e| format!("Failed to flush serial port: {e}"))?;
+        println!("Command sent successfully");
         Ok(())
     }
         
