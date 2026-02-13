@@ -1,7 +1,7 @@
 #[cfg(target_os = "linux")]
 pub mod motor_system {
     use rppal::gpio::{Gpio, OutputPin, InputPin};    
-    use std::{thread, time::Duration, sync::Mutex};
+    use std::{thread, time::Duration, sync::Mutex, io::Write};
     use once_cell::sync::Lazy;
     use rppal::pwm::{Pwm, Channel, Polarity};
     
@@ -235,27 +235,30 @@ impl Controller {
     
     #[tauri::command]
     pub fn move_servo(angle: u8) -> Result<String, String> {
-        let duration_ms = 1000;
-        let handle = std::thread::spawn(move || {
-            // Create a standalone Servo object each time
-            let pwm = match Pwm::with_frequency(Channel::Pwm1, 50.0, 0.075, Polarity::Normal, true) {
-                Ok(p) => p,
-                Err(e) => return Err(format!("PWM init error: {e}")),
-            };
-    
-            let duty = 0.025 + (angle.clamp(0, 180) as f64 / 180.0) * 0.10;
-            if let Err(e) = pwm.set_duty_cycle(duty) {
-                return Err(format!("set_duty_cycle error: {e}"));
-            }
-            thread::sleep(Duration::from_millis(duration_ms));
-            Ok(format!("Moved servo to {} degrees for {}ms", angle, duration_ms))
-        });
-    
+        let command = if angle >= 90 { "on" } else { "off" };
+        let handle = std::thread::spawn(move || send_arduino_command(command));
+
         match handle.join() {
-            Ok(Ok(res)) => Ok(res),
+            Ok(Ok(_)) => Ok(format!("Sent '{command}' to Arduino")),
             Ok(Err(e)) => Err(e),
-            Err(_) => Err("Thread panicked during servo move".to_string()),
+            Err(_) => Err("Thread panicked during Arduino command".to_string()),
         }
+    }
+
+    fn send_arduino_command(command: &str) -> Result<(), String> {
+        let port_path = std::env::var("ARDUINO_PORT").unwrap_or_else(|_| "/dev/ttyACM0".to_string());
+        let mut port = serialport::new(port_path, 9600)
+            .timeout(Duration::from_secs(2))
+            .open()
+            .map_err(|e| format!("Failed to open serial port: {e}"))?;
+
+        thread::sleep(Duration::from_millis(1200));
+
+        port.write_all(format!("{command}\n").as_bytes())
+            .map_err(|e| format!("Failed to write to serial port: {e}"))?;
+        port.flush()
+            .map_err(|e| format!("Failed to flush serial port: {e}"))?;
+        Ok(())
     }
         
 
