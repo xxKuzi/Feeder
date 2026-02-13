@@ -226,14 +226,14 @@ mod motor_test {
                     let safety = parts[2].parse::<bool>().unwrap_or(true);
                     // This works now because rotate_stepper returns Result<String, String>
                     match rotate_stepper(&mut pins, steps, safety) {
-                        Ok(msg) => println!("{}", msg),
+                        Ok(msg) => println!("{:?}", msg),
                         Err(e) => println!("Error: {}", e),
                     }
                 }
                 "calibrate" => {
                     // This works now because calibrate returns Result<String, String>
                     match calibrate(&mut pins) {
-                        Ok(msg) => println!("{}", msg),
+                        Ok(msg) => println!("{:?}", msg),
                         Err(e) => println!("Error: {}", e),
                     }
                 }
