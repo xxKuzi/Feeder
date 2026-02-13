@@ -38,3 +38,4 @@ log = "0.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 rppal = "0.16"  # for GPIO control
+serialport = "4"
