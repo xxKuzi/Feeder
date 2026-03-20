@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 const DataContext = createContext();
 import Modal from "./Modal.jsx";
 import Calibration from "./Calibration.jsx";
@@ -30,6 +31,7 @@ export function Memory({ children }) {
   const [calibrationState, setCalibrationState] = useState("false"); //false, running, end_place, true
   const [lastCalibration, setLastCalibration] = useState("0");
   const [globalServoState, setGlobalServoState] = useState(false);
+  const [basketPoints, setBasketPoints] = useState(0);
   const [developerMode, setDeveloperMode] = useState(true);
   const [refresh, setRefresh] = useState(false);
   const [manualMemory, setManualMemory] = useState({
@@ -46,6 +48,7 @@ export function Memory({ children }) {
     loadUsers();
     loadModes();
     initMotorInstance();
+    startArduinoBridge();
   }, []);
 
   const initMotorInstance = async () => {
@@ -55,6 +58,39 @@ export function Memory({ children }) {
       console.error("Error in init instance:", err);
     }
   };
+
+  const startArduinoBridge = async () => {
+    try {
+      await invoke("start_arduino_bridge");
+      const initialScore = await invoke("get_basket_score");
+      setBasketPoints(Number(initialScore || 0));
+    } catch (err) {
+      console.error("Error in Arduino bridge init:", err);
+    }
+  };
+
+  useEffect(() => {
+    let unlistenFn = null;
+
+    const bindScoreListener = async () => {
+      unlistenFn = await listen("basket-score-updated", (event) => {
+        const payload = event.payload || {};
+        if (typeof payload.score === "number") {
+          setBasketPoints(payload.score);
+        } else {
+          setBasketPoints((prev) => prev + 1);
+        }
+      });
+    };
+
+    bindScoreListener();
+
+    return () => {
+      if (unlistenFn) {
+        unlistenFn();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (users[0].name !== "XYZ") {
@@ -338,8 +374,8 @@ export function Memory({ children }) {
             "Rotated stepper motor 4800 steps (safety: false)"
           ) {
             //setTimeout(() => {
-              setCalibrationState("true");
-              saveLastCalibration();
+            setCalibrationState("true");
+            saveLastCalibration();
             //}, 5000);
           }
           setGlobalAngle(90);
@@ -396,15 +432,38 @@ export function Memory({ children }) {
   };
 
   const toggleServo = async (newState) => {
-    setGlobalServoState(newState);            
-    
+    setGlobalServoState(newState);
+
     try {
-      await invoke("move_servo", { angle: newState ? 0 : 180});
-  
+      await invoke("move_servo", { angle: newState ? 0 : 180 });
     } catch (error) {
       console.error("Failed to toggle servo:", error);
     }
-    
+  };
+
+  const toggleFeederServo = async (stopBall) => {
+    try {
+      await invoke("move_feeder_servo", { stopBall });
+    } catch (error) {
+      console.error("Failed to toggle feeder servo:", error);
+    }
+  };
+
+  const feederDispenseToServo1 = async () => {
+    try {
+      await invoke("feed_ball_to_servo1");
+    } catch (error) {
+      console.error("Failed to feed ball from servo2 to servo1:", error);
+    }
+  };
+
+  const resetBasketPoints = async () => {
+    try {
+      await invoke("reset_basket_score");
+      setBasketPoints(0);
+    } catch (error) {
+      console.error("Failed to reset basket points:", error);
+    }
   };
 
   const saveAngle = async (angle) => {
@@ -466,6 +525,10 @@ export function Memory({ children }) {
     unlockDeveloperMode,
     globalServoState,
     toggleServo,
+    toggleFeederServo,
+    feederDispenseToServo1,
+    basketPoints,
+    resetBasketPoints,
     manualMemory,
     setManualMemory,
     singOutDeveloperMode,

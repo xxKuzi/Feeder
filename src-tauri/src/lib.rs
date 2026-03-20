@@ -12,7 +12,18 @@ use sql::{
     connect_to_database, add_record, add_user, load_users, select_user, delete_user,
     load_current_data, load_records, rename_user, add_mode, load_modes, delete_mode, update_mode, save_angle, save_last_calibration
 };
-use electro::motor_system::{rotate_stepper_motor, calibrate_stepper_motor, check_limit_switch, init_instance, move_servo};
+use electro::motor_system::{
+    rotate_stepper_motor,
+    calibrate_stepper_motor,
+    check_limit_switch,
+    init_instance,
+    move_servo,
+    move_feeder_servo,
+    feed_ball_to_servo1,
+    get_basket_score,
+    reset_basket_score,
+    start_arduino_bridge,
+};
 
 use tauri::{Manager, AppHandle};
 use once_cell::sync::OnceCell;
@@ -87,7 +98,12 @@ pub async fn run() {
         save_angle,
         save_last_calibration,
         init_instance,
-        move_servo
+        move_servo,
+        move_feeder_servo,
+        feed_ball_to_servo1,
+        get_basket_score,
+        reset_basket_score,
+        start_arduino_bridge
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

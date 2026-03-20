@@ -1,9 +1,10 @@
 #[cfg(target_os = "linux")]
 pub mod motor_system {
     use rppal::gpio::{Gpio, OutputPin, InputPin};    
-    use std::{thread, time::Duration, sync::Mutex, io::{Write, Read}};
+    use std::{thread, time::Duration, sync::{Mutex, atomic::{AtomicBool, AtomicU32, Ordering}}, io::{Write, Read, BufRead, BufReader}};
     use once_cell::sync::Lazy;
     use rppal::pwm::{Pwm, Channel, Polarity};
+    use tauri::{AppHandle, Emitter};
     
 
 pub struct Controller {
@@ -141,6 +142,8 @@ impl Controller {
     
     // 📡 Persistent Arduino serial connection
     static ARDUINO_PORT: Lazy<Mutex<Option<Box<dyn serialport::SerialPort>>>> = Lazy::new(|| Mutex::new(None));
+    static ARDUINO_LISTENER_RUNNING: AtomicBool = AtomicBool::new(false);
+    static BASKET_SCORE: AtomicU32 = AtomicU32::new(0);
 
     // 🧠 Auto-initializing access wrapper
     fn with_controller<F, R>(f: F) -> Result<R, String>
@@ -238,8 +241,8 @@ impl Controller {
     
     #[tauri::command]
     pub fn move_servo(angle: u8) -> Result<String, String> {
-       println!("move_servo called with angle: {}", angle);
-        let command = if angle >= 90 { "on" } else { "off" };
+       println!("move_servo (servo1) called with angle: {}", angle);
+        let command = if angle >= 90 { "SERVO1_STOP" } else { "SERVO1_RELEASE" };
         println!("Sending command '{}' to Arduino", command);
         
         // Non-blocking: spawn thread without joining
@@ -252,24 +255,128 @@ impl Controller {
         Ok(format!("Command '{}' queued (non-blocking)", command))
     }
 
-    fn send_arduino_command(command: &str) -> Result<(), String> {
+    #[tauri::command]
+    pub fn move_feeder_servo(stop_ball: bool) -> Result<String, String> {
+        let command = if stop_ball { "SERVO2_STOP" } else { "SERVO2_RELEASE" };
+        send_arduino_command(command)?;
+        Ok(format!("Command '{}' sent", command))
+    }
+
+    #[tauri::command]
+    pub fn feed_ball_to_servo1() -> Result<String, String> {
+        send_arduino_command("SERVO2_DISPENSE")?;
+        Ok("Servo2 dispense command sent".to_string())
+    }
+
+    #[tauri::command]
+    pub fn get_basket_score() -> Result<u32, String> {
+        Ok(BASKET_SCORE.load(Ordering::Relaxed))
+    }
+
+    #[tauri::command]
+    pub fn reset_basket_score() -> Result<String, String> {
+        BASKET_SCORE.store(0, Ordering::Relaxed);
+        let _ = send_arduino_command("RESET_SCORE");
+        Ok("Basket score reset".to_string())
+    }
+
+    #[tauri::command]
+    pub fn start_arduino_bridge(app: AppHandle, port: Option<String>) -> Result<String, String> {
+        ensure_arduino_connection(port)?;
+        ensure_arduino_listener(app)?;
+        Ok("Arduino bridge ready".to_string())
+    }
+
+    fn ensure_arduino_connection(port_override: Option<String>) -> Result<(), String> {
         let mut port_guard = ARDUINO_PORT.lock().unwrap();
-        
-        // Initialize connection if needed
+
         if port_guard.is_none() {
-            let port_path = std::env::var("ARDUINO_PORT").unwrap_or_else(|_| "/dev/ttyUSB0".to_string());
+            let port_path = port_override
+                .or_else(|| std::env::var("ARDUINO_PORT").ok())
+                .unwrap_or_else(|| "/dev/ttyUSB0".to_string());
+
             println!("Opening serial port: {}", port_path);
-            let port = serialport::new(&port_path, 9600)
+            let port = serialport::new(&port_path, 115200)
                 .timeout(Duration::from_millis(100))
                 .open()
                 .map_err(|e| format!("Failed to open serial port: {e}"))?;
 
             println!("Waiting for Arduino to boot...");
             thread::sleep(Duration::from_millis(2000));
-            
             *port_guard = Some(port);
             println!("Arduino connection established");
         }
+
+        Ok(())
+    }
+
+    fn ensure_arduino_listener(app: AppHandle) -> Result<(), String> {
+        if ARDUINO_LISTENER_RUNNING
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return Ok(());
+        }
+
+        let reader_port = {
+            let mut port_guard = ARDUINO_PORT.lock().unwrap();
+            match port_guard.as_mut() {
+                Some(port) => port.try_clone().map_err(|e| format!("Failed to clone serial port: {e}"))?,
+                None => {
+                    ARDUINO_LISTENER_RUNNING.store(false, Ordering::SeqCst);
+                    return Err("Arduino port is not initialized".to_string());
+                }
+            }
+        };
+
+        thread::spawn(move || {
+            let mut reader = BufReader::new(reader_port);
+            let mut line = String::new();
+
+            loop {
+                line.clear();
+                match reader.read_line(&mut line) {
+                    Ok(0) => {
+                        thread::sleep(Duration::from_millis(10));
+                    }
+                    Ok(_) => {
+                        let msg = line.trim();
+                        if msg.is_empty() {
+                            continue;
+                        }
+
+                        println!("Arduino RX: {}", msg);
+
+                        if let Some(delta_str) = msg.strip_prefix("SCORE:") {
+                            let delta = delta_str.parse::<u32>().unwrap_or(1);
+                            let new_score = BASKET_SCORE.fetch_add(delta, Ordering::Relaxed) + delta;
+
+                            let _ = app.emit(
+                                "basket-score-updated",
+                                serde_json::json!({
+                                    "score": new_score,
+                                    "delta": delta
+                                }),
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        if e.kind() != std::io::ErrorKind::TimedOut {
+                            println!("Arduino listener error: {}", e);
+                            thread::sleep(Duration::from_millis(50));
+                        }
+                    }
+                }
+            }
+        });
+
+        Ok(())
+    }
+
+    fn send_arduino_command(command: &str) -> Result<(), String> {
+        ensure_arduino_connection(None)?;
+
+        let mut port_guard = ARDUINO_PORT.lock().unwrap();
         
         if let Some(port) = port_guard.as_mut() {
             // Clear any buffered data
@@ -304,7 +411,7 @@ impl Controller {
 
 #[cfg(not(target_os = "linux"))]
 pub mod motor_system {
-    use std::{thread, time::Duration, sync::Mutex};
+    use tauri::AppHandle;
     #[tauri::command]
     pub fn init_instance() -> Result<String, String> {
         Err("You can not init instance supported on this platform".to_string())
@@ -316,7 +423,7 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn rotate_stepper_motor(_times: i32) -> Result<String, String> {
+    pub fn rotate_stepper_motor(_times: i32, _safety: bool) -> Result<String, String> {
         Ok("Rotated stepper motor 4800 steps (safety: false)".to_string())
         // Err("Stepper motor control not supported on this platform".to_string())
     }
@@ -329,7 +436,32 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn move_servo(angle: u8) -> Result<String, String> {
+    pub fn move_servo(_angle: u8) -> Result<String, String> {
         Ok("end_place".to_string())
-    }   
+    }
+
+    #[tauri::command]
+    pub fn move_feeder_servo(_stop_ball: bool) -> Result<String, String> {
+        Ok("not supported on this platform".to_string())
+    }
+
+    #[tauri::command]
+    pub fn feed_ball_to_servo1() -> Result<String, String> {
+        Ok("not supported on this platform".to_string())
+    }
+
+    #[tauri::command]
+    pub fn get_basket_score() -> Result<u32, String> {
+        Ok(0)
+    }
+
+    #[tauri::command]
+    pub fn reset_basket_score() -> Result<String, String> {
+        Ok("Basket score reset".to_string())
+    }
+
+    #[tauri::command]
+    pub fn start_arduino_bridge(_app: AppHandle, _port: Option<String>) -> Result<String, String> {
+        Ok("Arduino bridge not supported on this platform".to_string())
+    }
 }
