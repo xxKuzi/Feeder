@@ -17,6 +17,9 @@ export default function Workout() {
     workoutData,
     globalAngle,
     toggleServo,
+    feederDispenseToServo1,
+    basketPoints,
+    resetBasketPoints,
     rotateStepperMotor,
   } = useData();
   const [time, setTime] = useState(0); //elapsed Time
@@ -106,6 +109,7 @@ export default function Workout() {
     setReset(true); //changes angle and motorSpeed to first value in array
     countdownRef.current.startCountdown(4); //Shows counter for 4s
     updateStatistics(0, 0); //reset statistics
+    resetBasketPoints();
     startWorkout(); //BLUETOOTH
     setFullTime(
       workoutData.intervals.length > 1
@@ -113,7 +117,7 @@ export default function Workout() {
             workoutData.intervals.reduce((total, current) => total + current, 0)
         : workoutData.repetition *
             workoutData.intervals[0] *
-            workoutData.angles.length
+            workoutData.angles.length,
     ); //calculate fullTime + ONE second safety
 
     setTimeout(() => {
@@ -181,7 +185,7 @@ export default function Workout() {
       ? `${String(seconds).padStart(2, "0")}`
       : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
           2,
-          "0"
+          "0",
         )}`;
   };
 
@@ -193,8 +197,10 @@ export default function Workout() {
     // console.log("updating Stepper motor speed to: ", ending);
   };
 
-  const releaseBall = () => {
+  const releaseBall = async () => {
     console.log("A ball was released");
+    await feederDispenseToServo1();
+    await new Promise((resolve) => setTimeout(resolve, 250));
     toggleServo(true);
     setTimeout(() => {
       toggleServo(false);
@@ -237,6 +243,7 @@ export default function Workout() {
         />
       </div>
       <p className="text-4xl font-bold mt-10">{workoutData.name}</p>
+      <p className="text-2xl font-semibold mt-2">Skóre: {basketPoints}</p>
       {/* MAIN */}
       <div className="rounded-xl space-x-4 flex items-center justify-center w-full">
         {/* Circle */}

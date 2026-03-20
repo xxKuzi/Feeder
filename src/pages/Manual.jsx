@@ -17,6 +17,7 @@ export default function Manual() {
     manualMemory,
     setManualMemory,
     toggleServo,
+    feederDispenseToServo1,
   } = useData();
   const navigate = useNavigate();
 
@@ -32,8 +33,10 @@ export default function Manual() {
     }, 3000);
   };
 
-  const pass = () => {
+  const pass = async () => {
     setIsPassDisabled(true);
+    await feederDispenseToServo1();
+    await new Promise((resolve) => setTimeout(resolve, 250));
     toggleServo(true);
     setTimeout(() => {
       setIsPassDisabled(false);
