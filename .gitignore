@@ -25,5 +25,5 @@ dist-ssr
 src-tauri/data.db
 src-tauri/data.db
 
-# rust test script
-./arduino-serial-tester/target/
+
+
