@@ -34,6 +34,14 @@
 - Sketch: [arduino/feeder_dual_servo_score/feeder_dual_servo_score.ino](arduino/feeder_dual_servo_score/feeder_dual_servo_score.ino)
 - Protocol notes: [arduino/feeder_dual_servo_score/README.md](arduino/feeder_dual_servo_score/README.md)
 
+### Fast serial test app (without Tauri reload)
+
+- Standalone Rust CLI: [arduino-serial-tester](arduino-serial-tester)
+- Run:
+  - `cd arduino-serial-tester`
+  - `cargo run -- --port /dev/ttyUSB0 --baud 115200`
+- The tester can send commands and shows live basket points from `SCORE:<n>` messages.
+
 ### USB serial on Raspberry Pi
 
 - Default serial path used by backend: `/dev/ttyUSB0`
