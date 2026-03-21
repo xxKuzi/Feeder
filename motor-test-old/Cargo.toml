@@ -1,0 +1,10 @@
+[package]
+name = "motor-test"
+version = "0.1.0"
+edition = "2021"
+
+description = "Standalone motor test tool for Raspberry Pi"
+
+[dependencies]
+rppal = "0.16"
+serialport = "4"
