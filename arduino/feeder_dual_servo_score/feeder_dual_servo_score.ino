@@ -189,7 +189,7 @@ void loop() {
         scoreCount++;
 
         Serial.print("SCORE:");
-        Serial.println(scoreCount);
+        Serial.println(1); //it sends only 1 plus
       }
     } else {
       // Re-arm detection after sensors drop under threshold.
