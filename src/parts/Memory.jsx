@@ -118,7 +118,9 @@ export function Memory({ children }) {
         const requestId = Number(payload.requestId || payload.request_id || 0);
 
         if (
-          payload.message === "Aborted: Limit switch already pressed at start."
+          payload.message ===
+            "Aborted: Limit switch already pressed at start." ||
+          payload.message?.includes("Stopped early due to limit switch")
         ) {
           setCalibrationState("false");
           openCalibration();
@@ -469,10 +471,15 @@ export function Memory({ children }) {
       const result = await waitForMotorRequest(requestId);
       const state = result?.message;
 
-      if (state === "end_place") {
+      if (
+        state === "end_place" ||
+        state === "end_place_left" ||
+        state === "end_place_right"
+      ) {
         setCalibrationState("end_place");
         setTimeout(async () => {
-          const defaultPosition = await rotateStepperMotor(90, false, {
+          const centerMoveDegrees = state === "end_place_left" ? -90 : 90;
+          const defaultPosition = await rotateStepperMotor(centerMoveDegrees, false, {
             waitForCompletion: true,
           });
           console.log("defaultPosition", defaultPosition);
