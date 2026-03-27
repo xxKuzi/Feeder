@@ -118,8 +118,7 @@ export function Memory({ children }) {
         const requestId = Number(payload.requestId || payload.request_id || 0);
 
         if (
-          payload.message ===
-          "Aborted: Limit switch already pressed at start."
+          payload.message === "Aborted: Limit switch already pressed at start."
         ) {
           setCalibrationState("false");
           openCalibration();
@@ -137,9 +136,7 @@ export function Memory({ children }) {
         const requestId = Number(payload.requestId || payload.request_id || 0);
         const resolver = pendingMotorRequestsRef.current.get(requestId);
         if (resolver?.reject) {
-          resolver.reject(
-            new Error(payload.error || "Motor operation failed")
-          );
+          resolver.reject(new Error(payload.error || "Motor operation failed"));
           clearPendingRequest(requestId);
         }
       });
@@ -427,7 +424,7 @@ export function Memory({ children }) {
   const rotateStepperMotor = async (
     degrees,
     safety = true,
-    options = { waitForCompletion: false }
+    options = { waitForCompletion: false },
   ) => {
     try {
       const queued = await invoke("rotate_stepper_motor", {
