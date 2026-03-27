@@ -377,15 +377,23 @@ impl Controller {
 
     #[tauri::command]
     pub fn move_feeder_servo(stop_ball: bool) -> Result<String, String> {
-        let command = if stop_ball { "SERVO2_STOP" } else { "SERVO2_RELEASE" };
-        send_arduino_command(command)?;
-        Ok(format!("Command '{}' sent", command))
+        let command = if stop_ball { "SERVO2_STOP" } else { "SERVO2_RELEASE" }.to_string();
+        std::thread::spawn(move || {
+            if let Err(e) = send_arduino_command(&command) {
+                println!("Arduino command error: {}", e);
+            }
+        });
+        Ok(format!("Command '{}' queued (non-blocking)", command))
     }
 
     #[tauri::command]
     pub fn feed_ball_to_servo1() -> Result<String, String> {
-        send_arduino_command("SERVO2_DISPENSE")?;
-        Ok("Servo2 dispense command sent".to_string())
+        std::thread::spawn(|| {
+            if let Err(e) = send_arduino_command("SERVO2_DISPENSE") {
+                println!("Arduino command error: {}", e);
+            }
+        });
+        Ok("Servo2 dispense command queued (non-blocking)".to_string())
     }
 
     #[tauri::command]
