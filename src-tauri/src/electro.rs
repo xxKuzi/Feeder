@@ -130,11 +130,14 @@ impl Controller {
                 return Err("Calibration failed: both limit switches are pressed.".to_string());
             }
 
+            let mut current_direction: Option<bool> = None; // Track direction: Some(true)=high, Some(false)=low
+
             // Determine which switch is pressed and move away to release it, then move to the other end
             if self.limit_switch_pin.is_low() {
                 // Right switch (GPIO 24) is already pressed - move LEFT to release it
                 println!("Right limit switch is pressed. Moving left to release it...");
                 self.direction_pin.set_high();
+                current_direction = Some(true);
                 let mut steps = 0u32;
 
                 while self.limit_switch_pin.is_low() && steps < MAX_RELEASE_STEPS {
@@ -167,6 +170,7 @@ impl Controller {
                 // Left switch (GPIO 1) is already pressed - move RIGHT to release it
                 println!("Left limit switch is pressed. Moving right to release it...");
                 self.direction_pin.set_low();
+                current_direction = Some(false);
                 let mut steps = 0u32;
 
                 while self.limit_switch_pin_2.is_low() && steps < MAX_RELEASE_STEPS {
@@ -199,6 +203,7 @@ impl Controller {
                 // Neither switch is pressed - move in default direction until one is hit
                 println!("No limit switch pressed. Moving right to find a limit switch...");
                 self.direction_pin.set_low();
+                current_direction = Some(false);
                 let mut steps = 0u32;
 
                 while self.limit_switch_pin.is_high() && self.limit_switch_pin_2.is_high() && steps < MAX_HOME_STEPS {
@@ -219,10 +224,12 @@ impl Controller {
             const CENTER_STEPS: u32 = 4800; // 90 degrees to center (full travel is 0-180 degrees)
             
             // Reverse direction to move toward center
-            if self.direction_pin.is_high() {
-                self.direction_pin.set_low();
-            } else {
-                self.direction_pin.set_high();
+            if let Some(was_high) = current_direction {
+                if was_high {
+                    self.direction_pin.set_low();
+                } else {
+                    self.direction_pin.set_high();
+                }
             }
 
             for _ in 0..CENTER_STEPS {
