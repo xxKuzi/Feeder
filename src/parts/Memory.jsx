@@ -17,6 +17,8 @@ export function Memory({ children }) {
   const modalRef = useRef();
   const calibrationRef = useRef();
   const keyboardRef = useRef(null);
+  const pendingMotorRequestsRef = useRef(new Map());
+  const pendingMotorTimeoutsRef = useRef(new Map());
   const navigate = useNavigate();
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
   const [workoutData, setWorkoutData] = useState({
@@ -32,6 +34,7 @@ export function Memory({ children }) {
   const [lastCalibration, setLastCalibration] = useState("0");
   const [globalServoState, setGlobalServoState] = useState(false);
   const [basketPoints, setBasketPoints] = useState(0);
+  const [motorQueueLength, setMotorQueueLength] = useState(0);
   const [developerMode, setDeveloperMode] = useState(true);
   const [refresh, setRefresh] = useState(false);
   const [manualMemory, setManualMemory] = useState({
@@ -89,6 +92,85 @@ export function Memory({ children }) {
       if (unlistenFn) {
         unlistenFn();
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    let unlistenStarted = null;
+    let unlistenCompleted = null;
+    let unlistenFailed = null;
+    let unlistenQueue = null;
+
+    const clearPendingRequest = (requestId) => {
+      const timeoutId = pendingMotorTimeoutsRef.current.get(requestId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      pendingMotorTimeoutsRef.current.delete(requestId);
+      pendingMotorRequestsRef.current.delete(requestId);
+    };
+
+    const bindMotorListeners = async () => {
+      unlistenStarted = await listen("motor_move_started", () => {});
+
+      unlistenCompleted = await listen("motor_move_completed", (event) => {
+        const payload = event.payload || {};
+        const requestId = Number(payload.requestId || payload.request_id || 0);
+
+        if (
+          payload.message ===
+          "Aborted: Limit switch already pressed at start."
+        ) {
+          setCalibrationState("false");
+          openCalibration();
+        }
+
+        const resolver = pendingMotorRequestsRef.current.get(requestId);
+        if (resolver?.resolve) {
+          resolver.resolve(payload);
+          clearPendingRequest(requestId);
+        }
+      });
+
+      unlistenFailed = await listen("motor_move_failed", (event) => {
+        const payload = event.payload || {};
+        const requestId = Number(payload.requestId || payload.request_id || 0);
+        const resolver = pendingMotorRequestsRef.current.get(requestId);
+        if (resolver?.reject) {
+          resolver.reject(
+            new Error(payload.error || "Motor operation failed")
+          );
+          clearPendingRequest(requestId);
+        }
+      });
+
+      unlistenQueue = await listen("motor_queue_length", (event) => {
+        const payload = event.payload || {};
+        setMotorQueueLength(Number(payload.queueLength || 0));
+      });
+    };
+
+    bindMotorListeners();
+
+    return () => {
+      if (unlistenStarted) {
+        unlistenStarted();
+      }
+      if (unlistenCompleted) {
+        unlistenCompleted();
+      }
+      if (unlistenFailed) {
+        unlistenFailed();
+      }
+      if (unlistenQueue) {
+        unlistenQueue();
+      }
+
+      pendingMotorTimeoutsRef.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      pendingMotorTimeoutsRef.current.clear();
+      pendingMotorRequestsRef.current.clear();
     };
   }, []);
 
@@ -324,18 +406,42 @@ export function Memory({ children }) {
     console.log("slowing down");
   };
 
-  const rotateStepperMotor = async (degrees, safety = true) => {
+  const waitForMotorRequest = (requestId, timeoutMs = 120000) => {
+    return new Promise((resolve, reject) => {
+      if (!requestId) {
+        reject(new Error("Invalid motor request id"));
+        return;
+      }
+
+      pendingMotorRequestsRef.current.set(requestId, { resolve, reject });
+      const timeoutId = setTimeout(() => {
+        pendingMotorRequestsRef.current.delete(requestId);
+        pendingMotorTimeoutsRef.current.delete(requestId);
+        reject(new Error("Motor operation timed out"));
+      }, timeoutMs);
+
+      pendingMotorTimeoutsRef.current.set(requestId, timeoutId);
+    });
+  };
+
+  const rotateStepperMotor = async (
+    degrees,
+    safety = true,
+    options = { waitForCompletion: false }
+  ) => {
     try {
-      const result = await invoke("rotate_stepper_motor", {
+      const queued = await invoke("rotate_stepper_motor", {
         times: Math.round((6400 / 360) * degrees * 3),
         safety,
       });
-      if (result === "Aborted: Limit switch already pressed at start.") {
-        console.log("calibration needed");
-        setCalibrationState("false");
-        openCalibration();
+
+      if (!options.waitForCompletion) {
+        return queued;
       }
-      return result;
+
+      const requestId = Number(queued?.requestId || queued?.request_id || 0);
+      const completed = await waitForMotorRequest(requestId);
+      return completed?.message || null;
     } catch (error) {
       console.error("Failed to update stepper motor value:", error);
       return null;
@@ -361,22 +467,22 @@ export function Memory({ children }) {
 
   const performCalibration = async () => {
     try {
-      const state = await invoke("calibrate_stepper_motor");
+      const queued = await invoke("calibrate_stepper_motor");
+      const requestId = Number(queued?.requestId || queued?.request_id || 0);
+      const result = await waitForMotorRequest(requestId);
+      const state = result?.message;
 
       if (state === "end_place") {
         setCalibrationState("end_place");
         setTimeout(async () => {
-          const defaultPosition = await rotateStepperMotor(90, false);
+          const defaultPosition = await rotateStepperMotor(90, false, {
+            waitForCompletion: true,
+          });
           console.log("defaultPosition", defaultPosition);
 
-          if (
-            defaultPosition ===
-            "Rotated stepper motor 4800 steps (safety: false)"
-          ) {
-            //setTimeout(() => {
+          if (defaultPosition && !defaultPosition.startsWith("Aborted:")) {
             setCalibrationState("true");
             saveLastCalibration();
-            //}, 5000);
           }
           setGlobalAngle(90);
         }, 1000);
@@ -566,6 +672,7 @@ export function Memory({ children }) {
     feederDispenseToServo1,
     runAutoBallCycle,
     basketPoints,
+    motorQueueLength,
     resetBasketPoints,
     addBasketPoints,
     sendArduinoRawCommand,
