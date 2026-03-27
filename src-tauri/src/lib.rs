@@ -21,7 +21,9 @@ use electro::motor_system::{
     move_feeder_servo,
     feed_ball_to_servo1,
     get_basket_score,
+    add_basket_points,
     reset_basket_score,
+    send_arduino_raw_command,
     start_arduino_bridge,
 };
 
@@ -102,7 +104,9 @@ pub async fn run() {
         move_feeder_servo,
         feed_ball_to_servo1,
         get_basket_score,
+        add_basket_points,
         reset_basket_score,
+        send_arduino_raw_command,
         start_arduino_bridge
     ])
     .run(tauri::generate_context!())

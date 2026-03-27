@@ -274,10 +274,48 @@ impl Controller {
     }
 
     #[tauri::command]
-    pub fn reset_basket_score() -> Result<String, String> {
+    pub fn add_basket_points(delta: u32, app: AppHandle) -> Result<u32, String> {
+        let safe_delta = delta.max(1);
+        let new_score = BASKET_SCORE.fetch_add(safe_delta, Ordering::Relaxed) + safe_delta;
+
+        app.emit(
+            "basket-score-updated",
+            serde_json::json!({
+                "score": new_score,
+                "delta": safe_delta
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+
+        Ok(new_score)
+    }
+
+    #[tauri::command]
+    pub fn reset_basket_score(app: AppHandle) -> Result<String, String> {
+        send_arduino_command("RESET_SCORE")?;
         BASKET_SCORE.store(0, Ordering::Relaxed);
-        let _ = send_arduino_command("RESET_SCORE");
+
+        app.emit(
+            "basket-score-updated",
+            serde_json::json!({
+                "score": 0,
+                "delta": 0
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+
         Ok("Basket score reset".to_string())
+    }
+
+    #[tauri::command]
+    pub fn send_arduino_raw_command(command: String) -> Result<String, String> {
+        let trimmed = command.trim();
+        if trimmed.is_empty() {
+            return Err("Command is empty".to_string());
+        }
+
+        send_arduino_command(trimmed)?;
+        Ok(format!("Raw command sent: {}", trimmed))
     }
 
     #[tauri::command]
@@ -358,6 +396,18 @@ impl Controller {
                                     "delta": delta
                                 }),
                             );
+                        } else if let Some(abs_str) = msg.strip_prefix("STATE:SCORE=") {
+                            if let Ok(abs_score) = abs_str.parse::<u32>() {
+                                BASKET_SCORE.store(abs_score, Ordering::Relaxed);
+
+                                let _ = app.emit(
+                                    "basket-score-updated",
+                                    serde_json::json!({
+                                        "score": abs_score,
+                                        "delta": 0
+                                    }),
+                                );
+                            }
                         }
                     }
                     Err(e) => {
@@ -456,8 +506,18 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn reset_basket_score() -> Result<String, String> {
+    pub fn add_basket_points(_delta: u32, _app: AppHandle) -> Result<u32, String> {
+        Ok(0)
+    }
+
+    #[tauri::command]
+    pub fn reset_basket_score(_app: AppHandle) -> Result<String, String> {
         Ok("Basket score reset".to_string())
+    }
+
+    #[tauri::command]
+    pub fn send_arduino_raw_command(_command: String) -> Result<String, String> {
+        Ok("Arduino bridge not supported on this platform".to_string())
     }
 
     #[tauri::command]

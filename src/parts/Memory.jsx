@@ -466,6 +466,26 @@ export function Memory({ children }) {
     }
   };
 
+  const addBasketPoints = async (delta = 1) => {
+    try {
+      const updatedScore = await invoke("add_basket_points", { delta });
+      setBasketPoints(Number(updatedScore || 0));
+      return updatedScore;
+    } catch (error) {
+      console.error("Failed to add basket points:", error);
+      return null;
+    }
+  };
+
+  const sendArduinoRawCommand = async (command) => {
+    try {
+      return await invoke("send_arduino_raw_command", { command });
+    } catch (error) {
+      console.error("Failed to send raw Arduino command:", error);
+      return null;
+    }
+  };
+
   const saveAngle = async (angle) => {
     try {
       await invoke("save_angle", { angle: angle });
@@ -529,6 +549,8 @@ export function Memory({ children }) {
     feederDispenseToServo1,
     basketPoints,
     resetBasketPoints,
+    addBasketPoints,
+    sendArduinoRawCommand,
     manualMemory,
     setManualMemory,
     singOutDeveloperMode,
