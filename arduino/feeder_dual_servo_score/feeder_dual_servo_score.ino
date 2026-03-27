@@ -9,18 +9,20 @@ static const int SENSOR_2_PIN = A4; // Analog sensor 2
 static const int SENSOR_3_PIN = A5; // Analog sensor 3
 
 // ===== Servo angles =====
-// Adjust after mechanical calibration
-static const int SERVO1_STOP_ANGLE = 45;
-static const int SERVO1_RELEASE_ANGLE = 210;
+
+static const int SERVO1_STOP_ANGLE = 60;
+static const int SERVO1_RELEASE_ANGLE = 140;
 
 static const int SERVO2_STOP_ANGLE = -55;
 static const int SERVO2_RELEASE_ANGLE = 110;
+
+
 
 // Servo movement speed: higher value = slower movement.
 static const int SERVO_STEP_DELAY_MS = 5;
 
 // Servo2 one-shot dispense timing (ms)
-static const unsigned long SERVO2_DISPENSE_OPEN_MS = 220;
+static const unsigned long SERVO2_DISPENSE_OPEN_MS = 1000;
 
 // Scoring rule: all analog sensors must be above this value.
 static const int ANALOG_TRIGGER_THRESHOLD = 300;
