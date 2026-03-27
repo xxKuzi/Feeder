@@ -100,7 +100,7 @@ export default function Testing() {
             onClick={() => resetBasketPoints()}
             className="button button__negative"
           >
-            Reset points (Pi -> Arduino)
+            Reset points (Pi {"->"} Arduino)
           </button>
         </div>
 
@@ -125,7 +125,7 @@ export default function Testing() {
         <input
           onFocus={(e) =>
             showKeyboard(e, (newValue) =>
-              setText((prev) => [newValue, prev[1]])
+              setText((prev) => [newValue, prev[1]]),
             )
           }
           value={text[0]}
@@ -135,7 +135,7 @@ export default function Testing() {
         <input
           onFocus={(e) =>
             showKeyboard(e, (newValue) =>
-              setText((prev) => [prev[0], newValue])
+              setText((prev) => [prev[0], newValue]),
             )
           }
           onChange={() => {}}
