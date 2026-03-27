@@ -564,7 +564,7 @@ export function Memory({ children }) {
     try {
       // 1) Open servo1 to release the current ball.
       await toggleServo(true);
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 2) Close servo1 so it can receive and hold the next ball.
       await toggleServo(false);
