@@ -378,8 +378,9 @@ impl Controller {
     #[tauri::command]
     pub fn move_feeder_servo(stop_ball: bool) -> Result<String, String> {
         let command = if stop_ball { "SERVO2_STOP" } else { "SERVO2_RELEASE" }.to_string();
+        let command_for_worker = command.clone();
         std::thread::spawn(move || {
-            if let Err(e) = send_arduino_command(&command) {
+            if let Err(e) = send_arduino_command(&command_for_worker) {
                 println!("Arduino command error: {}", e);
             }
         });
