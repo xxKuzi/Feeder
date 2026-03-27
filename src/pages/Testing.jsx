@@ -9,6 +9,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 export default function Testing() {
   const [text, setText] = useState(["a", "b"]);
+  const [arduinoCmd, setArduinoCmd] = useState("STATE?");
   const {
     openModal,
     showKeyboard,
@@ -19,6 +20,10 @@ export default function Testing() {
     singOutDeveloperMode,
     setGlobalAngle,
     openCalibration,
+    basketPoints,
+    addBasketPoints,
+    resetBasketPoints,
+    sendArduinoRawCommand,
   } = useData();
 
   useEffect(() => {
@@ -73,6 +78,48 @@ export default function Testing() {
       >
         open calibration
       </button>
+
+      <div className="flex flex-col items-center justify-center bg-gray-200 rounded-xl mt-8 px-4 py-3 w-[680px] max-w-full">
+        <h2 className="text-2xl font-bold">Arduino Score & Command Test</h2>
+        <p className="mt-2 text-lg">Live basket points: {basketPoints}</p>
+
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <button
+            onClick={() => addBasketPoints(1)}
+            className="button button__positive"
+          >
+            +1 point (frontend invoke)
+          </button>
+          <button
+            onClick={() => addBasketPoints(5)}
+            className="button button__positive"
+          >
+            +5 points
+          </button>
+          <button
+            onClick={() => resetBasketPoints()}
+            className="button button__negative"
+          >
+            Reset points (Pi -> Arduino)
+          </button>
+        </div>
+
+        <div className="flex items-center justify-center gap-3 mt-4 w-full">
+          <input
+            value={arduinoCmd}
+            onChange={(e) => setArduinoCmd(e.target.value)}
+            className="p-2 border rounded w-[360px]"
+            placeholder="SERVO2_DISPENSE / STATE? / PING"
+          />
+          <button
+            onClick={() => sendArduinoRawCommand(arduinoCmd)}
+            className="button button__positive"
+          >
+            Send raw cmd
+          </button>
+        </div>
+      </div>
+
       <div className="flex flex-col items-center justify-center bg-gray-200 rounded-xl mt-10 px-4 py-2">
         <h1 className="text-2xl font-bold">Keyboard & Input Testing</h1>
         <input
