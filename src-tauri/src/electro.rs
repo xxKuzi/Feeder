@@ -1,7 +1,7 @@
 #[cfg(target_os = "linux")]
 pub mod motor_system {
     use rppal::gpio::{Gpio, OutputPin, InputPin};    
-    use std::{thread, time::Duration, sync::{Mutex, atomic::{AtomicBool, AtomicU32, Ordering}}, io::{Write, Read, BufRead, BufReader}};
+    use std::{thread, time::Duration, sync::{mpsc, Mutex, atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering}}, io::{Write, Read, BufRead, BufReader}};
     use once_cell::sync::Lazy;
     use rppal::pwm::{Pwm, Channel, Polarity};
     use tauri::{AppHandle, Emitter};
@@ -144,6 +144,150 @@ impl Controller {
     static ARDUINO_PORT: Lazy<Mutex<Option<Box<dyn serialport::SerialPort>>>> = Lazy::new(|| Mutex::new(None));
     static ARDUINO_LISTENER_RUNNING: AtomicBool = AtomicBool::new(false);
     static BASKET_SCORE: AtomicU32 = AtomicU32::new(0);
+    static MOTOR_JOB_SENDER: Lazy<Mutex<Option<mpsc::Sender<MotorJob>>>> = Lazy::new(|| Mutex::new(None));
+    static MOTOR_QUEUE_LENGTH: AtomicU32 = AtomicU32::new(0);
+    static MOTOR_JOB_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+
+    #[derive(Clone, Copy)]
+    enum MotorJobKind {
+        Rotate { times: i32, safety: bool },
+        Calibrate,
+    }
+
+    impl MotorJobKind {
+        fn as_str(self) -> &'static str {
+            match self {
+                MotorJobKind::Rotate { .. } => "rotate",
+                MotorJobKind::Calibrate => "calibrate",
+            }
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    struct MotorJob {
+        request_id: u64,
+        kind: MotorJobKind,
+    }
+
+    fn emit_motor_event(app: &AppHandle, event: &str, payload: serde_json::Value) {
+        if let Err(e) = app.emit(event, payload) {
+            println!("Failed to emit {event}: {e}");
+        }
+    }
+
+    fn emit_motor_queue_length(app: &AppHandle) {
+        emit_motor_event(
+            app,
+            "motor_queue_length",
+            serde_json::json!({
+                "queueLength": MOTOR_QUEUE_LENGTH.load(Ordering::SeqCst)
+            }),
+        );
+    }
+
+    fn run_motor_job(job: MotorJob) -> Result<String, String> {
+        with_controller(|instance| {
+            instance.enable_pin.set_low();
+
+            match job.kind {
+                MotorJobKind::Rotate { times, safety } => {
+                    println!("Checking safety condition...");
+
+                    if (instance.limit_switch_pin.is_low() || instance.limit_switch_pin_2.is_low()) && safety {
+                        let state1 = if instance.limit_switch_pin.is_low() { "PRESSED" } else { "NOT PRESSED" };
+                        let state2 = if instance.limit_switch_pin_2.is_low() { "PRESSED" } else { "NOT PRESSED" };
+
+                        println!(
+                            "⚠️ One of the limit switches is LOW (pressed) – ABORTING for safety\nLimit Switch 1: {}, Limit Switch 2: {}",
+                            state1, state2
+                        );
+
+                        return Ok("Aborted: Limit switch already pressed at start.".to_string());
+                    }
+
+                    instance.rotate_stepper_motor(times, safety)
+                }
+                MotorJobKind::Calibrate => instance.calibrate(),
+            }
+        })
+    }
+
+    fn ensure_motor_worker(app: &AppHandle) {
+        let mut sender_guard = MOTOR_JOB_SENDER.lock().unwrap();
+        if sender_guard.is_some() {
+            return;
+        }
+
+        let (tx, rx) = mpsc::channel::<MotorJob>();
+        let worker_app = app.clone();
+
+        thread::spawn(move || {
+            for job in rx {
+                emit_motor_event(
+                    &worker_app,
+                    "motor_move_started",
+                    serde_json::json!({
+                        "requestId": job.request_id,
+                        "jobType": job.kind.as_str()
+                    }),
+                );
+
+                match run_motor_job(job) {
+                    Ok(message) => {
+                        emit_motor_event(
+                            &worker_app,
+                            "motor_move_completed",
+                            serde_json::json!({
+                                "requestId": job.request_id,
+                                "jobType": job.kind.as_str(),
+                                "message": message
+                            }),
+                        );
+                    }
+                    Err(error) => {
+                        emit_motor_event(
+                            &worker_app,
+                            "motor_move_failed",
+                            serde_json::json!({
+                                "requestId": job.request_id,
+                                "jobType": job.kind.as_str(),
+                                "error": error
+                            }),
+                        );
+                    }
+                }
+
+                MOTOR_QUEUE_LENGTH.fetch_sub(1, Ordering::SeqCst);
+                emit_motor_queue_length(&worker_app);
+            }
+        });
+
+        *sender_guard = Some(tx);
+    }
+
+    fn enqueue_motor_job(app: &AppHandle, kind: MotorJobKind) -> Result<(u64, u32), String> {
+        ensure_motor_worker(app);
+
+        let sender = {
+            let sender_guard = MOTOR_JOB_SENDER.lock().unwrap();
+            sender_guard
+                .as_ref()
+                .cloned()
+                .ok_or_else(|| "Motor worker is unavailable".to_string())?
+        };
+
+        let request_id = MOTOR_JOB_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let queue_length = MOTOR_QUEUE_LENGTH.fetch_add(1, Ordering::SeqCst) + 1;
+
+        let job = MotorJob { request_id, kind };
+        if let Err(e) = sender.send(job) {
+            MOTOR_QUEUE_LENGTH.fetch_sub(1, Ordering::SeqCst);
+            return Err(format!("Failed to queue motor job: {e}"));
+        }
+
+        emit_motor_queue_length(app);
+        Ok((request_id, queue_length))
+    }
 
     // 🧠 Auto-initializing access wrapper
     fn with_controller<F, R>(f: F) -> Result<R, String>
@@ -172,51 +316,27 @@ impl Controller {
     }
 
     #[tauri::command]
-    pub fn rotate_stepper_motor(times: i32, safety: bool) -> Result<String, String> {
-        let handle = std::thread::spawn(move || {
-            with_controller(|instance| {
-                println!("Checking safety condition...");
-    
-                instance.enable_pin.set_low(); // LOW - motor works
-    
-                if (instance.limit_switch_pin.is_low() || instance.limit_switch_pin_2.is_low()) && safety {
-                    let state1 = if instance.limit_switch_pin.is_low() { "PRESSED" } else { "NOT PRESSED" };
-                    let state2 = if instance.limit_switch_pin_2.is_low() { "PRESSED" } else { "NOT PRESSED" };
-    
-                    println!(
-                        "⚠️ One of the limit switches is LOW (pressed) – ABORTING for safety\nLimit Switch 1: {}, Limit Switch 2: {}",
-                        state1, state2
-                    );
-    
-                    return Ok("Aborted: Limit switch already pressed at start.".to_string());
-                }
-    
-                instance.rotate_stepper_motor(times, safety);
-    
-                Ok("Stepper rotation started.".to_string())
-            })
-        });
-    
-        match handle.join() {
-            Ok(Ok(_)) => Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety)),
-            Ok(Err(e)) => Err(format!("Stepper motor error: {}", e)),
-            Err(_) => Err("Thread panicked during motor rotation".to_string()),
-        }
+    pub fn rotate_stepper_motor(app: AppHandle, times: i32, safety: bool) -> Result<serde_json::Value, String> {
+        let (request_id, queue_length) = enqueue_motor_job(&app, MotorJobKind::Rotate { times, safety })?;
+
+        Ok(serde_json::json!({
+            "status": "queued",
+            "requestId": request_id,
+            "queueLength": queue_length,
+            "jobType": "rotate"
+        }))
     }
 
     #[tauri::command]
-    pub fn calibrate_stepper_motor() -> Result<String, String> {
-        let handle = std::thread::spawn(|| {
-            with_controller(|instance| instance.calibrate())
-        });
-    
-        match handle.join() {
-            Ok(result) => match result {
-                Ok(_) => Ok("end_place".to_string()),
-                Err(e) => Err(format!("Calibration error: {}", e)),
-            },
-            Err(_) => Err("Thread panicked during calibration".to_string()),
-        }
+    pub fn calibrate_stepper_motor(app: AppHandle) -> Result<serde_json::Value, String> {
+        let (request_id, queue_length) = enqueue_motor_job(&app, MotorJobKind::Calibrate)?;
+
+        Ok(serde_json::json!({
+            "status": "queued",
+            "requestId": request_id,
+            "queueLength": queue_length,
+            "jobType": "calibrate"
+        }))
     }
 
     #[tauri::command]
@@ -461,7 +581,10 @@ impl Controller {
 
 #[cfg(not(target_os = "linux"))]
 pub mod motor_system {
-    use tauri::AppHandle;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use tauri::{AppHandle, Emitter};
+
+    static STUB_JOB_COUNTER: AtomicU64 = AtomicU64::new(1);
     #[tauri::command]
     pub fn init_instance() -> Result<String, String> {
         Err("You can not init instance supported on this platform".to_string())
@@ -473,15 +596,82 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn rotate_stepper_motor(_times: i32, _safety: bool) -> Result<String, String> {
-        Ok("Rotated stepper motor 4800 steps (safety: false)".to_string())
+    pub fn rotate_stepper_motor(app: AppHandle, _times: i32, _safety: bool) -> Result<serde_json::Value, String> {
+        let request_id = STUB_JOB_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+        app.emit(
+            "motor_move_started",
+            serde_json::json!({
+                "requestId": request_id,
+                "jobType": "rotate"
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+
+        app.emit(
+            "motor_move_completed",
+            serde_json::json!({
+                "requestId": request_id,
+                "jobType": "rotate",
+                "message": "Rotated stepper motor 4800 steps (safety: false)"
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+
+        app.emit(
+            "motor_queue_length",
+            serde_json::json!({
+                "queueLength": 0
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+
+        Ok(serde_json::json!({
+            "status": "queued",
+            "requestId": request_id,
+            "queueLength": 0,
+            "jobType": "rotate"
+        }))
         // Err("Stepper motor control not supported on this platform".to_string())
     }
 
     #[tauri::command]
-    pub fn calibrate_stepper_motor() -> Result<String, String> {
-        // thread::sleep(Duration::from_millis(2000));
-        Ok("end_place".to_string())
+    pub fn calibrate_stepper_motor(app: AppHandle) -> Result<serde_json::Value, String> {
+        let request_id = STUB_JOB_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+        app.emit(
+            "motor_move_started",
+            serde_json::json!({
+                "requestId": request_id,
+                "jobType": "calibrate"
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+
+        app.emit(
+            "motor_move_completed",
+            serde_json::json!({
+                "requestId": request_id,
+                "jobType": "calibrate",
+                "message": "end_place"
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+
+        app.emit(
+            "motor_queue_length",
+            serde_json::json!({
+                "queueLength": 0
+            }),
+        )
+        .map_err(|e| e.to_string())?;
+
+        Ok(serde_json::json!({
+            "status": "queued",
+            "requestId": request_id,
+            "queueLength": 0,
+            "jobType": "calibrate"
+        }))
         //Err("Calibration not supported on this platform".to_string())
     }
 
