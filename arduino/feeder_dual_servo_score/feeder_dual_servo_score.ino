@@ -16,6 +16,9 @@ static const int SERVO1_RELEASE_ANGLE = 0;
 static const int SERVO2_STOP_ANGLE = 90;
 static const int SERVO2_RELEASE_ANGLE = 0;
 
+// Servo movement speed: higher value = slower movement.
+static const int SERVO_STEP_DELAY_MS = 15;
+
 // Servo2 one-shot dispense timing (ms)
 static const unsigned long SERVO2_DISPENSE_OPEN_MS = 220;
 
@@ -31,6 +34,9 @@ static const bool DEBUG_ANALOG_VALUES = false;
 Servo servo1;
 Servo servo2;
 
+int servo1CurrentAngle = SERVO1_STOP_ANGLE;
+int servo2CurrentAngle = SERVO2_STOP_ANGLE;
+
 unsigned long scoreCount = 0;
 bool scoredInCurrentCrossing = false;
 unsigned long lastSampleMs = 0;
@@ -39,20 +45,35 @@ int sensor1Value = 0;
 int sensor2Value = 0;
 int sensor3Value = 0;
 
+void moveServoSmooth(Servo &servo, int &currentAngle, int targetAngle) {
+  if (targetAngle == currentAngle) {
+    return;
+  }
+
+  int step = (targetAngle > currentAngle) ? 1 : -1;
+  for (int pos = currentAngle; pos != targetAngle; pos += step) {
+    servo.write(pos);
+    delay(SERVO_STEP_DELAY_MS);
+  }
+
+  servo.write(targetAngle);
+  currentAngle = targetAngle;
+}
+
 void setServo1Stop() {
-  servo1.write(SERVO1_STOP_ANGLE);
+  moveServoSmooth(servo1, servo1CurrentAngle, SERVO1_STOP_ANGLE);
 }
 
 void setServo1Release() {
-  servo1.write(SERVO1_RELEASE_ANGLE);
+  moveServoSmooth(servo1, servo1CurrentAngle, SERVO1_RELEASE_ANGLE);
 }
 
 void setServo2Stop() {
-  servo2.write(SERVO2_STOP_ANGLE);
+  moveServoSmooth(servo2, servo2CurrentAngle, SERVO2_STOP_ANGLE);
 }
 
 void setServo2Release() {
-  servo2.write(SERVO2_RELEASE_ANGLE);
+  moveServoSmooth(servo2, servo2CurrentAngle, SERVO2_RELEASE_ANGLE);
 }
 
 bool sensorsAllActive() {
@@ -150,6 +171,11 @@ void setup() {
 
   servo1.attach(SERVO1_PIN);
   servo2.attach(SERVO2_PIN);
+
+  // Ensure software and hardware state start synchronized.
+  servo1.write(servo1CurrentAngle);
+  servo2.write(servo2CurrentAngle);
+  delay(100);
 
   // Safety default: both gates closed/stopping
   setServo1Stop();
