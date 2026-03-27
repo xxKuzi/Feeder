@@ -136,7 +136,7 @@ impl Controller {
             if self.limit_switch_pin.is_low() {
                 // Right switch (GPIO 24) is pressed -> move LEFT to release it.
                 println!("Right limit switch is pressed. Moving left to release it...");
-                self.direction_pin.set_high();
+                self.direction_pin.set_low();
                 let mut steps = 0u32;
 
                 while self.limit_switch_pin.is_low() && steps < MAX_RELEASE_STEPS {
@@ -168,7 +168,7 @@ impl Controller {
             } else if self.limit_switch_pin_2.is_low() {
                 // Left switch (GPIO 1) is pressed -> move RIGHT to release it.
                 println!("Left limit switch is pressed. Moving right to release it...");
-                self.direction_pin.set_low();
+                self.direction_pin.set_high();
                 let mut steps = 0u32;
 
                 while self.limit_switch_pin_2.is_low() && steps < MAX_RELEASE_STEPS {
