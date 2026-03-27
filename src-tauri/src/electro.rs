@@ -130,14 +130,13 @@ impl Controller {
                 return Err("Calibration failed: both limit switches are pressed.".to_string());
             }
 
-            let mut current_direction: Option<bool> = None; // Track direction: Some(true)=high, Some(false)=low
+            let end_place: &str;
 
             // Determine which switch is pressed and move away to release it, then move to the other end
             if self.limit_switch_pin.is_low() {
                 // Right switch (GPIO 24) is already pressed - move LEFT to release it
                 println!("Right limit switch is pressed. Moving left to release it...");
                 self.direction_pin.set_high();
-                current_direction = Some(true);
                 let mut steps = 0u32;
 
                 while self.limit_switch_pin.is_low() && steps < MAX_RELEASE_STEPS {
@@ -166,11 +165,11 @@ impl Controller {
                 if self.limit_switch_pin_2.is_high() {
                     return Err("Calibration failed: left limit switch not reached within expected travel.".to_string());
                 }
+                end_place = "left";
             } else if self.limit_switch_pin_2.is_low() {
                 // Left switch (GPIO 1) is already pressed - move RIGHT to release it
                 println!("Left limit switch is pressed. Moving right to release it...");
                 self.direction_pin.set_low();
-                current_direction = Some(false);
                 let mut steps = 0u32;
 
                 while self.limit_switch_pin_2.is_low() && steps < MAX_RELEASE_STEPS {
@@ -199,11 +198,11 @@ impl Controller {
                 if self.limit_switch_pin.is_high() {
                     return Err("Calibration failed: right limit switch not reached within expected travel.".to_string());
                 }
+                end_place = "right";
             } else {
                 // Neither switch is pressed - move in default direction until one is hit
                 println!("No limit switch pressed. Moving right to find a limit switch...");
                 self.direction_pin.set_low();
-                current_direction = Some(false);
                 let mut steps = 0u32;
 
                 while self.limit_switch_pin.is_high() && self.limit_switch_pin_2.is_high() && steps < MAX_HOME_STEPS {
@@ -217,30 +216,18 @@ impl Controller {
                 if self.limit_switch_pin.is_high() && self.limit_switch_pin_2.is_high() {
                     return Err("Calibration failed: no limit switch reached within expected travel.".to_string());
                 }
-            }
 
-            // After finding a limit switch, move to center (90 degrees)
-            println!("Moving to center position (90 degrees)...");
-            const CENTER_STEPS: u32 = 4800; // 90 degrees to center (full travel is 0-180 degrees)
-            
-            // Reverse direction to move toward center
-            if let Some(was_high) = current_direction {
-                if was_high {
-                    self.direction_pin.set_low();
+                if self.limit_switch_pin_2.is_low() {
+                    end_place = "left";
+                } else if self.limit_switch_pin.is_low() {
+                    end_place = "right";
                 } else {
-                    self.direction_pin.set_high();
+                    return Err("Calibration failed: end place could not be determined.".to_string());
                 }
             }
 
-            for _ in 0..CENTER_STEPS {
-                self.pulse_pin.set_high();
-                thread::sleep(Duration::from_micros(STEP_DELAY_US));
-                self.pulse_pin.set_low();
-                thread::sleep(Duration::from_micros(STEP_DELAY_US));
-            }
-
-            println!("Calibration complete: Carriage at center position (90 degrees).");
-            Ok("end_place".to_string())
+            println!("Calibration complete: end place is {}.", end_place);
+            Ok(format!("end_place_{}", end_place))
         }
 
         
