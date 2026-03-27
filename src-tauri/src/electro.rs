@@ -119,17 +119,52 @@ impl Controller {
 
         pub fn calibrate(&mut self) -> Result<String, String> {
             println!("Starting calibration...");
-            self.enable_pin.set_low(); //LOW - motor works
-            self.direction_pin.set_low(); //rotate to right
+            self.enable_pin.set_low(); // LOW - motor works
+            self.direction_pin.set_low(); // rotate to right (toward GPIO 24 switch)
 
-            while self.limit_switch_pin.is_high() && self.limit_switch_pin_2.is_high() {
-                self.pulse_pin.set_high();
-                thread::sleep(Duration::from_micros(1000));
-                self.pulse_pin.set_low();
-                thread::sleep(Duration::from_micros(1000));
+            const STEP_DELAY_US: u64 = 1000;
+            const MAX_RELEASE_STEPS: u32 = 25_000;
+            const MAX_HOME_STEPS: u32 = 60_000;
+
+            // If both switches are pressed, mechanics/wiring is in an invalid state.
+            if self.limit_switch_pin.is_low() && self.limit_switch_pin_2.is_low() {
+                return Err("Calibration failed: both limit switches are pressed.".to_string());
             }
 
-            println!("Calibration complete: Limit switch activated.");
+            // Left switch is GPIO 1 (limit_switch_pin_2). If it's pressed, first move right until released.
+            if self.limit_switch_pin_2.is_low() {
+                println!("Left limit switch is pressed. Releasing it by moving right...");
+                let mut steps = 0u32;
+
+                while self.limit_switch_pin_2.is_low() && steps < MAX_RELEASE_STEPS {
+                    self.pulse_pin.set_high();
+                    thread::sleep(Duration::from_micros(STEP_DELAY_US));
+                    self.pulse_pin.set_low();
+                    thread::sleep(Duration::from_micros(STEP_DELAY_US));
+                    steps += 1;
+                }
+
+                if self.limit_switch_pin_2.is_low() {
+                    return Err("Calibration failed: left limit switch stayed pressed while moving right.".to_string());
+                }
+            }
+
+            // Continue moving right until right/home switch (GPIO 24 = limit_switch_pin) is pressed.
+            println!("Searching for right/home limit switch...");
+            let mut steps_to_home = 0u32;
+            while self.limit_switch_pin.is_high() && steps_to_home < MAX_HOME_STEPS {
+                self.pulse_pin.set_high();
+                thread::sleep(Duration::from_micros(STEP_DELAY_US));
+                self.pulse_pin.set_low();
+                thread::sleep(Duration::from_micros(STEP_DELAY_US));
+                steps_to_home += 1;
+            }
+
+            if self.limit_switch_pin.is_high() {
+                return Err("Calibration failed: right/home limit switch not reached within expected travel.".to_string());
+            }
+
+            println!("Calibration complete: right/home limit switch activated.");
             Ok("end_place".to_string())
         }
 
@@ -191,20 +226,9 @@ impl Controller {
 
             match job.kind {
                 MotorJobKind::Rotate { times, safety } => {
-                    println!("Checking safety condition...");
-
-                    if (instance.limit_switch_pin.is_low() || instance.limit_switch_pin_2.is_low()) && safety {
-                        let state1 = if instance.limit_switch_pin.is_low() { "PRESSED" } else { "NOT PRESSED" };
-                        let state2 = if instance.limit_switch_pin_2.is_low() { "PRESSED" } else { "NOT PRESSED" };
-
-                        println!(
-                            "⚠️ One of the limit switches is LOW (pressed) – ABORTING for safety\nLimit Switch 1: {}, Limit Switch 2: {}",
-                            state1, state2
-                        );
-
-                        return Ok("Aborted: Limit switch already pressed at start.".to_string());
-                    }
-
+                    // Allow movement even if a limit switch is already pressed.
+                    // The loop check in rotate_stepper_motor will stop if moving toward a pressed switch.
+                    // This enables recovery: user can move away from a stuck position.
                     instance.rotate_stepper_motor(times, safety)
                 }
                 MotorJobKind::Calibrate => instance.calibrate(),
