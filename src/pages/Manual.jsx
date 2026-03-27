@@ -16,10 +16,22 @@ export default function Manual() {
     setWorkoutData,
     manualMemory,
     setManualMemory,
-    toggleServo,
-    feederDispenseToServo1,
+    toggleFeederServo,
+    runAutoBallCycle,
+    basketPoints,
+    resetBasketPoints,
   } = useData();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const setupServosForLoader = async () => {
+      // Initial loader state: servo2 open, servo1 closed.
+      await toggleFeederServo(false);
+      await toggleServo(false);
+    };
+
+    setupServosForLoader();
+  }, []);
 
   const changeAngle = () => {
     let difference = manualMemory.angle - globalAngle;
@@ -35,12 +47,10 @@ export default function Manual() {
 
   const pass = async () => {
     setIsPassDisabled(true);
-    await feederDispenseToServo1();
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    toggleServo(true);
+    await toggleFeederServo(true);
+    await runAutoBallCycle();
     setTimeout(() => {
       setIsPassDisabled(false);
-      toggleServo(false);
     }, 2000);
   };
 
@@ -76,6 +86,7 @@ export default function Manual() {
       <ManualScheduler formData={manualMemory} setFormData={setManualMemory} />
 
       <ManualSimulation formData={manualMemory} setFormData={setManualMemory} />
+      <p className="mt-4 text-2xl font-semibold">Skóre: {basketPoints}</p>
       <div className="space-x-4">
         <button
           className={`button__positive button mt-8 ${
@@ -103,6 +114,12 @@ export default function Manual() {
         onClick={startWorkout}
       >
         Start
+      </button>
+      <button
+        className="button button__negative mt-4"
+        onClick={resetBasketPoints}
+      >
+        Reset skóre (Pi -&gt; Arduino)
       </button>
     </div>
   );
