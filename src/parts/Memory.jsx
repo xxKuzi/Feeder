@@ -478,10 +478,14 @@ export function Memory({ children }) {
       ) {
         setCalibrationState("end_place");
         setTimeout(async () => {
-          const centerMoveDegrees = state === "end_place_left" ? -90 : 90;
-          const defaultPosition = await rotateStepperMotor(centerMoveDegrees, false, {
-            waitForCompletion: true,
-          });
+          const centerMoveDegrees = state === "end_place_right" ? -90 : 90;
+          const defaultPosition = await rotateStepperMotor(
+            centerMoveDegrees,
+            false,
+            {
+              waitForCompletion: true,
+            },
+          );
           console.log("defaultPosition", defaultPosition);
 
           if (defaultPosition && !defaultPosition.startsWith("Aborted:")) {
