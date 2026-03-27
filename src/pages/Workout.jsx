@@ -12,12 +12,12 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 export default function Workout() {
   const {
     statistics,
-    shoot,
     updateStatistics,
     workoutData,
     globalAngle,
     toggleServo,
-    feederDispenseToServo1,
+    toggleFeederServo,
+    runAutoBallCycle,
     basketPoints,
     resetBasketPoints,
     rotateStepperMotor,
@@ -33,6 +33,7 @@ export default function Workout() {
   const [timer, setTimer] = useState(workoutData.intervals[0]); //INTERVAL between SHOOTS
   const [round, setRound] = useState(0); //round of workout
   const [nextAngle, setNextAngle] = useState(0); //mainly for better UX
+  const [attemptedShots, setAttemptedShots] = useState(0);
 
   const isRunningRef = useRef(); //main variable
   const countdownRef = useRef(null); //ref to INITIAL CountDown
@@ -104,12 +105,18 @@ export default function Workout() {
   };
 
   //INITIALIZATION OR RESET
-  const initialization = () => {
+  const initialization = async () => {
     setTime(0);
     setReset(true); //changes angle and motorSpeed to first value in array
     countdownRef.current.startCountdown(4); //Shows counter for 4s
     updateStatistics(0, 0); //reset statistics
+    setAttemptedShots(0);
     resetBasketPoints();
+
+    // Loader preparation: servo2 open, servo1 closed.
+    await toggleFeederServo(false);
+    await toggleServo(false);
+
     startWorkout(); //BLUETOOTH
     setFullTime(
       workoutData.intervals.length > 1
@@ -119,17 +126,12 @@ export default function Workout() {
             workoutData.intervals[0] *
             workoutData.angles.length,
     ); //calculate fullTime + ONE second safety
-
-    setTimeout(() => {
-      shoot(true);
-    }, 4000);
-    setTimeout(() => {
-      shoot(false);
-    }, 5000);
-    setTimeout(() => {
-      shoot(true);
-    }, 6000);
   };
+
+  useEffect(() => {
+    const made = Math.min(basketPoints, attemptedShots);
+    updateStatistics(made, attemptedShots);
+  }, [basketPoints, attemptedShots]);
 
   //UPDATING SUCCESS RATE
   useEffect(() => {
@@ -162,7 +164,11 @@ export default function Workout() {
   };
 
   //WHEN COUNTDOWN ENDS
-  const CountdownEnd = () => {
+  const CountdownEnd = async () => {
+    // Start sequence: open servo1, close servo2 to hold next balls.
+    await toggleServo(true);
+    await toggleFeederServo(true);
+
     releaseBall();
     setStopButton(true);
     startWorkout(); //BLUETOOTH
@@ -199,12 +205,8 @@ export default function Workout() {
 
   const releaseBall = async () => {
     console.log("A ball was released");
-    await feederDispenseToServo1();
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    toggleServo(true);
-    setTimeout(() => {
-      toggleServo(false);
-    }, 1000);
+    setAttemptedShots((prev) => prev + 1);
+    await runAutoBallCycle();
   };
 
   return (
