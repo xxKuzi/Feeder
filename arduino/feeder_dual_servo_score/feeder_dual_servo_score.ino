@@ -20,7 +20,7 @@ static const int SERVO2_RELEASE_ANGLE = 0;
 static const unsigned long SERVO2_DISPENSE_OPEN_MS = 220;
 
 // Scoring rule: all analog sensors must be above this value.
-static const int ANALOG_TRIGGER_THRESHOLD = 00;
+static const int ANALOG_TRIGGER_THRESHOLD = 300;
 
 // Sensor test/read frequency: 10x per second.
 static const unsigned long SAMPLE_INTERVAL_MS = 100;
@@ -189,7 +189,7 @@ void loop() {
         scoreCount++;
 
         Serial.print("SCORE:");
-        Serial.println(1);
+        Serial.println(scoreCount);
       }
     } else {
       // Re-arm detection after sensors drop under threshold.
