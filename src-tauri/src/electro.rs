@@ -1,5 +1,6 @@
 #[cfg(target_os = "linux")]
 pub mod motor_system {
+    use crate::tcp;
     use rppal::gpio::{Gpio, OutputPin, InputPin};    
     use std::{thread, time::Duration, sync::{mpsc, Mutex, atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering}}, io::{Write, Read, BufRead, BufReader}};
     use once_cell::sync::Lazy;
@@ -265,6 +266,7 @@ impl Controller {
     }
 
     fn emit_motor_event(app: &AppHandle, event: &str, payload: serde_json::Value) {
+        let _ = tcp::send_event(event, payload.clone());
         if let Err(e) = app.emit(event, payload) {
             println!("Failed to emit {event}: {e}");
         }
@@ -500,6 +502,14 @@ impl Controller {
         )
         .map_err(|e| e.to_string())?;
 
+        let _ = tcp::send_event(
+            "basket_score_updated",
+            serde_json::json!({
+                "score": new_score,
+                "delta": safe_delta
+            }),
+        );
+
         Ok(new_score)
     }
 
@@ -516,6 +526,14 @@ impl Controller {
             }),
         )
         .map_err(|e| e.to_string())?;
+
+        let _ = tcp::send_event(
+            "basket_score_updated",
+            serde_json::json!({
+                "score": 0,
+                "delta": 0
+            }),
+        );
 
         Ok("Basket score reset".to_string())
     }
@@ -598,6 +616,13 @@ impl Controller {
 
                         println!("Arduino RX: {}", msg);
 
+                        let _ = tcp::send_event(
+                            "arduino_rx",
+                            serde_json::json!({
+                                "line": msg
+                            }),
+                        );
+
                         if let Some(delta_str) = msg.strip_prefix("SCORE:") {
                             let delta = delta_str.parse::<u32>().unwrap_or(1);
                             let new_score = BASKET_SCORE.fetch_add(delta, Ordering::Relaxed) + delta;
@@ -609,12 +634,28 @@ impl Controller {
                                     "delta": delta
                                 }),
                             );
+
+                            let _ = tcp::send_event(
+                                "basket_score_updated",
+                                serde_json::json!({
+                                    "score": new_score,
+                                    "delta": delta
+                                }),
+                            );
                         } else if let Some(abs_str) = msg.strip_prefix("STATE:SCORE=") {
                             if let Ok(abs_score) = abs_str.parse::<u32>() {
                                 BASKET_SCORE.store(abs_score, Ordering::Relaxed);
 
                                 let _ = app.emit(
                                     "basket-score-updated",
+                                    serde_json::json!({
+                                        "score": abs_score,
+                                        "delta": 0
+                                    }),
+                                );
+
+                                let _ = tcp::send_event(
+                                    "basket_score_updated",
                                     serde_json::json!({
                                         "score": abs_score,
                                         "delta": 0
