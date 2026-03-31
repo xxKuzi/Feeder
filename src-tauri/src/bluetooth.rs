@@ -6,6 +6,7 @@ use tauri::Emitter;
 use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
 use tauri::{AppHandle, Manager, WebviewWindow};
+use crate::tcp;
 
 // Import logging macros.
 use log::{info, error, warn};
@@ -190,6 +191,14 @@ async fn handle_updates(
                     eprintln!("Failed to emit event to frontend: {}", e);
                 }
 
+                let _ = tcp::send_event(
+                    "workout_state",
+                    serde_json::json!({
+                        "state": if new_value == "on" { "running" } else { "paused" },
+                        "source": "ble_write"
+                    }),
+                );
+
                 // Update the characteristic to notify subscribed clients.
                 if let Err(e) = peripheral
                     .lock()
@@ -225,6 +234,13 @@ pub async fn start_workout(app_state: tauri::State<'_, AppState>) -> Result<(), 
         .await
         .map_err(|e| format!("Failed to update characteristic: {:?}", e))?;
     info!("Workout started (state set to running)");
+    let _ = tcp::send_event(
+        "workout_state",
+        serde_json::json!({
+            "state": "running",
+            "source": "tauri_command"
+        }),
+    );
     
     Ok(())
 }
@@ -239,6 +255,13 @@ pub async fn pause_workout(app_state: tauri::State<'_, AppState>) -> Result<(), 
         .await
         .map_err(|e| format!("Failed to update characteristic: {:?}", e))?;
     info!("Workout paused (state set to off)");
+    let _ = tcp::send_event(
+        "workout_state",
+        serde_json::json!({
+            "state": "paused",
+            "source": "tauri_command"
+        }),
+    );
     Ok(())
 }
 

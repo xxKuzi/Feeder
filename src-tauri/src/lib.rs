@@ -2,12 +2,14 @@ pub mod sql;
 pub mod electro;
 pub mod bluetooth;
 pub mod limit_switch;
+pub mod tcp;
 use tauri::Emitter;
 use log::{info, error, warn};
 
 use limit_switch::platform::watch_limit_switch;
 
 use bluetooth::{get_workout_state, init_ble, pause_workout, start_workout, AppState};
+use tcp::{start_tcp_server, tcp_send_event};
 use sql::{
     connect_to_database, add_record, add_user, load_users, select_user, delete_user,
     load_current_data, load_records, rename_user, add_mode, load_modes, delete_mode, update_mode, save_angle, save_last_calibration
@@ -66,6 +68,10 @@ pub async fn run() {
 
     tauri::Builder::default()
     .setup(|app| {
+        if let Err(e) = start_tcp_server() {
+            warn!("TCP telemetry server failed to start: {e}");
+        }
+
         // Blocking call to initialize BLE using the app handle from Tauri.
         // Note: This may block the setup, so ensure the BLE initialization is quick.
         let ble_state = tauri::async_runtime::block_on(init_ble(app.handle().clone()))
@@ -107,7 +113,8 @@ pub async fn run() {
         add_basket_points,
         reset_basket_score,
         send_arduino_raw_command,
-        start_arduino_bridge
+        start_arduino_bridge,
+        tcp_send_event
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

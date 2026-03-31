@@ -1,0 +1,136 @@
+:root {
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: #152238;
+  background: radial-gradient(
+    circle at top right,
+    #f8f3dc,
+    #f0fbff 45%,
+    #eef2ff
+  );
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 16px 40px;
+}
+
+.hero {
+  margin-bottom: 18px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.hero p {
+  margin: 6px 0 12px;
+}
+
+.connection {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 700;
+}
+
+.connection.ok {
+  background: #defce8;
+  color: #17603b;
+}
+
+.connection.bad {
+  background: #ffe8ea;
+  color: #8f2431;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(43, 70, 120, 0.18);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 8px 25px rgba(43, 70, 120, 0.08);
+}
+
+.card h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.metric {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.pill {
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e8eef9;
+}
+
+.pill.running {
+  background: #d9fae6;
+  color: #11683c;
+}
+
+.pill.paused {
+  background: #ffe7bf;
+  color: #7a4a00;
+}
+
+.events {
+  margin-top: 14px;
+}
+
+.event-list {
+  max-height: 55vh;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.event-row {
+  border: 1px solid rgba(43, 70, 120, 0.18);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(250, 252, 255, 0.9);
+}
+
+.event-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+pre,
+.mono {
+  margin: 0;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.hint {
+  color: #55709c;
+}
