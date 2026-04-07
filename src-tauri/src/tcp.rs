@@ -293,7 +293,7 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             Ok(json!({ "ok": true }))
         }
         "start_workout" => {
-            let _ = requires_developer(role)?;
+            let _ = requires_auth(role)?;
             let requested_mode_id = args
                 .get("mode_id")
                 .and_then(Value::as_i64)

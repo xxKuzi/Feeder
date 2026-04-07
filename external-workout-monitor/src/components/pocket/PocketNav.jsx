@@ -2,27 +2,39 @@ import { NavLink } from "react-router-dom";
 import { IoHomeOutline, IoNewspaperOutline } from "react-icons/io5";
 import { CiDumbbell } from "react-icons/ci";
 import { GrManual } from "react-icons/gr";
+import { useI18n } from "../../i18n/I18nProvider";
 
 const tabs = [
-  { to: "home", label: "Home", icon: IoHomeOutline },
-  { to: "manual", label: "Manual Mode", icon: GrManual },
-  { to: "control", label: "Workout", icon: CiDumbbell },
-  { to: "stats", label: "Stats", icon: IoNewspaperOutline },
+  { to: "home", key: "Home", icon: IoHomeOutline },
+  { to: "manual", key: "manualMode", icon: GrManual },
+  { to: "control", key: "workout", icon: CiDumbbell },
+  { to: "stats", key: "stats", icon: IoNewspaperOutline },
 ];
 
 export default function PocketNav({ basePath = "/user", role = "guest" }) {
+  const { t } = useI18n();
+  const roleLabel = t(
+    role === "developer"
+      ? "roleDeveloper"
+      : role === "user"
+        ? "roleUser"
+        : "roleGuest",
+  );
+
   return (
     <nav
       className="fixed bottom-2 left-2 right-2 z-40 rounded-xl border border-slate-300 bg-slate-100/95 p-2 shadow-lg backdrop-blur md:static md:left-auto md:right-auto md:top-0 md:h-screen md:w-[136px] md:rounded-none md:border-0 md:border-r md:border-slate-300 md:bg-slate-100 md:p-3 md:shadow-none"
-      aria-label="Feeder Pocket tabs"
+      aria-label={t("tabsAria")}
     >
       <div className="hidden md:block md:pb-3">
         <p className="text-lg font-bold leading-none">Feeder</p>
-        <p className="mt-1 text-xs capitalize text-slate-500">{role} monitor</p>
+        <p className="mt-1 text-xs capitalize text-slate-500">
+          {t("monitorLabel", { role: roleLabel })}
+        </p>
       </div>
 
       <div className="grid grid-cols-4 gap-2 md:flex md:flex-col">
-        {tabs.map(({ to, label, icon: Icon }) => (
+        {tabs.map(({ to, key, icon: Icon }) => (
           <NavLink
             key={to}
             to={`${basePath}/${to}`}
@@ -35,7 +47,7 @@ export default function PocketNav({ basePath = "/user", role = "guest" }) {
             }
           >
             <Icon className="h-5 w-5" />
-            <span>{label}</span>
+            <span>{t(key)}</span>
           </NavLink>
         ))}
       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMonitor } from "../../monitor/MonitorContext";
+import { useI18n } from "../../i18n/I18nProvider";
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -111,6 +112,7 @@ function EventList() {
 }
 
 export function PocketOverviewTab() {
+  const { t } = useI18n();
   const { snapshot, selectedMode, workoutState, workoutStateAt, modeList } =
     useMonitor();
   const [now, setNow] = useState(Date.now());
@@ -147,17 +149,17 @@ export function PocketOverviewTab() {
         <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-              Live court status
+              {t("liveCourtStatus")}
             </p>
             <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
               {snapshot?.workoutState === "running"
-                ? "Workout running"
-                : "Workout paused"}
+                ? t("workoutRunning")
+                : t("workoutPaused")}
             </h2>
             <p className="text-sm text-slate-500">
               {mode
-                ? `${mode.name} · ${mode.repetition} rounds`
-                : "No mode selected"}
+                ? `${mode.name} · ${t("rounds", { count: mode.repetition })}`
+                : t("noModeSelected")}
             </p>
           </div>
           <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center">
@@ -165,32 +167,36 @@ export function PocketOverviewTab() {
               {successRate}%
             </span>
             <small className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Live success rate
+              {t("liveSuccessRate")}
             </small>
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <Card
-            title="Workout"
-            value={mode ? mode.name : "Unknown"}
+            title={t("workout")}
+            value={mode ? mode.name : t("unknown")}
             note={
               mode
                 ? `Mode #${mode.modeId ?? mode.mode_id}`
-                : "Select a workout first"
+                : t("selectWorkoutFirst")
             }
             tone="gold"
           />
           <Card
-            title="Current state"
-            value={snapshot?.workoutState || "unknown"}
-            note={`Bridge ${snapshot?.connectedToFeeder ? "online" : "offline"}`}
+            title={t("currentState")}
+            value={snapshot?.workoutState || t("unknown")}
+            note={
+              snapshot?.connectedToFeeder
+                ? t("bridgeOnline")
+                : t("bridgeOffline")
+            }
             tone="green"
           />
           <Card
-            title="Attempts"
+            title={t("attempts")}
             value={estimatedAttempts}
-            note={`Made ${made} shots`}
+            note={t("madeShots", { count: made })}
             tone="blue"
           />
         </div>
@@ -198,19 +204,19 @@ export function PocketOverviewTab() {
 
       <aside className="grid gap-3">
         <Card
-          title="Session time"
+          title={t("sessionTime")}
           value={formatTime(now - (workoutStateAt || now))}
-          note="Since last workout change"
+          note={t("sinceLastWorkoutChange")}
         />
         <Card
-          title="Basket score"
+          title={t("basketScore")}
           value={snapshot?.basketScore ?? 0}
-          note="Read from live telemetry"
+          note={t("readFromTelemetry")}
         />
         <Card
-          title="Selected mode"
+          title={t("selectedMode")}
           value={snapshot?.activeModeId ?? 0}
-          note="Used when starting workout"
+          note={t("usedWhenStarting")}
         />
       </aside>
     </section>
@@ -218,9 +224,12 @@ export function PocketOverviewTab() {
 }
 
 export function PocketControlTab() {
+  const { t } = useI18n();
   const {
-    isDeveloper,
     modeList,
+    selectedMode,
+    snapshot,
+    workoutStateAt,
     activeModeId,
     setActiveModeId,
     loadModes,
@@ -229,21 +238,109 @@ export function PocketControlTab() {
     doExit,
     doStart,
   } = useMonitor();
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(timer);
+  }, []);
+
+  const mode = selectedMode || modeList[0] || null;
+  const cycleState = getCycleState(mode, workoutStateAt || now, now);
+  const made = Number(snapshot?.basketScore || 0);
+  const intervals = Array.isArray(mode?.intervals) ? mode.intervals : [];
+  const averageInterval = Math.max(
+    sumIntervals(intervals) / Math.max(intervals.length, 1),
+    1,
+  );
+  const plannedShots = Math.max(
+    (mode?.repetition || 1) * Math.max(intervals.length, 1),
+    1,
+  );
+  const estimatedAttempts = Math.max(
+    1,
+    Math.min(
+      Math.ceil(cycleState.elapsedSeconds / averageInterval),
+      plannedShots,
+    ),
+  );
+  const successRate = clamp(
+    Math.round((made / Math.max(estimatedAttempts, 1)) * 100),
+    0,
+    100,
+  );
+  const cycleProgressPercent = Math.round(cycleState.progress * 100);
+  const currentShot = Math.min(
+    cycleState.intervalIndex + 1,
+    intervals.length || 1,
+  );
+  const totalShotsPerRound = Math.max(intervals.length, 1);
 
   return (
     <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card
+          title={t("successRatio")}
+          value={`${successRate}%`}
+          note={t("madeVsTaken")}
+          tone="blue"
+        />
+        <Card
+          title={t("shotsMade")}
+          value={made}
+          note={t("liveBasketScore")}
+          tone="green"
+        />
+        <Card
+          title={t("shotsTaken")}
+          value={estimatedAttempts}
+          note={t("targetShots", { count: plannedShots })}
+          tone="gold"
+        />
+        <Card
+          title={t("workoutTime")}
+          value={formatTime(now - (workoutStateAt || now))}
+          note={
+            snapshot?.workoutState === "running" ? t("running") : t("paused")
+          }
+        />
+      </div>
+
+      <div className="mb-4 rounded-xl border border-slate-300 bg-slate-50 p-4">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="m-0 text-xs font-semibold uppercase tracking-widest text-slate-500">
+            {t("workoutCycleTimebar")}
+          </p>
+          <p className="m-0 text-sm font-semibold text-slate-700">
+            {t("shotProgress", {
+              current: currentShot,
+              total: totalShotsPerRound,
+              left: formatTime(cycleState.intervalRemaining * 1000),
+            })}
+          </p>
+        </div>
+        <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-full rounded-full bg-blue-600 transition-all duration-200"
+            style={{ width: `${cycleProgressPercent}%` }}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+          <span>{mode ? mode.name : t("noModeSelected")}</span>
+          <span>{t("roundProgress", { progress: cycleProgressPercent })}</span>
+        </div>
+      </div>
+
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Workout controls
+            {t("workoutControls")}
           </p>
           <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            Keep it simple
+            {t("keepItSimple")}
           </h2>
         </div>
-        <p className="text-sm text-slate-500">
-          User can stop or exit. Developer can also start.
-        </p>
+        <p className="text-sm text-slate-500">{t("controlsHint")}</p>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -251,27 +348,25 @@ export function PocketControlTab() {
           className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-semibold"
           onClick={doPause}
         >
-          Stop Workout
+          {t("stopWorkout")}
         </button>
         <button
           className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
           onClick={doExit}
         >
-          Exit Workout
+          {t("exitWorkout")}
         </button>
-        {isDeveloper && (
-          <button
-            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
-            onClick={() => doStart(activeModeId)}
-          >
-            Start Workout
-          </button>
-        )}
+        <button
+          className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
+          onClick={() => doStart(activeModeId)}
+        >
+          {t("startWorkout")}
+        </button>
       </div>
 
       <div className="grid gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="mode-select">Selected workout</label>
+          <label htmlFor="mode-select">{t("selectedWorkout")}</label>
           <select
             id="mode-select"
             className="min-w-[220px] rounded-lg border border-slate-300 px-3 py-2"
@@ -291,13 +386,13 @@ export function PocketControlTab() {
             className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
             onClick={saveSelectedMode}
           >
-            Save Selected Mode
+            {t("saveSelectedMode")}
           </button>
           <button
             className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
             onClick={loadModes}
           >
-            Refresh Modes
+            {t("refreshModes")}
           </button>
         </div>
 
@@ -316,9 +411,9 @@ export function PocketControlTab() {
                 </span>
                 <strong>{mode.name}</strong>
                 <small>
-                  {mode.repetition || 1} rounds ·{" "}
+                  {t("rounds", { count: mode.repetition || 1 })} ·{" "}
                   {Array.isArray(mode.intervals) ? mode.intervals.length : 1}{" "}
-                  shots
+                  {t("shotsLabel")}
                 </small>
               </button>
             );
@@ -330,6 +425,7 @@ export function PocketControlTab() {
 }
 
 export function PocketMenuTab() {
+  const { t } = useI18n();
   const { profile, doManualMove, doManualTryShot, doManualRunShots, snapshot } =
     useMonitor();
   const [positionSteps, setPositionSteps] = useState(0);
@@ -370,47 +466,44 @@ export function PocketMenuTab() {
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Manual mode
+            {t("manualModeTitle")}
           </p>
           <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            Position and shot testing
+            {t("positionShotTesting")}
           </h2>
         </div>
-        <p className="text-sm text-slate-500">
-          Move feeder to a try position, fire one shot, or run a custom shot
-          count.
-        </p>
+        <p className="text-sm text-slate-500">{t("manualHint")}</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <article className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Current profile
+            {t("currentProfile")}
           </p>
           <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            {profile?.name || "Unknown"}
+            {profile?.name || t("unknown")}
           </h3>
           <p>#{profile?.number ?? 0}</p>
         </article>
 
         <article className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Workout state
+            {t("workoutState")}
           </p>
           <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            {snapshot?.workoutState || "unknown"}
+            {snapshot?.workoutState || t("unknown")}
           </h3>
-          <p>Manual controls do not change selected mode.</p>
+          <p>{t("manualNoModeChange")}</p>
         </article>
       </div>
 
       <div className="grid gap-3">
         <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
           <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            Try position
+            {t("tryPositionTitle")}
           </h3>
           <div className="grid gap-3">
-            <label htmlFor="manual-steps">Position steps (relative)</label>
+            <label htmlFor="manual-steps">{t("positionStepsRelative")}</label>
             <input
               id="manual-steps"
               type="number"
@@ -430,7 +523,7 @@ export function PocketMenuTab() {
                 onChange={(e) => setMoveWithSafety(e.target.checked)}
                 disabled={busy}
               />{" "}
-              Move with limit-switch safety
+              {t("moveWithSafety")}
             </label>
           </div>
 
@@ -440,24 +533,24 @@ export function PocketMenuTab() {
               onClick={tryPosition}
               disabled={busy}
             >
-              Try Position
+              {t("tryPosition")}
             </button>
             <button
               className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
               onClick={tryShot}
               disabled={busy}
             >
-              Try Shot
+              {t("tryShot")}
             </button>
           </div>
         </section>
 
         <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
           <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            Custom shot sequence
+            {t("customShotSequence")}
           </h3>
           <div className="grid gap-3">
-            <label htmlFor="manual-shots">Number of shots</label>
+            <label htmlFor="manual-shots">{t("numberOfShots")}</label>
             <input
               id="manual-shots"
               type="number"
@@ -467,7 +560,7 @@ export function PocketMenuTab() {
               onChange={(e) => setShots(Number(e.target.value || 1))}
               disabled={busy}
             />
-            <label htmlFor="manual-interval">Delay between shots (ms)</label>
+            <label htmlFor="manual-interval">{t("delayBetweenShots")}</label>
             <input
               id="manual-interval"
               type="number"
@@ -484,7 +577,7 @@ export function PocketMenuTab() {
             onClick={runManualSequence}
             disabled={busy}
           >
-            Run {Math.max(1, shots)} Shots
+            {t("runShots", { count: Math.max(1, shots) })}
           </button>
         </section>
       </div>
@@ -493,6 +586,7 @@ export function PocketMenuTab() {
 }
 
 export function PocketStatsTab() {
+  const { t } = useI18n();
   const {
     snapshot,
     isDeveloper,
@@ -523,38 +617,32 @@ export function PocketStatsTab() {
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Statistics
+            {t("statistics")}
           </p>
           <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            {isDeveloper ? "Live logs and stats" : "Your workout stats"}
+            {isDeveloper ? t("liveLogsAndStats") : t("yourWorkoutStats")}
           </h2>
         </div>
-        <p className="text-sm text-slate-500">
-          Developer mode keeps the log feed visible.
-        </p>
+        <p className="text-sm text-slate-500">{t("devLogHint")}</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Card
-          title="Basket score"
+          title={t("basketScore")}
           value={snapshot?.basketScore ?? 0}
-          note="Current live score"
+          note={t("currentLiveScore")}
           tone="gold"
         />
         <Card
-          title="Messages"
+          title={t("messages")}
           value={messages}
-          note={
-            isDeveloper
-              ? "Includes telemetry and events"
-              : "Hidden logs in user mode"
-          }
+          note={isDeveloper ? t("includesTelemetry") : t("hiddenLogs")}
           tone="blue"
         />
         <Card
-          title="State"
-          value={snapshot?.workoutState || "unknown"}
-          note={`Role ${snapshot?.role || "guest"}`}
+          title={t("state")}
+          value={snapshot?.workoutState || t("unknown")}
+          note={t("roleLine", { role: snapshot?.role || t("roleGuest") })}
           tone="green"
         />
       </div>
@@ -566,31 +654,31 @@ export function PocketStatsTab() {
               className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
               onClick={handleExport}
             >
-              Download All Data
+              {t("downloadAllData")}
             </button>
             <button
               className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
               onClick={loadProfiles}
             >
-              Refresh Profiles
+              {t("refreshProfiles")}
             </button>
             <button
               className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
               onClick={loadModes}
             >
-              Refresh Modes
+              {t("refreshModes")}
             </button>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
               <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-                Profiles
+                {t("profiles")}
               </h3>
               <div className="grid gap-3">
                 <input
                   className="rounded-lg border border-slate-300 px-3 py-2"
-                  placeholder="Name"
+                  placeholder={t("name")}
                   value={newProfile.name}
                   onChange={(e) =>
                     setNewProfile((prev) => ({ ...prev, name: e.target.value }))
@@ -599,7 +687,7 @@ export function PocketStatsTab() {
                 <input
                   className="rounded-lg border border-slate-300 px-3 py-2"
                   type="number"
-                  placeholder="Number"
+                  placeholder={t("number")}
                   value={newProfile.number}
                   onChange={(e) =>
                     setNewProfile((prev) => ({
@@ -612,7 +700,7 @@ export function PocketStatsTab() {
                   className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
                   onClick={addProfile}
                 >
-                  Add Profile
+                  {t("addProfile")}
                 </button>
               </div>
 
@@ -620,7 +708,7 @@ export function PocketStatsTab() {
                 <input
                   className="rounded-lg border border-slate-300 px-3 py-2"
                   type="number"
-                  placeholder="User ID"
+                  placeholder={t("userId")}
                   value={renamePayload.user_id}
                   onChange={(e) =>
                     setRenamePayload((prev) => ({
@@ -631,7 +719,7 @@ export function PocketStatsTab() {
                 />
                 <input
                   className="rounded-lg border border-slate-300 px-3 py-2"
-                  placeholder="New Name"
+                  placeholder={t("newName")}
                   value={renamePayload.new_name}
                   onChange={(e) =>
                     setRenamePayload((prev) => ({
@@ -643,7 +731,7 @@ export function PocketStatsTab() {
                 <input
                   className="rounded-lg border border-slate-300 px-3 py-2"
                   type="number"
-                  placeholder="New Number"
+                  placeholder={t("newNumber")}
                   value={renamePayload.new_number}
                   onChange={(e) =>
                     setRenamePayload((prev) => ({
@@ -656,7 +744,7 @@ export function PocketStatsTab() {
                   className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
                   onClick={renameProfile}
                 >
-                  Update Profile
+                  {t("updateProfile")}
                 </button>
               </div>
 
@@ -673,7 +761,7 @@ export function PocketStatsTab() {
                       className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-semibold"
                       onClick={() => deleteProfile(profile.user_id)}
                     >
-                      Delete
+                      {t("delete")}
                     </button>
                   </div>
                 ))}
@@ -682,7 +770,7 @@ export function PocketStatsTab() {
 
             <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
               <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-                Modes
+                {t("modes")}
               </h3>
               <div className="mt-3 grid gap-2">
                 {modeList.map((mode) => {
@@ -722,7 +810,7 @@ export function PocketStatsTab() {
                           className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
                           onClick={() => saveMode(mode)}
                         >
-                          Save
+                          {t("save")}
                         </button>
                       </div>
                     </div>
@@ -733,7 +821,7 @@ export function PocketStatsTab() {
 
             <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
               <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-                Password management
+                {t("passwordManagement")}
               </h3>
               <div className="grid gap-3">
                 <select
@@ -746,13 +834,13 @@ export function PocketStatsTab() {
                     }))
                   }
                 >
-                  <option value="user">User password</option>
-                  <option value="developer">Developer password</option>
+                  <option value="user">{t("userPassword")}</option>
+                  <option value="developer">{t("developerPassword")}</option>
                 </select>
                 <input
                   className="rounded-lg border border-slate-300 px-3 py-2"
                   type="password"
-                  placeholder="New password"
+                  placeholder={t("newPassword")}
                   value={passwordPayload.new_password}
                   onChange={(e) =>
                     setPasswordPayload((prev) => ({
@@ -765,7 +853,7 @@ export function PocketStatsTab() {
                   className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
                   onClick={changePassword}
                 >
-                  Change Password
+                  {t("changePassword")}
                 </button>
               </div>
             </section>
@@ -776,9 +864,7 @@ export function PocketStatsTab() {
           </div>
         </div>
       ) : (
-        <p className="text-sm text-slate-500">
-          No logs are shown in user mode.
-        </p>
+        <p className="text-sm text-slate-500">{t("noUserLogs")}</p>
       )}
     </section>
   );
