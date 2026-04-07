@@ -5,8 +5,8 @@ import { GrManual } from "react-icons/gr";
 
 const tabs = [
   { to: "home", label: "Home", icon: IoHomeOutline },
-  { to: "control", label: "Workout", icon: CiDumbbell },
   { to: "manual", label: "Manual Mode", icon: GrManual },
+  { to: "control", label: "Workout", icon: CiDumbbell },
   { to: "stats", label: "Stats", icon: IoNewspaperOutline },
 ];
 

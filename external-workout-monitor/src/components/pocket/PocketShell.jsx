@@ -51,7 +51,9 @@ export default function PocketShell({ basePath = "/user", variant = "user" }) {
 
           {mobileMenuOpen && (
             <div className="absolute left-0 top-14 grid min-w-[210px] gap-2 rounded-lg border border-slate-300 bg-white p-3 shadow-xl">
-              <p className="m-0 text-sm capitalize text-slate-600">Mode: {role}</p>
+              <p className="m-0 text-sm capitalize text-slate-600">
+                Mode: {role}
+              </p>
               <button
                 className="rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white"
                 onClick={signOut}
@@ -64,7 +66,9 @@ export default function PocketShell({ basePath = "/user", variant = "user" }) {
 
         <header className="mb-4 hidden items-start justify-between gap-4 md:flex">
           <div>
-            <p className="text-xs uppercase tracking-widest text-slate-500">Feeder</p>
+            <p className="text-xs uppercase tracking-widest text-slate-500">
+              Feeder
+            </p>
             <h1 className="m-0 text-3xl font-bold tracking-tight">
               {variant === "dev" ? "Developer Monitor" : "User Monitor"}
             </h1>

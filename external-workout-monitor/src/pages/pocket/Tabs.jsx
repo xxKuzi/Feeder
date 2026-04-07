@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMonitor } from "../../monitor/MonitorContext";
 
 function clamp(value, min, max) {
@@ -65,11 +65,22 @@ function getCycleState(mode, startedAt, now = Date.now()) {
 }
 
 function Card({ title, value, note, tone = "neutral" }) {
+  const toneClass = {
+    neutral: "border-slate-300 bg-white",
+    gold: "border-amber-200 bg-amber-50",
+    green: "border-green-200 bg-green-50",
+    blue: "border-blue-200 bg-blue-50",
+  };
+
   return (
-    <article className={`pocket-card pocket-card--${tone}`}>
-      <p className="pocket-card__title">{title}</p>
-      <p className="pocket-card__value">{value}</p>
-      {note && <p className="pocket-card__note">{note}</p>}
+    <article
+      className={`rounded-xl border p-4 shadow-sm ${toneClass[tone] || toneClass.neutral}`}
+    >
+      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+        {title}
+      </p>
+      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
+      {note && <p className="text-sm text-slate-500">{note}</p>}
     </article>
   );
 }
@@ -78,19 +89,21 @@ function EventList() {
   const { events } = useMonitor();
 
   return (
-    <div className="pocket-event-list">
+    <div className="grid max-h-[56vh] gap-3 overflow-auto pr-1">
       {events.slice(0, 18).map((event, index) => (
         <article
-          className="pocket-event"
+          className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm"
           key={`${event.timestamp_ms || "na"}-${index}`}
         >
-          <div className="pocket-event__head">
+          <div className="mb-2 flex justify-between gap-3 text-sm font-semibold text-slate-700">
             <span>{event.event}</span>
             <span>
               {new Date(event.timestamp_ms || Date.now()).toLocaleTimeString()}
             </span>
           </div>
-          <pre>{JSON.stringify(event.payload || {}, null, 2)}</pre>
+          <pre className="m-0 whitespace-pre-wrap break-words text-xs text-slate-600">
+            {JSON.stringify(event.payload || {}, null, 2)}
+          </pre>
         </article>
       ))}
     </div>
@@ -129,29 +142,35 @@ export function PocketOverviewTab() {
   );
 
   return (
-    <section className="pocket-grid">
-      <div className="pocket-grid__main">
-        <div className="pocket-hero-card">
-          <div className="pocket-hero-card__copy">
-            <p className="pocket-kicker">Live court status</p>
-            <h2>
+    <section className="grid gap-4 lg:grid-cols-[1.8fr_0.9fr]">
+      <div className="grid gap-3">
+        <div className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+              Live court status
+            </p>
+            <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
               {snapshot?.workoutState === "running"
                 ? "Workout running"
                 : "Workout paused"}
             </h2>
-            <p>
+            <p className="text-sm text-slate-500">
               {mode
                 ? `${mode.name} · ${mode.repetition} rounds`
                 : "No mode selected"}
             </p>
           </div>
-          <div className="pocket-hero-card__rate">
-            <span>{successRate}%</span>
-            <small>Live success rate</small>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center">
+            <span className="text-3xl font-extrabold text-blue-700">
+              {successRate}%
+            </span>
+            <small className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Live success rate
+            </small>
           </div>
         </div>
 
-        <div className="pocket-card-row">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <Card
             title="Workout"
             value={mode ? mode.name : "Unknown"}
@@ -177,7 +196,7 @@ export function PocketOverviewTab() {
         </div>
       </div>
 
-      <aside className="pocket-grid__side">
+      <aside className="grid gap-3">
         <Card
           title="Session time"
           value={formatTime(now - (workoutStateAt || now))}
@@ -212,30 +231,37 @@ export function PocketControlTab() {
   } = useMonitor();
 
   return (
-    <section className="pocket-panel">
-      <div className="pocket-panel__header">
+    <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="pocket-kicker">Workout controls</p>
-          <h2>Keep it simple</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+            Workout controls
+          </p>
+          <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+            Keep it simple
+          </h2>
         </div>
-        <p className="pocket-panel__hint">
+        <p className="text-sm text-slate-500">
           User can stop or exit. Developer can also start.
         </p>
       </div>
 
-      <div className="pocket-controls">
+      <div className="mb-4 flex flex-wrap gap-2">
         <button
-          className="pocket-button pocket-button--ghost"
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-semibold"
           onClick={doPause}
         >
           Stop Workout
         </button>
-        <button className="pocket-button pocket-button--warm" onClick={doExit}>
+        <button
+          className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
+          onClick={doExit}
+        >
           Exit Workout
         </button>
         {isDeveloper && (
           <button
-            className="pocket-button pocket-button--primary"
+            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
             onClick={() => doStart(activeModeId)}
           >
             Start Workout
@@ -243,11 +269,12 @@ export function PocketControlTab() {
         )}
       </div>
 
-      <div className="pocket-mode-picker">
-        <div className="pocket-mode-picker__row">
+      <div className="grid gap-4">
+        <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="mode-select">Selected workout</label>
           <select
             id="mode-select"
+            className="min-w-[220px] rounded-lg border border-slate-300 px-3 py-2"
             value={activeModeId}
             onChange={(e) => setActiveModeId(Number(e.target.value))}
           >
@@ -261,30 +288,32 @@ export function PocketControlTab() {
             ))}
           </select>
           <button
-            className="pocket-button pocket-button--soft"
+            className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
             onClick={saveSelectedMode}
           >
             Save Selected Mode
           </button>
           <button
-            className="pocket-button pocket-button--soft"
+            className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
             onClick={loadModes}
           >
             Refresh Modes
           </button>
         </div>
 
-        <div className="pocket-mode-grid">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {modeList.map((mode) => {
             const id = mode.modeId ?? mode.mode_id;
             const active = Number(activeModeId) === Number(id);
             return (
               <button
                 key={id}
-                className={`pocket-mode-card ${active ? "is-active" : ""}`}
+                className={`rounded-lg border p-3 text-left shadow-sm transition ${active ? "border-blue-300 bg-blue-50" : "border-slate-300 bg-white"}`}
                 onClick={() => setActiveModeId(Number(id))}
               >
-                <span className="pocket-mode-card__id">#{id}</span>
+                <span className="inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                  #{id}
+                </span>
                 <strong>{mode.name}</strong>
                 <small>
                   {mode.repetition || 1} rounds ·{" "}
@@ -337,45 +366,63 @@ export function PocketMenuTab() {
   };
 
   return (
-    <section className="pocket-panel">
-      <div className="pocket-panel__header">
+    <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="pocket-kicker">Manual mode</p>
-          <h2>Position and shot testing</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+            Manual mode
+          </p>
+          <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+            Position and shot testing
+          </h2>
         </div>
-        <p className="pocket-panel__hint">
+        <p className="text-sm text-slate-500">
           Move feeder to a try position, fire one shot, or run a custom shot
           count.
         </p>
       </div>
 
-      <div className="pocket-menu-grid">
-        <article className="pocket-menu-card">
-          <p className="pocket-menu-card__label">Current profile</p>
-          <h3>{profile?.name || "Unknown"}</h3>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <article className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+            Current profile
+          </p>
+          <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+            {profile?.name || "Unknown"}
+          </h3>
           <p>#{profile?.number ?? 0}</p>
         </article>
 
-        <article className="pocket-menu-card">
-          <p className="pocket-menu-card__label">Workout state</p>
-          <h3>{snapshot?.workoutState || "unknown"}</h3>
+        <article className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+            Workout state
+          </p>
+          <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+            {snapshot?.workoutState || "unknown"}
+          </h3>
           <p>Manual controls do not change selected mode.</p>
         </article>
       </div>
 
-      <div className="pocket-dev-stack">
-        <section className="pocket-dev-card">
-          <h3>Try position</h3>
-          <div className="pocket-dev-form">
+      <div className="grid gap-3">
+        <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+            Try position
+          </h3>
+          <div className="grid gap-3">
             <label htmlFor="manual-steps">Position steps (relative)</label>
             <input
               id="manual-steps"
               type="number"
+              className="rounded-lg border border-slate-300 px-3 py-2"
               value={positionSteps}
               onChange={(e) => setPositionSteps(Number(e.target.value || 0))}
               disabled={busy}
             />
-            <label htmlFor="manual-safety">
+            <label
+              className="inline-flex items-center gap-2"
+              htmlFor="manual-safety"
+            >
               <input
                 id="manual-safety"
                 type="checkbox"
@@ -387,16 +434,16 @@ export function PocketMenuTab() {
             </label>
           </div>
 
-          <div className="pocket-controls">
+          <div className="mt-3 flex flex-wrap gap-2">
             <button
-              className="pocket-button pocket-button--primary"
+              className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
               onClick={tryPosition}
               disabled={busy}
             >
               Try Position
             </button>
             <button
-              className="pocket-button pocket-button--soft"
+              className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
               onClick={tryShot}
               disabled={busy}
             >
@@ -405,14 +452,17 @@ export function PocketMenuTab() {
           </div>
         </section>
 
-        <section className="pocket-dev-card">
-          <h3>Custom shot sequence</h3>
-          <div className="pocket-dev-form">
+        <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+          <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+            Custom shot sequence
+          </h3>
+          <div className="grid gap-3">
             <label htmlFor="manual-shots">Number of shots</label>
             <input
               id="manual-shots"
               type="number"
               min={1}
+              className="rounded-lg border border-slate-300 px-3 py-2"
               value={shots}
               onChange={(e) => setShots(Number(e.target.value || 1))}
               disabled={busy}
@@ -422,6 +472,7 @@ export function PocketMenuTab() {
               id="manual-interval"
               type="number"
               min={120}
+              className="rounded-lg border border-slate-300 px-3 py-2"
               value={intervalMs}
               onChange={(e) => setIntervalMs(Number(e.target.value || 1200))}
               disabled={busy}
@@ -429,7 +480,7 @@ export function PocketMenuTab() {
           </div>
 
           <button
-            className="pocket-button pocket-button--primary"
+            className="mt-3 rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
             onClick={runManualSequence}
             disabled={busy}
           >
@@ -468,18 +519,22 @@ export function PocketStatsTab() {
   const messages = Number(snapshot?.messagesSeen || 0);
 
   return (
-    <section className="pocket-panel">
-      <div className="pocket-panel__header">
+    <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="pocket-kicker">Statistics</p>
-          <h2>{isDeveloper ? "Live logs and stats" : "Your workout stats"}</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+            Statistics
+          </p>
+          <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+            {isDeveloper ? "Live logs and stats" : "Your workout stats"}
+          </h2>
         </div>
-        <p className="pocket-panel__hint">
+        <p className="text-sm text-slate-500">
           Developer mode keeps the log feed visible.
         </p>
       </div>
 
-      <div className="pocket-card-row">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Card
           title="Basket score"
           value={snapshot?.basketScore ?? 0}
@@ -505,33 +560,36 @@ export function PocketStatsTab() {
       </div>
 
       {isDeveloper ? (
-        <div className="pocket-dev-stack">
-          <div className="pocket-dev-actions mt-2">
+        <div className="grid gap-3">
+          <div className="mt-2 flex flex-wrap gap-2">
             <button
-              className="pocket-button pocket-button--soft "
+              className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
               onClick={handleExport}
             >
               Download All Data
             </button>
             <button
-              className="pocket-button pocket-button--soft"
+              className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
               onClick={loadProfiles}
             >
               Refresh Profiles
             </button>
             <button
-              className="pocket-button pocket-button--soft"
+              className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
               onClick={loadModes}
             >
               Refresh Modes
             </button>
           </div>
 
-          <div className="pocket-dev-admin-grid">
-            <section className="pocket-dev-card">
-              <h3>Profiles</h3>
-              <div className="pocket-dev-form">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+              <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+                Profiles
+              </h3>
+              <div className="grid gap-3">
                 <input
+                  className="rounded-lg border border-slate-300 px-3 py-2"
                   placeholder="Name"
                   value={newProfile.name}
                   onChange={(e) =>
@@ -539,6 +597,7 @@ export function PocketStatsTab() {
                   }
                 />
                 <input
+                  className="rounded-lg border border-slate-300 px-3 py-2"
                   type="number"
                   placeholder="Number"
                   value={newProfile.number}
@@ -550,15 +609,16 @@ export function PocketStatsTab() {
                   }
                 />
                 <button
-                  className="pocket-button pocket-button--primary"
+                  className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
                   onClick={addProfile}
                 >
                   Add Profile
                 </button>
               </div>
 
-              <div className="pocket-dev-form">
+              <div className="mt-3 grid gap-3">
                 <input
+                  className="rounded-lg border border-slate-300 px-3 py-2"
                   type="number"
                   placeholder="User ID"
                   value={renamePayload.user_id}
@@ -570,6 +630,7 @@ export function PocketStatsTab() {
                   }
                 />
                 <input
+                  className="rounded-lg border border-slate-300 px-3 py-2"
                   placeholder="New Name"
                   value={renamePayload.new_name}
                   onChange={(e) =>
@@ -580,6 +641,7 @@ export function PocketStatsTab() {
                   }
                 />
                 <input
+                  className="rounded-lg border border-slate-300 px-3 py-2"
                   type="number"
                   placeholder="New Number"
                   value={renamePayload.new_number}
@@ -591,21 +653,24 @@ export function PocketStatsTab() {
                   }
                 />
                 <button
-                  className="pocket-button pocket-button--soft"
+                  className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
                   onClick={renameProfile}
                 >
                   Update Profile
                 </button>
               </div>
 
-              <div className="pocket-list">
+              <div className="mt-3 grid gap-2">
                 {profiles.map((profile) => (
-                  <div key={profile.user_id} className="pocket-list__item">
+                  <div
+                    key={profile.user_id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-slate-300 p-2 text-sm"
+                  >
                     <span>
                       #{profile.user_id} {profile.name} ({profile.number ?? 0})
                     </span>
                     <button
-                      className="pocket-button pocket-button--ghost"
+                      className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-semibold"
                       onClick={() => deleteProfile(profile.user_id)}
                     >
                       Delete
@@ -615,18 +680,21 @@ export function PocketStatsTab() {
               </div>
             </section>
 
-            <section className="pocket-dev-card">
-              <h3>Modes</h3>
-              <div className="pocket-list">
+            <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+              <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+                Modes
+              </h3>
+              <div className="mt-3 grid gap-2">
                 {modeList.map((mode) => {
                   const id = mode.modeId ?? mode.mode_id;
                   const local = modeEdit[id] || {};
                   return (
                     <div
                       key={id}
-                      className="pocket-list__item pocket-list__item--stack"
+                      className="grid items-stretch gap-2 rounded-lg border border-slate-300 p-2 text-sm"
                     >
                       <input
+                        className="rounded-lg border border-slate-300 px-3 py-2"
                         value={local.name ?? mode.name}
                         onChange={(e) =>
                           setModeEdit((prev) => ({
@@ -635,8 +703,9 @@ export function PocketStatsTab() {
                           }))
                         }
                       />
-                      <div className="pocket-inline">
+                      <div className="flex flex-wrap gap-2">
                         <input
+                          className="rounded-lg border border-slate-300 px-3 py-2"
                           type="number"
                           value={local.repetition ?? mode.repetition}
                           onChange={(e) =>
@@ -650,7 +719,7 @@ export function PocketStatsTab() {
                           }
                         />
                         <button
-                          className="pocket-button pocket-button--primary"
+                          className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
                           onClick={() => saveMode(mode)}
                         >
                           Save
@@ -662,10 +731,13 @@ export function PocketStatsTab() {
               </div>
             </section>
 
-            <section className="pocket-dev-card">
-              <h3>Password management</h3>
-              <div className="pocket-dev-form">
+            <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+              <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+                Password management
+              </h3>
+              <div className="grid gap-3">
                 <select
+                  className="rounded-lg border border-slate-300 px-3 py-2"
                   value={passwordPayload.role}
                   onChange={(e) =>
                     setPasswordPayload((prev) => ({
@@ -678,6 +750,7 @@ export function PocketStatsTab() {
                   <option value="developer">Developer password</option>
                 </select>
                 <input
+                  className="rounded-lg border border-slate-300 px-3 py-2"
                   type="password"
                   placeholder="New password"
                   value={passwordPayload.new_password}
@@ -689,7 +762,7 @@ export function PocketStatsTab() {
                   }
                 />
                 <button
-                  className="pocket-button pocket-button--soft"
+                  className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 font-semibold"
                   onClick={changePassword}
                 >
                   Change Password
@@ -698,12 +771,14 @@ export function PocketStatsTab() {
             </section>
           </div>
 
-          <div className="pocket-logs-shell">
+          <div className="min-h-[260px]">
             <EventList />
           </div>
         </div>
       ) : (
-        <p className="pocket-muted">No logs are shown in user mode.</p>
+        <p className="text-sm text-slate-500">
+          No logs are shown in user mode.
+        </p>
       )}
     </section>
   );
