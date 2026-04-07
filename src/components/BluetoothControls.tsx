@@ -7,24 +7,30 @@ const BluetoothControls = () => {
   const [workoutState, setWorkoutState] = useState<string>("Unknown");
 
   const appWebview = getCurrentWebviewWindow();
-  console.log("appwebview ", appWebview);
 
-  appWebview.listen<string>("state-changed", (event) => {
-    // localStorage.setItem("console-message", event.payload);
-    console.log("payload ", event.payload);
-    if (event.payload === "on") {
-      setWorkoutState("running");
-    } else if (event.payload === "off") {
-      setWorkoutState("pause");
-    } else {
-      setWorkoutState("bad argument");
-    }
-  });
+  useEffect(() => {
+    const unlistenStateChanged = appWebview.listen<string>(
+      "state-changed",
+      (event) => {
+        console.log("Remote state-changed event:", event.payload);
+        if (event.payload === "on") {
+          setWorkoutState("running");
+        } else if (event.payload === "off") {
+          setWorkoutState("paused");
+        } else {
+          setWorkoutState("bad argument");
+        }
+      },
+    );
+
+    return () => {
+      unlistenStateChanged.then((fn) => fn());
+    };
+  }, []);
 
   const startWorkout = async () => {
     try {
       await invoke("start_workout");
-      // Optionally, you can update the state immediately.
       setWorkoutState("running");
     } catch (err) {
       console.error("Error starting workout:", err);
@@ -34,7 +40,6 @@ const BluetoothControls = () => {
   const pauseWorkout = async () => {
     try {
       await invoke("pause_workout");
-      // Optionally, update the state immediately.
       setWorkoutState("paused");
     } catch (err) {
       console.error("Error pausing workout:", err);

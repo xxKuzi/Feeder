@@ -414,6 +414,42 @@ pub async fn update_mode(data: Mode) -> Result<(), String> {
     result.map(|_| ()).map_err(|e| e.to_string())
 }
 
+#[derive(Serialize, Deserialize, Debug, FromRow)]
+pub struct UserAccuracySummary {
+        user_id: u32,
+        name: String,
+        made: i64,
+        taken: i64,
+        accuracy: f64,
+}
+
+#[tauri::command]
+pub async fn load_user_accuracy_summary() -> Result<Vec<UserAccuracySummary>, String> {
+        let pool = get_db_pool().await;
+        let pool = pool.lock().await;
+
+        let qry = r#"
+        SELECT
+            u.user_id AS user_id,
+            u.name AS name,
+            COALESCE(SUM(r.made), 0) AS made,
+            COALESCE(SUM(r.taken), 0) AS taken,
+            CASE
+                WHEN COALESCE(SUM(r.taken), 0) = 0 THEN 0.0
+                ELSE CAST(COALESCE(SUM(r.made), 0) AS REAL) / CAST(SUM(r.taken) AS REAL)
+            END AS accuracy
+        FROM users u
+        LEFT JOIN records r ON r.user_id = u.user_id
+        GROUP BY u.user_id, u.name
+        ORDER BY u.user_id
+        "#;
+
+        sqlx::query_as::<_, UserAccuracySummary>(qry)
+                .fetch_all(&*pool)
+                .await
+                .map_err(|e| e.to_string())
+}
+
 
 
 

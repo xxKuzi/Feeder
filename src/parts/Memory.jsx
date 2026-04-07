@@ -10,7 +10,7 @@ import { listen } from "@tauri-apps/api/event";
 const DataContext = createContext();
 import Modal from "./Modal.jsx";
 import Calibration from "./Calibration.jsx";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import KeyboardOverlay from "../parts/Keyboard";
 
 export function Memory({ children }) {
@@ -20,6 +20,7 @@ export function Memory({ children }) {
   const pendingMotorRequestsRef = useRef(new Map());
   const pendingMotorTimeoutsRef = useRef(new Map());
   const navigate = useNavigate();
+  const location = useLocation();
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
   const [workoutData, setWorkoutData] = useState({
     intervals: [5],
@@ -43,6 +44,8 @@ export function Memory({ children }) {
     distance: 3700,
     angle: 0, //USED ONLY FOR CHANGING ANGLE (NOT FOR CALIBRATION)
   });
+  const modesRef = useRef([]);
+  const workoutDataRef = useRef(workoutData);
   //at the beginning IT IS NOT VALID
 
   useEffect(() => {
@@ -53,6 +56,78 @@ export function Memory({ children }) {
     initMotorInstance();
     startArduinoBridge();
   }, []);
+
+  useEffect(() => {
+    modesRef.current = modes;
+  }, [modes]);
+
+  useEffect(() => {
+    workoutDataRef.current = workoutData;
+  }, [workoutData]);
+
+  useEffect(() => {
+    let unlistenRemoteStart = null;
+    let unlistenActiveModeChanged = null;
+    let unlistenRemoteExit = null;
+
+    const resolveModeById = (modeId) => {
+      if (!modeId) {
+        return null;
+      }
+      return modesRef.current.find((mode) => mode.modeId === modeId) || null;
+    };
+
+    const bindRemoteListeners = async () => {
+      unlistenActiveModeChanged = await listen(
+        "active-mode-changed",
+        (event) => {
+          const payload = event.payload || {};
+          const modeId = Number(payload.mode_id || payload.modeId || 0);
+          const selectedMode = resolveModeById(modeId);
+          if (selectedMode) {
+            setWorkoutData(selectedMode);
+          }
+        },
+      );
+
+      unlistenRemoteStart = await listen("remote-start-workout", (event) => {
+        const payload = event.payload || {};
+        const modeId = Number(payload.mode_id || payload.modeId || 0);
+        const selectedMode = resolveModeById(modeId);
+
+        if (selectedMode) {
+          setWorkoutData(selectedMode);
+        } else if (
+          !workoutDataRef.current?.name &&
+          modesRef.current.length > 0
+        ) {
+          setWorkoutData(modesRef.current[0]);
+        }
+
+        if (location.pathname !== "/workout") {
+          navigate("/workout");
+        }
+      });
+
+      unlistenRemoteExit = await listen("remote-exit-workout", () => {
+        navigate("/menu");
+      });
+    };
+
+    bindRemoteListeners();
+
+    return () => {
+      if (unlistenRemoteStart) {
+        unlistenRemoteStart();
+      }
+      if (unlistenActiveModeChanged) {
+        unlistenActiveModeChanged();
+      }
+      if (unlistenRemoteExit) {
+        unlistenRemoteExit();
+      }
+    };
+  }, [navigate, location.pathname]);
 
   const initMotorInstance = async () => {
     try {

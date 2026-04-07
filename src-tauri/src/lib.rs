@@ -4,11 +4,11 @@ pub mod bluetooth;
 pub mod limit_switch;
 pub mod tcp;
 use tauri::Emitter;
-use log::{info, error, warn};
+use log::{info, warn};
 
 use limit_switch::platform::watch_limit_switch;
 
-use bluetooth::{get_workout_state, init_ble, pause_workout, start_workout, AppState};
+use bluetooth::{get_workout_state, init_ble, pause_workout, start_workout};
 use tcp::{start_tcp_server, tcp_send_event};
 use sql::{
     connect_to_database, add_record, add_user, load_users, select_user, delete_user,
@@ -68,7 +68,7 @@ pub async fn run() {
 
     tauri::Builder::default()
     .setup(|app| {
-        if let Err(e) = start_tcp_server() {
+        if let Err(e) = start_tcp_server(app.handle().clone()) {
             warn!("TCP telemetry server failed to start: {e}");
         }
 

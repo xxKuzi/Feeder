@@ -7,7 +7,6 @@ import MotorControl from "../components/MotorControl.jsx";
 import Pause from "../components/Pause";
 import Countdown from "../components/Countdown";
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 export default function Workout() {
   const {
@@ -39,26 +38,13 @@ export default function Workout() {
   const countdownRef = useRef(null); //ref to INITIAL CountDown
   const pauseCountdownRef = useRef(null); //ref to PAUSE Countdown
   const [isOpen, setIsOpen] = useState(false);
+  const isOpenRef = useRef(false);
 
   const navigate = useNavigate(); //used for navigation between pages
 
-  const appWebview = getCurrentWebviewWindow();
-  // console.log("appwebview", appWebview);
-
-  appWebview.listen("state-changed", (event) => {
-    // localStorage.setItem("console-message", event.payload);
-    console.log("payload", event.payload);
-
-    if (event.payload === "on") {
-      pauseCountdownRef.current.startCountdown(2);
-      setIsOpen(false);
-    } else if (event.payload === "off") {
-      isRunningRef.current = false;
-      setIsOpen(true);
-    } else {
-      setWorkoutState("bad argument");
-    }
-  });
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   const pauseWorkout = async () => {
     try {
@@ -79,16 +65,41 @@ export default function Workout() {
     }
   };
 
-  //BLUETOOTH
+  // Remote event listener for state changes from TCP commands
   useEffect(() => {
-    const unlisten = () =>
-      listen("pause", () => {
-        console.log("Pause command received from the server");
-        isRunningRef.current = !isRunningRef.current;
-      });
+    const unlistenStateChanged = listen("state-changed", (event) => {
+      console.log("Remote state-changed event:", event.payload);
+
+      if (event.payload === "on") {
+        // Resume workout from remote command.
+        const wasPaused = isOpenRef.current || isRunningRef.current === false;
+        isRunningRef.current = true;
+        setIsOpen(false);
+        if (wasPaused) {
+          setNewWorkout(false);
+          setRefresh((prev) => !prev);
+        }
+      } else if (event.payload === "off") {
+        // Pause workout
+        isRunningRef.current = false;
+        setIsOpen(true);
+      }
+    });
 
     return () => {
-      unlisten();
+      unlistenStateChanged.then((fn) => fn());
+    };
+  }, []);
+
+  //BLUETOOTH
+  useEffect(() => {
+    const unlistenPause = listen("pause", () => {
+      console.log("Pause command received from the server");
+      isRunningRef.current = !isRunningRef.current;
+    });
+
+    return () => {
+      unlistenPause.then((fn) => fn());
     };
   }, []);
 
