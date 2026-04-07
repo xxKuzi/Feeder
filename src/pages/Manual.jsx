@@ -115,12 +115,6 @@ export default function Manual() {
       >
         Start
       </button>
-      <button
-        className="button button__negative mt-4"
-        onClick={resetBasketPoints}
-      >
-        Reset skóre (Pi -&gt; Arduino)
-      </button>
     </div>
   );
 }
