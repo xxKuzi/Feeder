@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 src-tauri/data.db
 src-tauri/data.db
+.remote-control.env
+src-tauri/.remote-control.env
+external-workout-monitor/.env
 
 
 

@@ -2,10 +2,11 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
+use once_cell::sync::OnceCell;
 use tauri::Emitter;
 use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
-use tauri::{AppHandle, Manager, WebviewWindow};
+use tauri::AppHandle;
 use crate::tcp;
 
 // Import logging macros.
@@ -32,6 +33,43 @@ pub static STATE: AtomicBool = AtomicBool::new(true);
 pub struct AppState {
     pub peripheral: Arc<Mutex<Peripheral>>,
     pub char_uuid: Uuid,
+}
+
+static BLE_APP_STATE: OnceCell<AppState> = OnceCell::new();
+static REMOTE_APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
+
+async fn set_workout_state_internal(running: bool, source: &str) -> Result<(), String> {
+    STATE.store(running, Ordering::SeqCst);
+    let new_value = if running { "on" } else { "off" };
+
+    // Try to update BLE characteristic if available
+    if let Some(app_state) = BLE_APP_STATE.get() {
+        let mut periph = app_state.peripheral.lock().await;
+        let _ = periph
+            .update_characteristic(app_state.char_uuid, new_value.into())
+            .await;
+    }
+
+    // Also emit Tauri event for local UI if app handle is available
+    if let Some(app) = REMOTE_APP_HANDLE.get() {
+        let _ = app.emit("state-changed", &new_value);
+    }
+
+    // Broadcast telemetry
+    let _ = tcp::send_event(
+        "workout_state",
+        serde_json::json!({
+            "state": if running { "running" } else { "paused" },
+            "source": source
+        }),
+    );
+
+    info!("Workout state changed to {} (source: {})", new_value, source);
+    Ok(())
+}
+
+pub async fn set_workout_state_remote(running: bool) -> Result<(), String> {
+    set_workout_state_internal(running, "remote_tcp").await
 }
 
 /// Initializes the BLE peripheral, adds the service, starts advertising,
@@ -82,9 +120,10 @@ pub async fn init_ble(app_handle: AppHandle) -> Result<AppState, Box<dyn std::er
     // Spawn event handler for BLE events.
     let peripheral_for_events = peripheral.clone();
     let char_uuid_for_events = char_uuid.clone();
+    let app_handle_for_events = app_handle.clone();
     tokio::spawn(async move {
         while let Some(event) = receiver_rx.recv().await {
-            handle_updates(event, peripheral_for_events.clone(), char_uuid_for_events, app_handle.clone()).await;
+            handle_updates(event, peripheral_for_events.clone(), char_uuid_for_events, app_handle_for_events.clone()).await;
         }
     });
 
@@ -120,7 +159,11 @@ pub async fn init_ble(app_handle: AppHandle) -> Result<AppState, Box<dyn std::er
         periph.update_characteristic(char_uuid, "on".into()).await?;
     }
 
-    Ok(AppState { peripheral, char_uuid })
+    let state = AppState { peripheral, char_uuid };
+    let _ = BLE_APP_STATE.set(state.clone());
+    // Store the app handle for remote commands (AppHandle is Arc<_> internally, so clone is cheap)
+    let _ = REMOTE_APP_HANDLE.set((*app_handle).clone());
+    Ok(state)
 }
 
 /// Handles incoming BLE events such as read and write requests.
@@ -162,7 +205,7 @@ async fn handle_updates(
             }
         }
         PeripheralEvent::WriteRequest {
-            request,
+            request: _,
             offset: _,
             value,
             responder,
@@ -218,29 +261,15 @@ async fn handle_updates(
                 error!("Failed to send write response: {:?}", e);
             }
         }
-        _ => {
-            info!("Unhandled event: {:?}", event);
-        }
     }
 }
 
 /// Tauri command to start the workout (set state to "running").
 #[tauri::command]
 pub async fn start_workout(app_state: tauri::State<'_, AppState>) -> Result<(), String> {
-    STATE.store(true, Ordering::SeqCst);
-    let mut periph = app_state.peripheral.lock().await;
-    periph
-        .update_characteristic(app_state.char_uuid, "on".into())
-        .await
-        .map_err(|e| format!("Failed to update characteristic: {:?}", e))?;
+    let _ = app_state;
+    set_workout_state_internal(true, "tauri_command").await?;
     info!("Workout started (state set to running)");
-    let _ = tcp::send_event(
-        "workout_state",
-        serde_json::json!({
-            "state": "running",
-            "source": "tauri_command"
-        }),
-    );
     
     Ok(())
 }
@@ -248,20 +277,9 @@ pub async fn start_workout(app_state: tauri::State<'_, AppState>) -> Result<(), 
 /// Tauri command to pause the workout (set state to "paused").
 #[tauri::command]
 pub async fn pause_workout(app_state: tauri::State<'_, AppState>) -> Result<(), String> {
-    STATE.store(false, Ordering::SeqCst);
-    let mut periph = app_state.peripheral.lock().await;
-    periph
-        .update_characteristic(app_state.char_uuid, "off".into())
-        .await
-        .map_err(|e| format!("Failed to update characteristic: {:?}", e))?;
+    let _ = app_state;
+    set_workout_state_internal(false, "tauri_command").await?;
     info!("Workout paused (state set to off)");
-    let _ = tcp::send_event(
-        "workout_state",
-        serde_json::json!({
-            "state": "paused",
-            "source": "tauri_command"
-        }),
-    );
     Ok(())
 }
 
