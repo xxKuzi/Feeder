@@ -1,13 +1,8 @@
 import { useMonitor } from "../monitor/MonitorContext";
 
 export default function LoginPage() {
-  const {
-    connected,
-    password,
-    setPassword,
-    authError,
-    handleAuth,
-  } = useMonitor();
+  const { connected, password, setPassword, authError, handleAuth } =
+    useMonitor();
 
   return (
     <div className="relative grid min-h-screen place-items-center p-4">
@@ -51,7 +46,9 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {authError && <p className="mt-3 text-sm font-bold text-red-600">{authError}</p>}
+        {authError && (
+          <p className="mt-3 text-sm font-bold text-red-600">{authError}</p>
+        )}
       </section>
     </div>
   );

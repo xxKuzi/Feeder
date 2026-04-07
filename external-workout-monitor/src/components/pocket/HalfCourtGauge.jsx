@@ -88,7 +88,11 @@ export default function HalfCourtGauge({ mode, startedAt, running, label }) {
         </p>
       </div>
 
-      <svg viewBox="0 0 200 120" className="block h-auto w-full" aria-hidden="true">
+      <svg
+        viewBox="0 0 200 120"
+        className="block h-auto w-full"
+        aria-hidden="true"
+      >
         <defs>
           <linearGradient
             id="gauge-gradient"
