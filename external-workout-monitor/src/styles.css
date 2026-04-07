@@ -1,208 +1,190 @@
-:root {
-  font-family: "Space Grotesk", "Segoe UI", sans-serif;
-  color: #152238;
-  background: radial-gradient(
-    circle at top right,
-    #f8f3dc,
-    #f0fbff 45%,
-    #eef2ff
-  );
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "SpaceMono";
+  src: url("/fonts/SpaceMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-}
-
-.page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 28px 16px 40px;
-}
-
-.hero {
-  margin-bottom: 18px;
-}
-
-.hero h1 {
-  margin: 0;
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-}
-
-.hero p {
-  margin: 6px 0 12px;
-}
-
-.connection {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 6px 12px;
+@font-face {
+  font-family: "SpaceMono";
+  src: url("/fonts/SpaceMono-Bold.ttf") format("truetype");
   font-weight: 700;
+  font-style: normal;
 }
 
-.connection.ok {
-  background: #defce8;
-  color: #17603b;
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-slate-100 text-slate-900 antialiased;
+    font-family: "SpaceMono", "Trebuchet MS", "Avenir Next", "Segoe UI", monospace;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 }
 
-.connection.bad {
-  background: #ffe8ea;
-  color: #8f2431;
-}
+@layer components {
+  .pocket-grid {
+    @apply grid gap-4 lg:grid-cols-[1.8fr_0.9fr];
+  }
 
-.connection-role {
-  margin-top: 8px;
-  font-weight: 700;
-}
+  .pocket-grid__main,
+  .pocket-grid__side,
+  .pocket-dev-stack,
+  .pocket-dev-form,
+  .pocket-list,
+  .pocket-event-list {
+    @apply grid gap-3;
+  }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
+  .pocket-panel,
+  .pocket-hero-card,
+  .pocket-card,
+  .pocket-menu-card,
+  .pocket-dev-card,
+  .pocket-event {
+    @apply rounded-xl border border-slate-300 bg-white p-4 shadow-sm;
+  }
 
-.card {
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(43, 70, 120, 0.18);
-  border-radius: 16px;
-  padding: 14px;
-  box-shadow: 0 8px 25px rgba(43, 70, 120, 0.08);
-}
+  .pocket-panel__header {
+    @apply mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between;
+  }
 
-.card h2 {
-  margin: 0 0 10px;
-  font-size: 1rem;
-}
+  .pocket-panel__hint,
+  .pocket-card__note,
+  .pocket-muted {
+    @apply text-sm text-slate-500;
+  }
 
-.metric {
-  font-size: 2rem;
-  font-weight: 700;
-}
+  .pocket-kicker,
+  .pocket-card__title,
+  .pocket-menu-card__label {
+    @apply text-xs font-semibold uppercase tracking-widest text-slate-500;
+  }
 
-.pill {
-  display: inline-block;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: #e8eef9;
-}
+  .pocket-panel h2,
+  .pocket-hero-card h2,
+  .pocket-dev-card h3,
+  .pocket-menu-card h3 {
+    @apply m-0 mt-1 text-xl font-bold leading-tight text-slate-900;
+  }
 
-.pill.running {
-  background: #d9fae6;
-  color: #11683c;
-}
+  .pocket-card__value {
+    @apply mt-1 text-2xl font-bold text-slate-900;
+  }
 
-.pill.paused {
-  background: #ffe7bf;
-  color: #7a4a00;
-}
+  .pocket-hero-card {
+    @apply flex flex-col justify-between gap-4 sm:flex-row sm:items-center;
+  }
 
-.events {
-  margin-top: 14px;
-}
+  .pocket-hero-card__rate {
+    @apply rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center;
+  }
 
-.auth-row {
-  margin-top: 14px;
-}
+  .pocket-hero-card__rate span {
+    @apply text-3xl font-extrabold text-blue-700;
+  }
 
-.auth-gate {
-  margin-top: 14px;
-  padding: 18px;
-}
+  .pocket-card-row,
+  .pocket-menu-grid,
+  .pocket-dev-admin-grid {
+    @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-3;
+  }
 
-.controls-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
+  .pocket-card--gold {
+    @apply border-amber-200 bg-amber-50;
+  }
 
-input,
-select,
-button {
-  border-radius: 10px;
-  border: 1px solid rgba(43, 70, 120, 0.25);
-  background: #fff;
-  padding: 8px 10px;
-  font: inherit;
-}
+  .pocket-card--green {
+    @apply border-green-200 bg-green-50;
+  }
 
-button {
-  cursor: pointer;
-  background: #e4f0ff;
-  font-weight: 700;
-}
+  .pocket-card--blue {
+    @apply border-blue-200 bg-blue-50;
+  }
 
-button:hover {
-  background: #d5e9ff;
-}
+  .pocket-controls,
+  .pocket-mode-picker__row,
+  .pocket-dev-actions,
+  .pocket-inline {
+    @apply flex flex-wrap gap-2;
+  }
 
-.tab-active {
-  background: #1b365d;
-  color: #fff;
-  border-color: #1b365d;
-}
+  .pocket-mode-picker {
+    @apply grid gap-4;
+  }
 
-.tag-list {
-  display: grid;
-  gap: 8px;
-}
+  .pocket-mode-grid {
+    @apply grid gap-2 sm:grid-cols-2 xl:grid-cols-4;
+  }
 
-.tag-item,
-.mode-edit-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  border: 1px solid rgba(43, 70, 120, 0.2);
-  border-radius: 10px;
-  padding: 8px;
-}
+  .pocket-mode-card {
+    @apply rounded-lg border border-slate-300 bg-white p-3 text-left shadow-sm transition;
+  }
 
-.error-text {
-  color: #8f2431;
-  font-weight: 700;
-}
+  .pocket-mode-card.is-active {
+    @apply border-blue-300 bg-blue-50;
+  }
 
-.command-info {
-  margin-top: 10px;
-}
+  .pocket-mode-card__id {
+    @apply inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700;
+  }
 
-.event-list {
-  max-height: 55vh;
-  overflow: auto;
-  display: grid;
-  gap: 8px;
-}
+  .pocket-button {
+    @apply rounded-lg px-4 py-2 font-semibold transition;
+  }
 
-.event-row {
-  border: 1px solid rgba(43, 70, 120, 0.18);
-  border-radius: 12px;
-  padding: 10px;
-  background: rgba(250, 252, 255, 0.9);
-}
+  .pocket-button--primary {
+    @apply bg-blue-600 text-white;
+  }
 
-.event-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
+  .pocket-button--soft,
+  .pocket-button--warm {
+    @apply border border-blue-200 bg-blue-50;
+  }
 
-pre,
-.mono {
-  margin: 0;
-  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
+  .pocket-button--ghost {
+    @apply border border-slate-300 bg-white;
+  }
 
-.hint {
-  color: #55709c;
+  .pocket-list__item {
+    @apply flex items-center justify-between gap-2 rounded-lg border border-slate-300 p-2 text-sm;
+  }
+
+  .pocket-list__item--stack {
+    @apply grid items-stretch;
+  }
+
+  .pocket-event-list {
+    @apply max-h-[56vh] overflow-auto pr-1;
+  }
+
+  .pocket-event__head {
+    @apply mb-2 flex justify-between gap-3 text-sm font-semibold text-slate-700;
+  }
+
+  .pocket-logs-shell {
+    @apply min-h-[260px];
+  }
+
+  .error-text {
+    @apply mt-3 text-sm font-bold text-red-600;
+  }
 }

@@ -1,22 +1,50 @@
 import { useEffect, useMemo, useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import UserPage from "./pages/UserPage";
+import DevPage from "./pages/DevPage";
+import {
+  PocketControlTab,
+  PocketMenuTab,
+  PocketOverviewTab,
+  PocketStatsTab,
+} from "./pages/pocket/Tabs";
+import { MonitorContext } from "./monitor/MonitorContext";
 
 const BRIDGE_URL =
   import.meta.env.VITE_MONITOR_BRIDGE_URL || "ws://127.0.0.1:8787";
 const SNAPSHOT_URL =
   (import.meta.env.VITE_MONITOR_HTTP_URL || "http://127.0.0.1:8787") +
   "/snapshot";
+const CACHE_KEY = "feeder-pocket-monitor-cache";
 
-function formatTimestamp(value) {
-  if (!value) {
-    return "-";
+function readCache() {
+  if (typeof window === "undefined") {
+    return null;
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(payload) {
+  if (typeof window === "undefined") {
+    return;
   }
 
-  return date.toLocaleTimeString();
+  try {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // Ignore storage quota / privacy mode issues.
+  }
+}
+
+function getModeId(mode) {
+  return Number(mode?.modeId ?? mode?.mode_id ?? 0);
 }
 
 async function postJson(url, body) {
@@ -29,15 +57,19 @@ async function postJson(url, body) {
 }
 
 export default function App() {
+  const cached = readCache();
+
   const [connected, setConnected] = useState(false);
-  const [snapshot, setSnapshot] = useState(null);
-  const [events, setEvents] = useState([]);
+  const [snapshot, setSnapshot] = useState(cached?.snapshot || null);
+  const [events, setEvents] = useState(cached?.events || []);
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [commandInfo, setCommandInfo] = useState("");
-  const [modeList, setModeList] = useState([]);
-  const [activeModeId, setActiveModeId] = useState(0);
-  const [profiles, setProfiles] = useState([]);
+  const [modeList, setModeList] = useState(cached?.modeList || []);
+  const [activeModeId, setActiveModeId] = useState(
+    Number(cached?.activeModeId || 0),
+  );
+  const [profiles, setProfiles] = useState(cached?.profiles || []);
   const [newProfile, setNewProfile] = useState({ name: "", number: 0 });
   const [renamePayload, setRenamePayload] = useState({
     user_id: 0,
@@ -49,7 +81,9 @@ export default function App() {
     new_password: "",
   });
   const [modeEdit, setModeEdit] = useState({});
-  const [activeTab, setActiveTab] = useState("control");
+  const [workoutStateAt, setWorkoutStateAt] = useState(
+    Number(cached?.workoutStateAt || cached?.snapshot?.workoutStateAt || 0),
+  );
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -58,8 +92,10 @@ export default function App() {
         const data = await response.json();
         setSnapshot(data);
         setEvents(data.latestEvents || []);
+        setActiveModeId(Number(data.activeModeId || 0));
+        setWorkoutStateAt(Number(data.workoutStateAt || 0));
       } catch {
-        // Ignore fetch errors; websocket may still connect.
+        // Cached state stays visible offline.
       }
     };
 
@@ -87,12 +123,15 @@ export default function App() {
           setSnapshot(packet.payload);
           setEvents(packet.payload.latestEvents || []);
           setActiveModeId(Number(packet.payload.activeModeId || 0));
+          if (packet.payload.workoutStateAt) {
+            setWorkoutStateAt(Number(packet.payload.workoutStateAt));
+          }
         }
 
         if (packet.type === "telemetry") {
           const event = packet.payload;
 
-          setEvents((prev) => [event, ...prev].slice(0, 100));
+          setEvents((prev) => [event, ...prev].slice(0, 120));
           setSnapshot((prev) => {
             const next = {
               ...(prev || {}),
@@ -100,16 +139,28 @@ export default function App() {
               messagesSeen: (prev?.messagesSeen || 0) + 1,
               latestEvents: [event, ...(prev?.latestEvents || [])].slice(
                 0,
-                100,
+                120,
               ),
             };
 
             if (event.event === "workout_state") {
               next.workoutState = event.payload?.state || next.workoutState;
+              next.workoutStateAt = event.timestamp_ms || Date.now();
+              setWorkoutStateAt(event.timestamp_ms || Date.now());
             }
+
+            if (event.event === "active_mode_changed") {
+              const nextModeId = Number(
+                event.payload?.mode_id || event.payload?.modeId || 0,
+              );
+              next.activeModeId = nextModeId;
+              setActiveModeId(nextModeId);
+            }
+
             if (event.event === "basket_score_updated") {
               next.basketScore = event.payload?.score ?? next.basketScore;
             }
+
             if (event.event === "arduino_rx") {
               next.lastArduinoLine =
                 event.payload?.line || next.lastArduinoLine;
@@ -126,10 +177,27 @@ export default function App() {
     return () => ws.close();
   }, []);
 
+  useEffect(() => {
+    writeCache({
+      snapshot,
+      events,
+      modeList,
+      profiles,
+      activeModeId,
+      workoutStateAt,
+    });
+  }, [snapshot, events, modeList, profiles, activeModeId, workoutStateAt]);
+
   const workoutState = snapshot?.workoutState || "unknown";
   const role = snapshot?.role || "guest";
   const isDeveloper = role === "developer";
   const isAuthenticated = Boolean(snapshot?.authenticated);
+
+  const selectedMode = useMemo(() => {
+    return (
+      modeList.find((mode) => getModeId(mode) === Number(activeModeId)) || null
+    );
+  }, [modeList, activeModeId]);
 
   const runCommand = async (command, args = {}) => {
     const result = await postJson(
@@ -152,15 +220,21 @@ export default function App() {
     const result = await runCommand("load_modes");
     setModeList(result.modes || []);
     setActiveModeId(Number(result.activeModeId || 0));
+    setSnapshot((prev) => ({
+      ...(prev || {}),
+      activeModeId: Number(result.activeModeId || 0),
+    }));
+    return result;
   };
 
   const loadProfiles = async () => {
     const result = await runCommand("list_profiles");
     setProfiles(result.users || []);
+    return result;
   };
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!connected || !isAuthenticated) {
       setModeList([]);
       setProfiles([]);
       return;
@@ -170,7 +244,7 @@ export default function App() {
     if (role === "developer") {
       loadProfiles().catch(() => {});
     }
-  }, [isAuthenticated, role]);
+  }, [connected, isAuthenticated, role]);
 
   const handleAuth = async () => {
     setAuthError("");
@@ -189,9 +263,15 @@ export default function App() {
       const snapshotResponse = await fetch(SNAPSHOT_URL);
       const refreshed = await snapshotResponse.json();
       setSnapshot(refreshed);
+      setPassword("");
 
       await loadModes();
-      await loadProfiles();
+      if (response.role === "developer") {
+        await loadProfiles();
+      } else {
+        setProfiles([]);
+      }
+
       setCommandInfo(`Logged in as ${response.role}`);
     } catch (error) {
       setAuthError(error.message || String(error));
@@ -212,6 +292,7 @@ export default function App() {
       }));
       setModeList([]);
       setProfiles([]);
+      setActiveModeId(0);
       setCommandInfo("Signed out");
     } catch (error) {
       setCommandInfo(error.message || String(error));
@@ -227,7 +308,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `feeder-full-export-${Date.now()}.json`;
+      anchor.download = `feeder-pocket-export-${Date.now()}.json`;
       anchor.click();
       URL.revokeObjectURL(url);
       setCommandInfo("All data downloaded");
@@ -245,10 +326,10 @@ export default function App() {
     }
   };
 
-  const doStart = async () => {
+  const doStart = async (modeId = activeModeId) => {
     try {
-      await runCommand("start_workout", { mode_id: Number(activeModeId) });
-      setCommandInfo(`Workout started with mode ${activeModeId}`);
+      await runCommand("start_workout", { mode_id: Number(modeId) });
+      setCommandInfo(`Workout started with mode ${modeId}`);
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -263,9 +344,52 @@ export default function App() {
     }
   };
 
+  const doManualMove = async (steps, safety = false) => {
+    try {
+      const response = await runCommand("manual_move_position", {
+        steps: Number(steps),
+        safety: Boolean(safety),
+      });
+      setCommandInfo(
+        `Moved by ${Number(steps)} steps${safety ? " (safety on)" : ""}`,
+      );
+      return response;
+    } catch (error) {
+      setCommandInfo(error.message || String(error));
+      throw error;
+    }
+  };
+
+  const doManualTryShot = async () => {
+    try {
+      await runCommand("manual_try_shot");
+      setCommandInfo("Single test shot triggered");
+    } catch (error) {
+      setCommandInfo(error.message || String(error));
+      throw error;
+    }
+  };
+
+  const doManualRunShots = async (shots, intervalMs = 1200) => {
+    try {
+      await runCommand("manual_run_shots", {
+        shots: Number(shots),
+        interval_ms: Number(intervalMs),
+      });
+      setCommandInfo(`Manual sequence completed (${Number(shots)} shots)`);
+    } catch (error) {
+      setCommandInfo(error.message || String(error));
+      throw error;
+    }
+  };
+
   const saveSelectedMode = async () => {
     try {
       await runCommand("select_mode", { mode_id: Number(activeModeId) });
+      setSnapshot((prev) => ({
+        ...(prev || {}),
+        activeModeId: Number(activeModeId),
+      }));
       setCommandInfo(`Selected mode ${activeModeId}`);
     } catch (error) {
       setCommandInfo(error.message || String(error));
@@ -312,18 +436,18 @@ export default function App() {
 
   const saveMode = async (mode) => {
     try {
-      const patch = modeEdit[mode.mode_id] || {};
+      const patch = modeEdit[getModeId(mode)] || {};
       const payload = {
         ...mode,
         ...patch,
-        mode_id: Number(mode.mode_id),
+        mode_id: getModeId(mode),
         category: Number((patch.category ?? mode.category) || 0),
         repetition: Number((patch.repetition ?? mode.repetition) || 1),
         predefined: Boolean(patch.predefined ?? mode.predefined),
       };
       await runCommand("update_mode", payload);
       await loadModes();
-      setCommandInfo(`Mode ${mode.mode_id} updated`);
+      setCommandInfo(`Mode ${getModeId(mode)} updated`);
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -342,351 +466,112 @@ export default function App() {
     }
   };
 
-  const workoutStateClass = useMemo(() => {
-    if (workoutState === "running") return "pill running";
-    if (workoutState === "paused") return "pill paused";
-    return "pill";
-  }, [workoutState]);
+  const roleHome = isDeveloper ? "/dev/home" : "/user/home";
+  const startPath = !connected || !isAuthenticated ? "/login" : roleHome;
 
-  const needsAccessGate = !connected || !isAuthenticated;
+  const monitorValue = useMemo(
+    () => ({
+      connected,
+      snapshot,
+      events,
+      password,
+      setPassword,
+      authError,
+      commandInfo,
+      modeList,
+      activeModeId,
+      setActiveModeId,
+      profiles,
+      newProfile,
+      setNewProfile,
+      renamePayload,
+      setRenamePayload,
+      passwordPayload,
+      setPasswordPayload,
+      modeEdit,
+      setModeEdit,
+      workoutState,
+      workoutStateAt,
+      role,
+      isDeveloper,
+      isAuthenticated,
+      selectedMode,
+      profile: snapshot?.profile || {
+        userId: snapshot?.user_id || 0,
+        name: snapshot?.profileName || "Guest",
+        number: snapshot?.profileNumber || 0,
+      },
+      handleAuth,
+      handleSignOut,
+      handleExport,
+      doPause,
+      doStart,
+      doExit,
+      doManualMove,
+      doManualTryShot,
+      doManualRunShots,
+      saveSelectedMode,
+      addProfile,
+      renameProfile,
+      deleteProfile,
+      saveMode,
+      changePassword,
+      loadModes,
+      loadProfiles,
+    }),
+    [
+      connected,
+      snapshot,
+      events,
+      password,
+      authError,
+      commandInfo,
+      modeList,
+      activeModeId,
+      profiles,
+      newProfile,
+      renamePayload,
+      passwordPayload,
+      modeEdit,
+      workoutState,
+      workoutStateAt,
+      role,
+      isDeveloper,
+      isAuthenticated,
+      selectedMode,
+    ],
+  );
 
-  if (needsAccessGate) {
-    return (
-      <div className="page">
-        <header className="hero">
-          <h1>Feeder Live Workout Monitor</h1>
-          <p>
-            External dashboard for BLE/TCP telemetry and real-time workout
-            stats.
-          </p>
-          <div className={connected ? "connection ok" : "connection bad"}>
-            Bridge: {connected ? "connected" : "disconnected"}
-          </div>
-          <div className="connection-role">
-            Access: {isAuthenticated ? role : "locked"}
-          </div>
-        </header>
-
-        <section className="card auth-gate">
-          <h2>{connected ? "Remote Login" : "Bridge Not Connected"}</h2>
-          <p className="hint">
-            {connected
-              ? "Enter password to unlock remote control."
-              : "Start Feeder app and bridge first, then login becomes available."}
-          </p>
-          <div className="controls-line">
-            <input
-              type="password"
-              placeholder="Enter user or developer password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={!connected}
-            />
-            <button onClick={handleAuth} disabled={!connected}>
-              Unlock
-            </button>
-          </div>
-          {authError && <p className="error-text">{authError}</p>}
-        </section>
-
-        <section className="events card auth-row">
-          <h2>Live Telemetry Events</h2>
-          <div className="event-list">
-            {events.length === 0 && (
-              <p className="hint">Waiting for telemetry...</p>
-            )}
-            {events.map((event, idx) => (
-              <div
-                className="event-row"
-                key={`${event.timestamp_ms || "na"}-${idx}`}
-              >
-                <div className="event-meta">
-                  <span>{event.event}</span>
-                  <span>{formatTimestamp(event.timestamp_ms)}</span>
-                </div>
-                <pre>{JSON.stringify(event.payload || {}, null, 2)}</pre>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
+  const loginElement =
+    !connected || !isAuthenticated ? (
+      <LoginPage />
+    ) : (
+      <Navigate to={roleHome} replace />
     );
-  }
 
   return (
-    <div className="page">
-      <header className="hero">
-        <h1>Feeder Live Workout Monitor</h1>
-        <p>
-          External dashboard for BLE/TCP telemetry and real-time workout stats.
-        </p>
-        <div className={connected ? "connection ok" : "connection bad"}>
-          Bridge: {connected ? "connected" : "disconnected"}
-        </div>
-        <div className="connection-role">
-          Access: {isAuthenticated ? role : "locked"}
-        </div>
-        {isAuthenticated && (
-          <div className="controls-line auth-row">
-            <button onClick={handleSignOut}>Sign Out</button>
-          </div>
-        )}
-      </header>
-
-      <section className="stats-grid">
-        <article className="card">
-          <h2>Workout State</h2>
-          <div className={workoutStateClass}>{workoutState}</div>
-        </article>
-
-        <article className="card">
-          <h2>Basket Score</h2>
-          <div className="metric">{snapshot?.basketScore ?? 0}</div>
-        </article>
-
-        <article className="card">
-          <h2>Messages Seen</h2>
-          <div className="metric">{snapshot?.messagesSeen ?? 0}</div>
-        </article>
-
-        <article className="card">
-          <h2>Last Arduino Line</h2>
-          <p className="mono">{snapshot?.lastArduinoLine || "No data yet"}</p>
-        </article>
-      </section>
-
-      {isAuthenticated && (
-        <section className="card auth-row">
-          <h2>Remote Tabs</h2>
-          <div className="controls-line">
-            <button
-              className={activeTab === "control" ? "tab-active" : ""}
-              onClick={() => setActiveTab("control")}
-            >
-              Control
-            </button>
-            <button
-              className={activeTab === "modes" ? "tab-active" : ""}
-              onClick={() => setActiveTab("modes")}
-            >
-              Modes
-            </button>
-            <button
-              className={activeTab === "profiles" ? "tab-active" : ""}
-              onClick={() => setActiveTab("profiles")}
-            >
-              Profiles
-            </button>
-            <button
-              className={activeTab === "events" ? "tab-active" : ""}
-              onClick={() => setActiveTab("events")}
-            >
-              Events
-            </button>
-          </div>
-        </section>
-      )}
-
-      {isAuthenticated && activeTab === "control" && (
-        <section className="card auth-row">
-          <h2>Normal User Control</h2>
-          <div className="controls-line">
-            <button onClick={doPause}>Stop Workout</button>
-            <button onClick={doExit}>Exit Workout</button>
-            {isDeveloper && <button onClick={doStart}>Start Workout</button>}
-          </div>
-          <div className="controls-line">
-            <select
-              value={activeModeId}
-              onChange={(e) => setActiveModeId(Number(e.target.value))}
-            >
-              {modeList.map((mode) => (
-                <option key={mode.mode_id} value={mode.mode_id}>
-                  {mode.mode_id} - {mode.name}
-                </option>
-              ))}
-            </select>
-            <button onClick={saveSelectedMode}>Save Selected Mode</button>
-            <button onClick={loadModes}>Refresh Modes</button>
-          </div>
-        </section>
-      )}
-
-      {isDeveloper && activeTab === "profiles" && (
-        <section className="card auth-row">
-          <h2>Profiles</h2>
-          <div className="controls-line">
-            <button onClick={loadProfiles}>Refresh Profiles</button>
-          </div>
-          <div className="controls-line">
-            <input
-              placeholder="Name"
-              value={newProfile.name}
-              onChange={(e) =>
-                setNewProfile((prev) => ({ ...prev, name: e.target.value }))
-              }
-            />
-            <input
-              type="number"
-              placeholder="Number"
-              value={newProfile.number}
-              onChange={(e) =>
-                setNewProfile((prev) => ({ ...prev, number: e.target.value }))
-              }
-            />
-            <button onClick={addProfile}>Add Profile</button>
-          </div>
-
-          <div className="controls-line">
-            <input
-              type="number"
-              placeholder="User ID"
-              value={renamePayload.user_id}
-              onChange={(e) =>
-                setRenamePayload((prev) => ({
-                  ...prev,
-                  user_id: e.target.value,
-                }))
-              }
-            />
-            <input
-              placeholder="New Name"
-              value={renamePayload.new_name}
-              onChange={(e) =>
-                setRenamePayload((prev) => ({
-                  ...prev,
-                  new_name: e.target.value,
-                }))
-              }
-            />
-            <input
-              type="number"
-              placeholder="New Number"
-              value={renamePayload.new_number}
-              onChange={(e) =>
-                setRenamePayload((prev) => ({
-                  ...prev,
-                  new_number: e.target.value,
-                }))
-              }
-            />
-            <button onClick={renameProfile}>Rename/Update Profile</button>
-          </div>
-
-          <div className="tag-list">
-            {profiles.map((profile) => (
-              <div key={profile.user_id} className="tag-item">
-                <span>
-                  #{profile.user_id} {profile.name} ({profile.number ?? 0})
-                </span>
-                <button onClick={() => deleteProfile(profile.user_id)}>
-                  Delete
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <h3>Password Management</h3>
-          <div className="controls-line">
-            <select
-              value={passwordPayload.role}
-              onChange={(e) =>
-                setPasswordPayload((prev) => ({
-                  ...prev,
-                  role: e.target.value,
-                }))
-              }
-            >
-              <option value="user">User password</option>
-              <option value="developer">Developer password</option>
-            </select>
-            <input
-              type="password"
-              placeholder="New password"
-              value={passwordPayload.new_password}
-              onChange={(e) =>
-                setPasswordPayload((prev) => ({
-                  ...prev,
-                  new_password: e.target.value,
-                }))
-              }
-            />
-            <button onClick={changePassword}>Change Password</button>
-          </div>
-        </section>
-      )}
-
-      {isDeveloper && activeTab === "modes" && (
-        <section className="card auth-row">
-          <h2>Modes</h2>
-          <div className="controls-line">
-            <button onClick={loadModes}>Refresh Modes</button>
-            <button onClick={handleExport}>Download All Data</button>
-          </div>
-
-          <div className="tag-list">
-            {modeList.map((mode) => {
-              const local = modeEdit[mode.mode_id] || {};
-              return (
-                <div key={mode.mode_id} className="mode-edit-row">
-                  <span>#{mode.mode_id}</span>
-                  <input
-                    value={local.name ?? mode.name}
-                    onChange={(e) =>
-                      setModeEdit((prev) => ({
-                        ...prev,
-                        [mode.mode_id]: {
-                          ...(prev[mode.mode_id] || {}),
-                          name: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                  <input
-                    type="number"
-                    value={local.repetition ?? mode.repetition}
-                    onChange={(e) =>
-                      setModeEdit((prev) => ({
-                        ...prev,
-                        [mode.mode_id]: {
-                          ...(prev[mode.mode_id] || {}),
-                          repetition: Number(e.target.value),
-                        },
-                      }))
-                    }
-                  />
-                  <button onClick={() => saveMode(mode)}>Save</button>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {commandInfo && <p className="hint command-info">{commandInfo}</p>}
-
-      {(!isAuthenticated || activeTab === "events") && (
-        <section className="events card">
-          <h2>Live Telemetry Events</h2>
-          <div className="event-list">
-            {events.length === 0 && (
-              <p className="hint">Waiting for telemetry...</p>
-            )}
-            {events.map((event, idx) => (
-              <div
-                className="event-row"
-                key={`${event.timestamp_ms || "na"}-${idx}`}
-              >
-                <div className="event-meta">
-                  <span>{event.event}</span>
-                  <span>{formatTimestamp(event.timestamp_ms)}</span>
-                </div>
-                <pre>{JSON.stringify(event.payload || {}, null, 2)}</pre>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
+    <MonitorContext.Provider value={monitorValue}>
+      <Routes>
+        <Route path="/" element={<Navigate to={startPath} replace />} />
+        <Route path="/login" element={loginElement} />
+        <Route path="/user" element={<UserPage />}>
+          <Route index element={<Navigate to="home" replace />} />
+          <Route path="home" element={<PocketOverviewTab />} />
+          <Route path="control" element={<PocketControlTab />} />
+          <Route path="manual" element={<PocketMenuTab />} />
+          <Route path="menu" element={<Navigate to="../manual" replace />} />
+          <Route path="stats" element={<PocketStatsTab />} />
+        </Route>
+        <Route path="/dev" element={<DevPage />}>
+          <Route index element={<Navigate to="home" replace />} />
+          <Route path="home" element={<PocketOverviewTab />} />
+          <Route path="control" element={<PocketControlTab />} />
+          <Route path="manual" element={<PocketMenuTab />} />
+          <Route path="menu" element={<Navigate to="../manual" replace />} />
+          <Route path="stats" element={<PocketStatsTab />} />
+        </Route>
+        <Route path="*" element={<Navigate to={startPath} replace />} />
+      </Routes>
+    </MonitorContext.Provider>
   );
 }
