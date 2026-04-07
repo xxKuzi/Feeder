@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "../../i18n/I18nProvider";
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -21,6 +22,7 @@ function getArcPoint(progress) {
 }
 
 export default function HalfCourtGauge({ mode, startedAt, running, label }) {
+  const { t } = useI18n();
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -79,12 +81,15 @@ export default function HalfCourtGauge({ mode, startedAt, running, label }) {
       <div className="mb-2 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Release window
+            {t("releaseWindow")}
           </p>
           <h3 className="m-0 text-lg font-bold">{label}</h3>
         </div>
         <p className="text-sm text-slate-600">
-          Shot {state.index + 1} · {Math.ceil(state.intervalRemaining)}s left
+          {t("shotLeft", {
+            shot: state.index + 1,
+            seconds: Math.ceil(state.intervalRemaining),
+          })}
         </p>
       </div>
 
@@ -140,8 +145,10 @@ export default function HalfCourtGauge({ mode, startedAt, running, label }) {
       </svg>
 
       <div className="mt-2 flex justify-between gap-3 text-sm font-semibold text-slate-500">
-        <span>Angle: {Math.round(state.cycleProgress * 180)}°</span>
-        <span>{running ? "Ball moving" : "Waiting"}</span>
+        <span>
+          {t("angle")}: {Math.round(state.cycleProgress * 180)}°
+        </span>
+        <span>{running ? t("ballMoving") : t("waiting")}</span>
       </div>
     </article>
   );

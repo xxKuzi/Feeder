@@ -10,6 +10,7 @@ import {
   PocketStatsTab,
 } from "./pages/pocket/Tabs";
 import { MonitorContext } from "./monitor/MonitorContext";
+import { useI18n } from "./i18n/I18nProvider";
 
 const BRIDGE_URL =
   import.meta.env.VITE_MONITOR_BRIDGE_URL || "ws://127.0.0.1:8787";
@@ -57,6 +58,7 @@ async function postJson(url, body) {
 }
 
 export default function App() {
+  const { t } = useI18n();
   const cached = readCache();
 
   const [connected, setConnected] = useState(false);
@@ -256,7 +258,7 @@ export default function App() {
       );
 
       if (!response.ok) {
-        setAuthError(response.error || "Invalid password");
+        setAuthError(response.error || t("invalidPassword"));
         return;
       }
 
@@ -272,7 +274,7 @@ export default function App() {
         setProfiles([]);
       }
 
-      setCommandInfo(`Logged in as ${response.role}`);
+      setCommandInfo(t("commandLoggedIn", { role: response.role }));
     } catch (error) {
       setAuthError(error.message || String(error));
     }
@@ -293,7 +295,7 @@ export default function App() {
       setModeList([]);
       setProfiles([]);
       setActiveModeId(0);
-      setCommandInfo("Signed out");
+      setCommandInfo(t("commandSignedOut"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -311,7 +313,7 @@ export default function App() {
       anchor.download = `feeder-pocket-export-${Date.now()}.json`;
       anchor.click();
       URL.revokeObjectURL(url);
-      setCommandInfo("All data downloaded");
+      setCommandInfo(t("commandAllDataDownloaded"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -320,7 +322,7 @@ export default function App() {
   const doPause = async () => {
     try {
       await runCommand("pause_workout");
-      setCommandInfo("Workout paused");
+      setCommandInfo(t("commandWorkoutPaused"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -329,7 +331,7 @@ export default function App() {
   const doStart = async (modeId = activeModeId) => {
     try {
       await runCommand("start_workout", { mode_id: Number(modeId) });
-      setCommandInfo(`Workout started with mode ${modeId}`);
+      setCommandInfo(t("commandWorkoutStarted", { modeId }));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -338,7 +340,7 @@ export default function App() {
   const doExit = async () => {
     try {
       await runCommand("exit_workout");
-      setCommandInfo("Workout exited to menu");
+      setCommandInfo(t("commandWorkoutExited"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -351,7 +353,10 @@ export default function App() {
         safety: Boolean(safety),
       });
       setCommandInfo(
-        `Moved by ${Number(steps)} steps${safety ? " (safety on)" : ""}`,
+        t("commandMovedSteps", {
+          steps: Number(steps),
+          safetySuffix: safety ? t("commandSafetySuffix") : "",
+        }),
       );
       return response;
     } catch (error) {
@@ -363,7 +368,7 @@ export default function App() {
   const doManualTryShot = async () => {
     try {
       await runCommand("manual_try_shot");
-      setCommandInfo("Single test shot triggered");
+      setCommandInfo(t("commandSingleShot"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
       throw error;
@@ -376,7 +381,7 @@ export default function App() {
         shots: Number(shots),
         interval_ms: Number(intervalMs),
       });
-      setCommandInfo(`Manual sequence completed (${Number(shots)} shots)`);
+      setCommandInfo(t("commandManualSequence", { shots: Number(shots) }));
     } catch (error) {
       setCommandInfo(error.message || String(error));
       throw error;
@@ -390,7 +395,7 @@ export default function App() {
         ...(prev || {}),
         activeModeId: Number(activeModeId),
       }));
-      setCommandInfo(`Selected mode ${activeModeId}`);
+      setCommandInfo(t("commandSelectedMode", { modeId: activeModeId }));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -404,7 +409,7 @@ export default function App() {
       });
       await loadProfiles();
       setNewProfile({ name: "", number: 0 });
-      setCommandInfo("Profile added");
+      setCommandInfo(t("commandProfileAdded"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -418,7 +423,7 @@ export default function App() {
         new_number: Number(renamePayload.new_number || 0),
       });
       await loadProfiles();
-      setCommandInfo("Profile updated");
+      setCommandInfo(t("commandProfileUpdated"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -428,7 +433,7 @@ export default function App() {
     try {
       await runCommand("delete_user", { user_id: Number(userId) });
       await loadProfiles();
-      setCommandInfo("Profile deleted");
+      setCommandInfo(t("commandProfileDeleted"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -447,7 +452,7 @@ export default function App() {
       };
       await runCommand("update_mode", payload);
       await loadModes();
-      setCommandInfo(`Mode ${getModeId(mode)} updated`);
+      setCommandInfo(t("commandModeUpdated", { modeId: getModeId(mode) }));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -460,7 +465,9 @@ export default function App() {
         new_password: passwordPayload.new_password,
       });
       setPasswordPayload((prev) => ({ ...prev, new_password: "" }));
-      setCommandInfo(`Password for ${passwordPayload.role} updated`);
+      setCommandInfo(
+        t("commandPasswordUpdated", { role: passwordPayload.role }),
+      );
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -498,7 +505,7 @@ export default function App() {
       selectedMode,
       profile: snapshot?.profile || {
         userId: snapshot?.user_id || 0,
-        name: snapshot?.profileName || "Guest",
+        name: snapshot?.profileName || t("guestProfileName"),
         number: snapshot?.profileNumber || 0,
       },
       handleAuth,
