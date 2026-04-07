@@ -36,7 +36,7 @@ export default function Result() {
             <p
               style={{
                 color: `rgb(${Math.round((1 - accuracy) * 255)},${Math.round(
-                  accuracy * 255
+                  accuracy * 255,
                 )},0)`,
               }}
               className="text-9xl font-bold"
@@ -47,7 +47,7 @@ export default function Result() {
           </div>
           <div className="flex flex-col items-center justify-center">
             <p className="text-9xl font-bold">{taken}</p>
-            <p className="text-2xl">vysřeleno</p>
+            <p className="text-2xl">vystřeleno</p>
           </div>
         </div>
       </div>

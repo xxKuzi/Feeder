@@ -1,5 +1,6 @@
 use crate::{
     bluetooth,
+    electro,
     sql,
     sql::Mode,
 };
@@ -14,7 +15,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicI32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
 
 const DEFAULT_TCP_ADDRESS: &str = "127.0.0.1:7878";
@@ -253,6 +254,39 @@ fn extract_string(args: &Value, key: &str) -> Result<String, String> {
 
 fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppHandle) -> Result<Value, String> {
     match command {
+        "manual_move_position" => {
+            let _ = requires_auth(role)?;
+            let steps = extract_i32(args, "steps")?;
+            let safety = args.get("safety").and_then(Value::as_bool).unwrap_or(false);
+            let queued = electro::motor_system::rotate_stepper_motor(app.clone(), steps, safety)?;
+            Ok(json!({
+                "ok": true,
+                "steps": steps,
+                "safety": safety,
+                "queued": queued
+            }))
+        }
+        "manual_try_shot" => {
+            let _ = requires_auth(role)?;
+            let result = electro::motor_system::feed_ball_to_servo1()?;
+            Ok(json!({ "ok": true, "message": result }))
+        }
+        "manual_run_shots" => {
+            let _ = requires_auth(role)?;
+            let shots = extract_u32(args, "shots")?;
+            let interval_ms = args
+                .get("interval_ms")
+                .and_then(Value::as_u64)
+                .unwrap_or(1200)
+                .clamp(120, 15000);
+
+            for _ in 0..shots {
+                electro::motor_system::feed_ball_to_servo1()?;
+                std::thread::sleep(Duration::from_millis(interval_ms));
+            }
+
+            Ok(json!({ "ok": true, "shots": shots, "interval_ms": interval_ms }))
+        }
         "pause_workout" => {
             let _ = requires_auth(role)?;
             tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(false))?;
@@ -403,6 +437,9 @@ fn handle_client(mut stream: TcpStream, app_handle: AppHandle, server: TcpTeleme
         "authRequired": true,
         "commands": [
             "auth",
+            "manual_move_position",
+            "manual_try_shot",
+            "manual_run_shots",
             "pause_workout",
             "start_workout",
             "exit_workout",

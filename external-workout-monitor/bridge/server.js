@@ -12,6 +12,8 @@ const state = {
   authenticated: false,
   role: null,
   workoutState: "unknown",
+  workoutStateAt: null,
+  activeModeId: 0,
   basketScore: 0,
   lastArduinoLine: "",
   messagesSeen: 0,
@@ -81,6 +83,14 @@ function updateFromTelemetry(message) {
       const nextState = message.payload?.state;
       if (typeof nextState === "string") {
         state.workoutState = nextState;
+        state.workoutStateAt = message.timestamp_ms || Date.now();
+      }
+    }
+
+    if (message.event === "active_mode_changed") {
+      const modeId = message.payload?.mode_id;
+      if (typeof modeId === "number") {
+        state.activeModeId = modeId;
       }
     }
 
