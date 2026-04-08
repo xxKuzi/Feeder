@@ -7,6 +7,7 @@ import {
   PocketControlTab,
   PocketMenuTab,
   PocketOverviewTab,
+  PocketModeEditTab,
   PocketStatsTab,
 } from "./pages/pocket/Tabs";
 import { MonitorContext } from "./monitor/MonitorContext";
@@ -565,6 +566,10 @@ export default function App() {
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<PocketOverviewTab />} />
           <Route path="control" element={<PocketControlTab />} />
+          <Route
+            path="control/edit/:modeId"
+            element={<PocketModeEditTab basePath="/user" />}
+          />
           <Route path="manual" element={<PocketMenuTab />} />
           <Route path="menu" element={<Navigate to="../manual" replace />} />
           <Route path="stats" element={<PocketStatsTab />} />
@@ -573,6 +578,10 @@ export default function App() {
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<PocketOverviewTab />} />
           <Route path="control" element={<PocketControlTab />} />
+          <Route
+            path="control/edit/:modeId"
+            element={<PocketModeEditTab basePath="/dev" />}
+          />
           <Route path="manual" element={<PocketMenuTab />} />
           <Route path="menu" element={<Navigate to="../manual" replace />} />
           <Route path="stats" element={<PocketStatsTab />} />
