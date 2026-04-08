@@ -81,6 +81,7 @@ export function Memory({ children }) {
       unlistenActiveModeChanged = await listen(
         "active-mode-changed",
         (event) => {
+          console.log("active-mode-changed event received:", event);
           const payload = event.payload || {};
           const modeId = Number(payload.mode_id || payload.modeId || 0);
           const selectedMode = resolveModeById(modeId);

@@ -1,11 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { IoHomeOutline, IoNewspaperOutline } from "react-icons/io5";
+import { IoNewspaperOutline } from "react-icons/io5";
 import { CiDumbbell } from "react-icons/ci";
 import { GrManual } from "react-icons/gr";
 import { useI18n } from "../../i18n/I18nProvider";
 
 const tabs = [
-  { to: "home", key: "Home", icon: IoHomeOutline },
   { to: "manual", key: "manualMode", icon: GrManual },
   { to: "control", key: "workout", icon: CiDumbbell },
   { to: "stats", key: "stats", icon: IoNewspaperOutline },
@@ -33,7 +32,7 @@ export default function PocketNav({ basePath = "/user", role = "guest" }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 md:flex md:flex-col">
+      <div className="grid grid-cols-3 gap-2 md:flex md:flex-col">
         {tabs.map(({ to, key, icon: Icon }) => (
           <NavLink
             key={to}
