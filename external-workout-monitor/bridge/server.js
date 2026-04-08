@@ -189,6 +189,7 @@ function connectTcp() {
   socket.on("error", (error) => {
     state.connectedToFeeder = false;
     console.error(`[bridge] TCP error: ${error.message}`);
+    broadcast({ type: "snapshot", payload: state });
   });
 
   socket.on("close", () => {
@@ -202,6 +203,8 @@ function connectTcp() {
       pendingReq.reject(new Error("TCP disconnected"));
       pendingRequests.delete(requestId);
     }
+
+    broadcast({ type: "snapshot", payload: state });
 
     console.warn("[bridge] TCP disconnected, retrying in 1s...");
     setTimeout(connectTcp, 1000);

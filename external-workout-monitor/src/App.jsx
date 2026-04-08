@@ -97,7 +97,7 @@ export default function App() {
   const { t } = useI18n();
   const cached = readCache();
 
-  const [connected, setConnected] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
   const [snapshot, setSnapshot] = useState(cached?.snapshot || null);
   const [events, setEvents] = useState(cached?.events || []);
   const [password, setPassword] = useState("");
@@ -155,15 +155,15 @@ export default function App() {
     const ws = new WebSocket(BRIDGE_URL);
 
     ws.onopen = () => {
-      setConnected(true);
+      setWsConnected(true);
     };
 
     ws.onclose = () => {
-      setConnected(false);
+      setWsConnected(false);
     };
 
     ws.onerror = () => {
-      setConnected(false);
+      setWsConnected(false);
     };
 
     ws.onmessage = (msg) => {
@@ -245,6 +245,37 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const syncSnapshot = async () => {
+      try {
+        const response = await fetch(SNAPSHOT_URL);
+        const data = await response.json();
+        setSnapshot((prev) => ({
+          ...(prev || {}),
+          ...data,
+          workoutState: toWorkoutStateCode(
+            data.workoutState,
+            data.activeModeId,
+          ),
+        }));
+
+        const nextModeId = Number(data.activeModeId || 0);
+        setActiveModeId(nextModeId);
+        if (nextModeId > 0) {
+          setLastModeId(nextModeId);
+        }
+        if (data.workoutStateAt) {
+          setWorkoutStateAt(Number(data.workoutStateAt));
+        }
+      } catch {
+        // Keep live websocket/cached state if HTTP snapshot is temporarily unavailable.
+      }
+    };
+
+    const timer = setInterval(syncSnapshot, 1500);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     writeCache({
       snapshot,
       events,
@@ -265,6 +296,7 @@ export default function App() {
   ]);
 
   const workoutState = Number(snapshot?.workoutState ?? WORKOUT_STATE_BREAK);
+  const connected = wsConnected && Boolean(snapshot?.connectedToFeeder);
   const role = snapshot?.role || "guest";
   const isDeveloper = role === "developer";
   const isAuthenticated = Boolean(snapshot?.authenticated);
