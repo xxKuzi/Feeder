@@ -18,6 +18,9 @@ const SNAPSHOT_URL =
   (import.meta.env.VITE_MONITOR_HTTP_URL || "http://127.0.0.1:8787") +
   "/snapshot";
 const CACHE_KEY = "feeder-pocket-monitor-cache";
+const WORKOUT_STATE_PAUSE = 0;
+const WORKOUT_STATE_RUNNING = 1;
+const WORKOUT_STATE_BREAK = 2;
 
 function readCache() {
   if (typeof window === "undefined") {
@@ -48,6 +51,39 @@ function getModeId(mode) {
   return Number(mode?.modeId ?? mode?.mode_id ?? 0);
 }
 
+function toWorkoutStateCode(state, activeModeId = 0) {
+  if (typeof state === "number" && Number.isFinite(state)) {
+    if (
+      state === WORKOUT_STATE_PAUSE ||
+      state === WORKOUT_STATE_RUNNING ||
+      state === WORKOUT_STATE_BREAK
+    ) {
+      return state;
+    }
+  }
+
+  const normalized = String(state || "").toLowerCase();
+  if (normalized === "running") {
+    return WORKOUT_STATE_RUNNING;
+  }
+  if (normalized === "paused") {
+    return Number(activeModeId || 0) > 0
+      ? WORKOUT_STATE_PAUSE
+      : WORKOUT_STATE_BREAK;
+  }
+  if (
+    normalized === "break" ||
+    normalized === "idle" ||
+    normalized === "stopped" ||
+    normalized === "ended" ||
+    normalized === "finished"
+  ) {
+    return WORKOUT_STATE_BREAK;
+  }
+
+  return WORKOUT_STATE_BREAK;
+}
+
 async function postJson(url, body) {
   const response = await fetch(url, {
     method: "POST",
@@ -71,6 +107,9 @@ export default function App() {
   const [activeModeId, setActiveModeId] = useState(
     Number(cached?.activeModeId || 0),
   );
+  const [lastModeId, setLastModeId] = useState(
+    Number(cached?.lastModeId || cached?.activeModeId || 0),
+  );
   const [profiles, setProfiles] = useState(cached?.profiles || []);
   const [newProfile, setNewProfile] = useState({ name: "", number: 0 });
   const [renamePayload, setRenamePayload] = useState({
@@ -92,9 +131,19 @@ export default function App() {
       try {
         const response = await fetch(SNAPSHOT_URL);
         const data = await response.json();
-        setSnapshot(data);
+        setSnapshot({
+          ...data,
+          workoutState: toWorkoutStateCode(
+            data.workoutState,
+            data.activeModeId,
+          ),
+        });
         setEvents(data.latestEvents || []);
-        setActiveModeId(Number(data.activeModeId || 0));
+        const nextModeId = Number(data.activeModeId || 0);
+        setActiveModeId(nextModeId);
+        if (nextModeId > 0) {
+          setLastModeId(nextModeId);
+        }
         setWorkoutStateAt(Number(data.workoutStateAt || 0));
       } catch {
         // Cached state stays visible offline.
@@ -122,9 +171,19 @@ export default function App() {
         const packet = JSON.parse(msg.data);
 
         if (packet.type === "snapshot") {
-          setSnapshot(packet.payload);
+          setSnapshot({
+            ...packet.payload,
+            workoutState: toWorkoutStateCode(
+              packet.payload?.workoutState,
+              packet.payload?.activeModeId,
+            ),
+          });
           setEvents(packet.payload.latestEvents || []);
-          setActiveModeId(Number(packet.payload.activeModeId || 0));
+          const nextModeId = Number(packet.payload.activeModeId || 0);
+          setActiveModeId(nextModeId);
+          if (nextModeId > 0) {
+            setLastModeId(nextModeId);
+          }
           if (packet.payload.workoutStateAt) {
             setWorkoutStateAt(Number(packet.payload.workoutStateAt));
           }
@@ -146,7 +205,10 @@ export default function App() {
             };
 
             if (event.event === "workout_state") {
-              next.workoutState = event.payload?.state || next.workoutState;
+              next.workoutState = toWorkoutStateCode(
+                event.payload?.state,
+                next.activeModeId,
+              );
               next.workoutStateAt = event.timestamp_ms || Date.now();
               setWorkoutStateAt(event.timestamp_ms || Date.now());
             }
@@ -157,6 +219,9 @@ export default function App() {
               );
               next.activeModeId = nextModeId;
               setActiveModeId(nextModeId);
+              if (nextModeId > 0) {
+                setLastModeId(nextModeId);
+              }
             }
 
             if (event.event === "basket_score_updated") {
@@ -186,16 +251,25 @@ export default function App() {
       modeList,
       profiles,
       activeModeId,
+      lastModeId,
       workoutStateAt,
     });
-  }, [snapshot, events, modeList, profiles, activeModeId, workoutStateAt]);
+  }, [
+    snapshot,
+    events,
+    modeList,
+    profiles,
+    activeModeId,
+    lastModeId,
+    workoutStateAt,
+  ]);
 
-  const workoutState = snapshot?.workoutState || "unknown";
+  const workoutState = Number(snapshot?.workoutState ?? WORKOUT_STATE_BREAK);
   const role = snapshot?.role || "guest";
   const isDeveloper = role === "developer";
   const isAuthenticated = Boolean(snapshot?.authenticated);
 
-  const selectedMode = useMemo(() => {
+  const runningMode = useMemo(() => {
     return (
       modeList.find((mode) => getModeId(mode) === Number(activeModeId)) || null
     );
@@ -322,16 +396,36 @@ export default function App() {
   const doPause = async () => {
     try {
       await runCommand("pause_workout");
+      setSnapshot((prev) => ({
+        ...(prev || {}),
+        workoutState: WORKOUT_STATE_PAUSE,
+        workoutStateAt: Date.now(),
+      }));
+      setWorkoutStateAt(Date.now());
       setCommandInfo(t("commandWorkoutPaused"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
   };
 
-  const doStart = async (modeId = activeModeId) => {
+  const doStart = async (modeId = activeModeId || lastModeId) => {
+    const nextModeId = Number(modeId || lastModeId || 0);
+    if (nextModeId <= 0) {
+      setCommandInfo(t("noModeSelected"));
+      return;
+    }
     try {
-      await runCommand("start_workout", { mode_id: Number(modeId) });
-      setCommandInfo(t("commandWorkoutStarted", { modeId }));
+      await runCommand("start_workout", { mode_id: nextModeId });
+      setActiveModeId(nextModeId);
+      setLastModeId(nextModeId);
+      setSnapshot((prev) => ({
+        ...(prev || {}),
+        activeModeId: nextModeId,
+        workoutState: WORKOUT_STATE_RUNNING,
+        workoutStateAt: Date.now(),
+      }));
+      setWorkoutStateAt(Date.now());
+      setCommandInfo(t("commandWorkoutStarted", { modeId: nextModeId }));
     } catch (error) {
       setCommandInfo(error.message || String(error));
     }
@@ -344,7 +438,10 @@ export default function App() {
       setSnapshot((prev) => ({
         ...(prev || {}),
         activeModeId: 0,
+        workoutState: WORKOUT_STATE_BREAK,
+        workoutStateAt: Date.now(),
       }));
+      setWorkoutStateAt(Date.now());
       setCommandInfo(t("commandWorkoutExited"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
@@ -493,6 +590,7 @@ export default function App() {
       modeList,
       activeModeId,
       setActiveModeId,
+      lastModeId,
       profiles,
       newProfile,
       setNewProfile,
@@ -507,7 +605,7 @@ export default function App() {
       role,
       isDeveloper,
       isAuthenticated,
-      selectedMode,
+      runningMode,
       profile: snapshot?.profile || {
         userId: snapshot?.user_id || 0,
         name: snapshot?.profileName || t("guestProfileName"),
@@ -540,6 +638,7 @@ export default function App() {
       commandInfo,
       modeList,
       activeModeId,
+      lastModeId,
       profiles,
       newProfile,
       renamePayload,
@@ -550,7 +649,7 @@ export default function App() {
       role,
       isDeveloper,
       isAuthenticated,
-      selectedMode,
+      runningMode,
     ],
   );
 

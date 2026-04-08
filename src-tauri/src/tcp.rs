@@ -289,7 +289,9 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
         }
         "pause_workout" => {
             let _ = requires_auth(role)?;
-            tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(false))?;
+            tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(
+                bluetooth::WORKOUT_STATE_PAUSE,
+            ))?;
             Ok(json!({ "ok": true }))
         }
         "start_workout" => {
@@ -304,7 +306,9 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             } else {
                 ACTIVE_MODE_ID.load(Ordering::Relaxed)
             };
-            tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(true))?;
+            tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(
+                bluetooth::WORKOUT_STATE_RUNNING,
+            ))?;
             let _ = app.emit("active-mode-changed", json!({ "mode_id": active_mode_id }));
             let _ = app.emit(
                 "remote-start-workout",
@@ -314,7 +318,12 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
         }
         "exit_workout" => {
             let _ = requires_auth(role)?;
-            tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(false))?;
+            ACTIVE_MODE_ID.store(0, Ordering::Relaxed);
+            tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(
+                bluetooth::WORKOUT_STATE_BREAK,
+            ))?;
+            let _ = send_event("active_mode_changed", json!({ "mode_id": 0 }));
+            let _ = app.emit("active-mode-changed", json!({ "mode_id": 0 }));
             let _ = app.emit("remote-exit-workout", json!({ "to": "menu" }));
             Ok(json!({ "ok": true }))
         }

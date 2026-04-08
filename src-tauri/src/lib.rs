@@ -8,7 +8,7 @@ use log::{info, warn};
 
 use limit_switch::platform::watch_limit_switch;
 
-use bluetooth::{get_workout_state, init_ble, pause_workout, start_workout};
+use bluetooth::{exit_workout, get_workout_state, init_ble, pause_workout, start_workout};
 use tcp::{start_tcp_server, tcp_send_event};
 use sql::{
     connect_to_database, add_record, add_user, load_users, select_user, delete_user,
@@ -98,7 +98,8 @@ pub async fn run() {
         exit_app,    
         update_mode,
         start_workout,
-        pause_workout,
+        pause_workout,        
+        exit_workout,
         get_workout_state,
         rotate_stepper_motor,
         calibrate_stepper_motor,

@@ -42,7 +42,7 @@ export default function PocketNav({ basePath = "/user", role = "guest" }) {
                 isActive
                   ? "border-blue-700 bg-blue-600 text-white shadow-lg shadow-blue-200"
                   : accent
-                    ? "border-blue-300 bg-blue-50 text-blue-800 hover:border-blue-400 hover:bg-blue-100 md:min-h-16"
+                    ? "border-blue-300 bg-blue-50 text-blue-800 hover:border-blue-400 hover:bg-blue-100"
                     : "border-transparent text-slate-700 hover:border-blue-100 hover:bg-white"
               }`
             }

@@ -1,5 +1,5 @@
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicI32, Ordering},
     Arc,
 };
 use once_cell::sync::OnceCell;
@@ -25,8 +25,12 @@ use ble_peripheral_rust::{
     uuid::ShortUuid,
 };
 
-/// Global state: true means "running", false means "paused".
-pub static STATE: AtomicBool = AtomicBool::new(true);
+pub const WORKOUT_STATE_PAUSE: i32 = 0;
+pub const WORKOUT_STATE_RUNNING: i32 = 1;
+pub const WORKOUT_STATE_BREAK: i32 = 2;
+
+/// Global workout state represented as integer codes.
+pub static STATE: AtomicI32 = AtomicI32::new(WORKOUT_STATE_RUNNING);
 
 /// Shared app state that holds the BLE peripheral and characteristic UUID.
 #[derive(Clone)]
@@ -38,38 +42,42 @@ pub struct AppState {
 static BLE_APP_STATE: OnceCell<AppState> = OnceCell::new();
 static REMOTE_APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
 
-async fn set_workout_state_internal(running: bool, source: &str) -> Result<(), String> {
-    STATE.store(running, Ordering::SeqCst);
-    let new_value = if running { "on" } else { "off" };
+async fn set_workout_state_internal(state_code: i32, source: &str) -> Result<(), String> {
+    let normalized = match state_code {
+        WORKOUT_STATE_RUNNING | WORKOUT_STATE_PAUSE | WORKOUT_STATE_BREAK => state_code,
+        _ => WORKOUT_STATE_PAUSE,
+    };
+    STATE.store(normalized, Ordering::SeqCst);
+    let ble_value = if normalized == WORKOUT_STATE_RUNNING { "on" } else { "off" };
 
     // Try to update BLE characteristic if available
     if let Some(app_state) = BLE_APP_STATE.get() {
         let mut periph = app_state.peripheral.lock().await;
         let _ = periph
-            .update_characteristic(app_state.char_uuid, new_value.into())
+            .update_characteristic(app_state.char_uuid, ble_value.into())
             .await;
     }
 
     // Also emit Tauri event for local UI if app handle is available
     if let Some(app) = REMOTE_APP_HANDLE.get() {
-        let _ = app.emit("state-changed", &new_value);
+        let _ = app.emit("state-changed", &normalized);
     }
 
     // Broadcast telemetry
     let _ = tcp::send_event(
         "workout_state",
         serde_json::json!({
-            "state": if running { "running" } else { "paused" },
+            "state": normalized,
             "source": source
         }),
     );
 
-    info!("Workout state changed to {} (source: {})", new_value, source);
+    info!("Workout state changed to {} (source: {})", normalized, source);
     Ok(())
 }
 
-pub async fn set_workout_state_remote(running: bool) -> Result<(), String> {
-    set_workout_state_internal(running, "remote_tcp").await
+pub async fn set_workout_state_remote(state_code: i32) -> Result<(), String> {
+    set_workout_state_internal(state_code, "remote_tcp").await
 }
 
 /// Initializes the BLE peripheral, adds the service, starts advertising,
@@ -190,7 +198,11 @@ async fn handle_updates(
             responder,
         } => {
             let current_state = STATE.load(Ordering::SeqCst);
-            let response_value = if current_state { "on" } else { "off" };
+            let response_value = if current_state == WORKOUT_STATE_RUNNING {
+                "on"
+            } else {
+                "off"
+            };
 
             info!(
                 "ReadRequest: {:?} Offset: {} -> Responding: {}",
@@ -215,12 +227,12 @@ async fn handle_updates(
 
                 let new_value = match msg.trim() {
                     "on" => {
-                        STATE.store(true, Ordering::SeqCst);
+                        STATE.store(WORKOUT_STATE_RUNNING, Ordering::SeqCst);
                         info!("STATE changed to: ON (running)");
                         "on"
                     }
                     "off" => {
-                        STATE.store(false, Ordering::SeqCst);
+                        STATE.store(WORKOUT_STATE_PAUSE, Ordering::SeqCst);
                         info!("STATE changed to: OFF (paused)");
                         "off"
                     }
@@ -230,14 +242,19 @@ async fn handle_updates(
                     }
                 };
                 println!("new_value: {:?}", new_value);
-                if let Err(e) = app_handle.emit_to("main", "state-changed", &new_value) {
+                let state_code = if new_value == "on" {
+                    WORKOUT_STATE_RUNNING
+                } else {
+                    WORKOUT_STATE_PAUSE
+                };
+                if let Err(e) = app_handle.emit_to("main", "state-changed", &state_code) {
                     eprintln!("Failed to emit event to frontend: {}", e);
                 }
 
                 let _ = tcp::send_event(
                     "workout_state",
                     serde_json::json!({
-                        "state": if new_value == "on" { "running" } else { "paused" },
+                        "state": state_code,
                         "source": "ble_write"
                     }),
                 );
@@ -268,7 +285,7 @@ async fn handle_updates(
 #[tauri::command]
 pub async fn start_workout(app_state: tauri::State<'_, AppState>) -> Result<(), String> {
     let _ = app_state;
-    set_workout_state_internal(true, "tauri_command").await?;
+    set_workout_state_internal(WORKOUT_STATE_RUNNING, "tauri_command").await?;
     info!("Workout started (state set to running)");
     
     Ok(())
@@ -278,18 +295,23 @@ pub async fn start_workout(app_state: tauri::State<'_, AppState>) -> Result<(), 
 #[tauri::command]
 pub async fn pause_workout(app_state: tauri::State<'_, AppState>) -> Result<(), String> {
     let _ = app_state;
-    set_workout_state_internal(false, "tauri_command").await?;
+    set_workout_state_internal(WORKOUT_STATE_PAUSE, "tauri_command").await?;
     info!("Workout paused (state set to off)");
+    Ok(())
+}
+
+/// Tauri command to end the workout (set state to "break").
+#[tauri::command]
+pub async fn exit_workout(app_state: tauri::State<'_, AppState>) -> Result<(), String> {
+    let _ = app_state;
+    set_workout_state_internal(WORKOUT_STATE_BREAK, "tauri_command").await?;
+    info!("Workout ended (state set to break)");
     Ok(())
 }
 
 /// Tauri command to get the current workout state.
 #[tauri::command]
-pub async fn get_workout_state() -> String {
+pub async fn get_workout_state() -> i32 {
     println!("get_workout_state");
-    if STATE.load(Ordering::SeqCst) {
-        "running".to_string()
-    } else {
-        "paused".to_string()
-    }
+    STATE.load(Ordering::SeqCst)
 }
