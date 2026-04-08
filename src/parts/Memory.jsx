@@ -23,7 +23,15 @@ export function Memory({ children }) {
   const location = useLocation();
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
   const [workoutData, setWorkoutData] = useState({
+    modeId: 0,
+    name: "Default",
+    angles: [90],
+    distances: [3700],
     intervals: [5],
+    repetition: 10,
+    category: 0,
+    image: "",
+    predefined: false,
   });
   const [profile, setProfile] = useState({ userId: 0, name: "XYZ" });
   const [records, setRecords] = useState([]);
@@ -66,9 +74,19 @@ export function Memory({ children }) {
   }, [workoutData]);
 
   useEffect(() => {
+    invoke("tcp_send_event", {
+      event: "global_angle_changed",
+      payload: { angle: Number(globalAngle) },
+    }).catch(() => {
+      // Ignore telemetry failures when TCP clients are disconnected.
+    });
+  }, [globalAngle]);
+
+  useEffect(() => {
     let unlistenRemoteStart = null;
     let unlistenActiveModeChanged = null;
     let unlistenRemoteExit = null;
+    let unlistenRemoteManualMove = null;
 
     const resolveModeById = (modeId) => {
       if (!modeId) {
@@ -93,6 +111,33 @@ export function Memory({ children }) {
 
       unlistenRemoteStart = await listen("remote-start-workout", (event) => {
         const payload = event.payload || {};
+        const remoteModeData = payload.mode_data || payload.modeData || null;
+
+        if (remoteModeData) {
+          setWorkoutData({
+            modeId: Number(remoteModeData.modeId ?? 0),
+            name: String(remoteModeData.name ?? "Pocket Manual Sequence"),
+            category: Number(remoteModeData.category ?? 1),
+            predefined: Boolean(remoteModeData.predefined ?? false),
+            repetition: Number(remoteModeData.repetition ?? 1),
+            angles: Array.isArray(remoteModeData.angles)
+              ? remoteModeData.angles.map(Number)
+              : [90],
+            distances: Array.isArray(remoteModeData.distances)
+              ? remoteModeData.distances.map(Number)
+              : [3700],
+            intervals: Array.isArray(remoteModeData.intervals)
+              ? remoteModeData.intervals.map(Number)
+              : [2],
+            image: String(remoteModeData.image ?? ""),
+          });
+
+          if (location.pathname !== "/workout") {
+            navigate("/workout");
+          }
+          return;
+        }
+
         const modeId = Number(payload.mode_id || payload.modeId || 0);
         const selectedMode = resolveModeById(modeId);
 
@@ -113,6 +158,29 @@ export function Memory({ children }) {
       unlistenRemoteExit = await listen("remote-exit-workout", () => {
         navigate("/menu");
       });
+
+      unlistenRemoteManualMove = await listen(
+        "remote-manual-move-position",
+        (event) => {
+          const payload = event.payload || {};
+          const targetAngle = Number(payload.target_angle);
+          if (Number.isFinite(targetAngle)) {
+            setGlobalAngle(Math.max(0, Math.min(180, targetAngle)));
+            return;
+          }
+
+          const steps = Number(payload.steps || 0);
+          if (!Number.isFinite(steps) || steps === 0) {
+            return;
+          }
+
+          const degreesPerStep = 360 / (6400 * 3);
+          setGlobalAngle((previous) => {
+            const next = previous + steps * degreesPerStep;
+            return Math.max(0, Math.min(180, next));
+          });
+        },
+      );
     };
 
     bindRemoteListeners();
@@ -126,6 +194,9 @@ export function Memory({ children }) {
       }
       if (unlistenRemoteExit) {
         unlistenRemoteExit();
+      }
+      if (unlistenRemoteManualMove) {
+        unlistenRemoteManualMove();
       }
     };
   }, [navigate, location.pathname]);
