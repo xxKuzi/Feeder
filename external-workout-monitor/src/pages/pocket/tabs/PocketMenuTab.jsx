@@ -69,7 +69,7 @@ export function PocketMenuTab() {
             {t("workoutState")}
           </p>
           <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            {snapshot?.workoutState || t("unknown")}
+            {snapshot?.workoutState ?? 2}
           </h3>
           <p>{t("manualNoModeChange")}</p>
         </article>

@@ -3,23 +3,34 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
+const WORKOUT_STATE_PAUSE = 0;
+const WORKOUT_STATE_RUNNING = 1;
+const WORKOUT_STATE_BREAK = 2;
+
+function stateCodeToLabel(stateCode: number): string {
+  if (stateCode === WORKOUT_STATE_RUNNING) {
+    return "running";
+  }
+  if (stateCode === WORKOUT_STATE_PAUSE) {
+    return "pause";
+  }
+  if (stateCode === WORKOUT_STATE_BREAK) {
+    return "break";
+  }
+  return "unknown";
+}
+
 const BluetoothControls = () => {
   const [workoutState, setWorkoutState] = useState<string>("Unknown");
 
   const appWebview = getCurrentWebviewWindow();
 
   useEffect(() => {
-    const unlistenStateChanged = appWebview.listen<string>(
+    const unlistenStateChanged = appWebview.listen<number>(
       "state-changed",
       (event) => {
         console.log("Remote state-changed event:", event.payload);
-        if (event.payload === "on") {
-          setWorkoutState("running");
-        } else if (event.payload === "off") {
-          setWorkoutState("paused");
-        } else {
-          setWorkoutState("bad argument");
-        }
+        setWorkoutState(stateCodeToLabel(Number(event.payload)));
       },
     );
 
@@ -31,7 +42,7 @@ const BluetoothControls = () => {
   const startWorkout = async () => {
     try {
       await invoke("start_workout");
-      setWorkoutState("running");
+      setWorkoutState(stateCodeToLabel(WORKOUT_STATE_RUNNING));
     } catch (err) {
       console.error("Error starting workout:", err);
     }
@@ -40,7 +51,7 @@ const BluetoothControls = () => {
   const pauseWorkout = async () => {
     try {
       await invoke("pause_workout");
-      setWorkoutState("paused");
+      setWorkoutState(stateCodeToLabel(WORKOUT_STATE_PAUSE));
     } catch (err) {
       console.error("Error pausing workout:", err);
     }
@@ -48,8 +59,8 @@ const BluetoothControls = () => {
 
   const fetchState = async () => {
     try {
-      const state = await invoke<string>("get_workout_state");
-      setWorkoutState(state);
+      const state = await invoke<number>("get_workout_state");
+      setWorkoutState(stateCodeToLabel(Number(state)));
     } catch (err) {
       console.error("Error fetching workout state:", err);
     }

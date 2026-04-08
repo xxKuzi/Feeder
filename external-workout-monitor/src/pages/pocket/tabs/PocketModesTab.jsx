@@ -4,6 +4,9 @@ import { useMonitor } from "../../../monitor/MonitorContext";
 import { useI18n } from "../../../i18n/I18nProvider";
 import { getModeId } from "./shared";
 
+const WORKOUT_STATE_PAUSE = 0;
+const WORKOUT_STATE_RUNNING = 1;
+
 export function PocketModesTab() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -28,6 +31,14 @@ export function PocketModesTab() {
   const [busy, setBusy] = useState(false);
 
   const basePath = role === "developer" ? "/dev" : "/user";
+  const runningModeId = Number(snapshot?.activeModeId || 0);
+  const workoutStateCode = Number(snapshot?.workoutState ?? 2);
+  const isWorkoutActive =
+    workoutStateCode === WORKOUT_STATE_RUNNING ||
+    workoutStateCode === WORKOUT_STATE_PAUSE;
+  const highlightedModeId = isWorkoutActive
+    ? runningModeId
+    : Number(activeModeId);
 
   const tryPosition = async () => {
     setBusy(true);
@@ -86,7 +97,7 @@ export function PocketModesTab() {
             {t("workoutState")}
           </p>
           <h3 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
-            {snapshot?.workoutState || t("unknown")}
+            {workoutStateCode}
           </h3>
           <p>{t("manualNoModeChange")}</p>
         </article>
@@ -184,7 +195,9 @@ export function PocketModesTab() {
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {modeList.map((modeItem) => {
           const id = getModeId(modeItem);
-          const active = Number(activeModeId) === Number(id);
+          const active = Number(highlightedModeId) === Number(id);
+          const isRunningMode =
+            isWorkoutActive && Number(runningModeId) === Number(id);
           return (
             <article
               key={id}
@@ -200,9 +213,9 @@ export function PocketModesTab() {
                     <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
                       #{id}
                     </span>
-                    {active && (
+                    {isRunningMode && (
                       <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
-                        {t("selectedMode")}
+                        {t("runningMode")}
                       </span>
                     )}
                   </div>
@@ -248,7 +261,7 @@ export function PocketModesTab() {
   return (
     <div className="grid gap-4">
       <section className=" border-t-2 border-blue-300 bg-gray-200 p-4 shadow-sm">
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="mb-4 flex flex-col items-start gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
               {t("modesTab")}
@@ -257,7 +270,7 @@ export function PocketModesTab() {
               {view === "manual" ? t("manualModeTitle") : t("modes")}
             </h2>
           </div>
-          <div className="inline-flex rounded-2xl border border-slate-300 bg-slate-100 p-1 shadow-sm">
+          <div className="flex p- rounded-2xl border border-slate-300 bg-slate-100 p-1 shadow-sm">
             <button
               type="button"
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${view === "modes" ? "bg-blue-600 text-white shadow-sm" : "bg-transparent text-slate-700 hover:bg-white"}`}

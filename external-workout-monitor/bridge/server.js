@@ -5,13 +5,49 @@ import { WebSocketServer } from "ws";
 const TCP_HOST = process.env.FEEDER_TCP_HOST || "127.0.0.1";
 const TCP_PORT = Number(process.env.FEEDER_TCP_PORT || "7878");
 const BRIDGE_PORT = Number(process.env.MONITOR_BRIDGE_PORT || "8787");
+const WORKOUT_STATE_PAUSE = 0;
+const WORKOUT_STATE_RUNNING = 1;
+const WORKOUT_STATE_BREAK = 2;
+
+function toWorkoutStateCode(state, activeModeId = 0) {
+  if (typeof state === "number") {
+    if (
+      state === WORKOUT_STATE_PAUSE ||
+      state === WORKOUT_STATE_RUNNING ||
+      state === WORKOUT_STATE_BREAK
+    ) {
+      return state;
+    }
+  }
+
+  const normalized = String(state || "").toLowerCase();
+  if (normalized === "running") {
+    return WORKOUT_STATE_RUNNING;
+  }
+  if (normalized === "paused") {
+    return Number(activeModeId || 0) > 0
+      ? WORKOUT_STATE_PAUSE
+      : WORKOUT_STATE_BREAK;
+  }
+  if (
+    normalized === "break" ||
+    normalized === "idle" ||
+    normalized === "stopped" ||
+    normalized === "ended" ||
+    normalized === "finished"
+  ) {
+    return WORKOUT_STATE_BREAK;
+  }
+
+  return WORKOUT_STATE_BREAK;
+}
 
 const state = {
   connectedToFeeder: false,
   connectedAt: null,
   authenticated: false,
   role: null,
-  workoutState: "unknown",
+  workoutState: WORKOUT_STATE_BREAK,
   workoutStateAt: null,
   activeModeId: 0,
   basketScore: 0,
@@ -81,8 +117,8 @@ function updateFromTelemetry(message) {
 
     if (message.event === "workout_state") {
       const nextState = message.payload?.state;
-      if (typeof nextState === "string") {
-        state.workoutState = nextState;
+      if (typeof nextState === "string" || typeof nextState === "number") {
+        state.workoutState = toWorkoutStateCode(nextState, state.activeModeId);
         state.workoutStateAt = message.timestamp_ms || Date.now();
       }
     }

@@ -8,6 +8,10 @@ import Pause from "../components/Pause";
 import Countdown from "../components/Countdown";
 import { invoke } from "@tauri-apps/api/core";
 
+const WORKOUT_STATE_PAUSE = 0;
+const WORKOUT_STATE_RUNNING = 1;
+const WORKOUT_STATE_BREAK = 2;
+
 export default function Workout() {
   const {
     statistics,
@@ -39,6 +43,7 @@ export default function Workout() {
   const pauseCountdownRef = useRef(null); //ref to PAUSE Countdown
   const [isOpen, setIsOpen] = useState(false);
   const isOpenRef = useRef(false);
+  const initializationRef = useRef(true); //to prevent multiple initialization calls in development mode with StrictMode
 
   const navigate = useNavigate(); //used for navigation between pages
 
@@ -49,7 +54,7 @@ export default function Workout() {
   const pauseWorkout = async () => {
     try {
       await invoke("pause_workout");
-      console.log("PAUSING");
+
       // Optionally, update the state immediately.
     } catch (err) {
       console.error("Error pausing workout:", err);
@@ -65,22 +70,48 @@ export default function Workout() {
     }
   };
 
+  const exitWorkout = async () => {
+    try {
+      await invoke("exit_workout");
+
+      // Optionally, update the state immediately.
+    } catch (err) {
+      console.error("Error ending workout:", err);
+    }
+  };
+
+  useEffect(() => {
+    initialization();
+  }, []);
+
+  useEffect(() => {
+    console.log(initializationRef.current);
+  }, [initializationRef.current]);
+
   // Remote event listener for state changes from TCP commands
   useEffect(() => {
     const unlistenStateChanged = listen("state-changed", (event) => {
       console.log("Remote state-changed event:", event.payload);
 
-      if (event.payload === "on") {
-        // Resume workout from remote command.
-        const wasPaused = isOpenRef.current || isRunningRef.current === false;
-        isRunningRef.current = true;
-        setIsOpen(false);
-        if (wasPaused) {
-          setNewWorkout(false);
-          setRefresh((prev) => !prev);
+      console.log("INCIALIZATION", initializationRef.current);
+      if (initializationRef.current) {
+        return;
+      }
+      const code = Number(event.payload);
+      console.log("here-1");
+      if (code === WORKOUT_STATE_RUNNING) {
+        if (isRunningRef.current === false) {
+          //RESUME
+          setIsOpen(false);
+          pauseCountdownRef.current.startCountdown(2);
         }
-      } else if (event.payload === "off") {
-        // Pause workout
+        // if (wasPaused) {
+        //   setNewWorkout(false);
+        //   setRefresh((prev) => !prev);
+        // }
+      } else if (code === WORKOUT_STATE_PAUSE || code === WORKOUT_STATE_BREAK) {
+        // Pause or break
+
         isRunningRef.current = false;
         setIsOpen(true);
       }
@@ -103,10 +134,6 @@ export default function Workout() {
     };
   }, []);
 
-  useEffect(() => {
-    initialization();
-  }, []);
-
   // after delay after resume
   const onPauseResume = () => {
     isRunningRef.current = true;
@@ -117,6 +144,11 @@ export default function Workout() {
 
   //INITIALIZATION OR RESET
   const initialization = async () => {
+    console.log("STARTING INITIALIZATION");
+    setIsOpen(false);
+    setNewWorkout(false);
+    setRefresh((prev) => !prev);
+    exitWorkout(); //BLUETOOTH
     setTime(0);
     setReset(true); //changes angle and motorSpeed to first value in array
     countdownRef.current.startCountdown(4); //Shows counter for 4s
@@ -186,6 +218,9 @@ export default function Workout() {
     isRunningRef.current = true;
     setNewWorkout(true); //for newWorkout in MotorControl
     setRefresh((prev) => !prev);
+    initializationRef.current = false;
+    console.log("INITIALIZATION ENDED");
+    console.log("initialization.current", initializationRef.current);
   };
 
   const formatTime = () => {
@@ -249,7 +284,10 @@ export default function Workout() {
           }}
           handleExit={() => {
             setIsOpen(false);
-            navigate("/menu");
+            isRunningRef.current = false;
+            exitWorkout().finally(() => {
+              navigate("/menu");
+            });
           }}
           isOpen={isOpen}
           setIsOpen={setIsOpen}

@@ -57,7 +57,7 @@ export function PocketStatsTab() {
         />
         <Card
           title={t("state")}
-          value={snapshot?.workoutState || t("unknown")}
+          value={snapshot?.workoutState ?? 2}
           note={t("roleLine", { role: snapshot?.role || t("roleGuest") })}
           tone="green"
         />
