@@ -86,7 +86,7 @@ export default function Manual() {
       <ManualScheduler formData={manualMemory} setFormData={setManualMemory} />
 
       <ManualSimulation formData={manualMemory} setFormData={setManualMemory} />
-      <p className="mt-4 text-2xl font-semibold">Skóre: {basketPoints}</p>
+
       <div className="space-x-4">
         <button
           className={`button__positive button mt-8 ${
