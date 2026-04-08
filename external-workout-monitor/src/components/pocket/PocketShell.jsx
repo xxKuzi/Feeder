@@ -39,8 +39,8 @@ export default function PocketShell({ basePath = "/user", variant = "user" }) {
     <div className="mx-auto grid min-h-screen w-full max-w-[1400px] grid-cols-1 gap-3 md:grid-cols-[136px_minmax(0,1fr)]">
       <PocketNav basePath={basePath} role={role} />
 
-      <div className="min-h-screen px-3 pb-28 pt-3 md:px-4 md:pb-6 md:pt-5">
-        <header className="relative z-30 mb-3 flex items-center justify-between md:hidden">
+      <div className="pt-3 md:px-4 md:pb-6 md:pt-5">
+        <header className="relative z-30 mb-3 flex items-center px-2 justify-between md:hidden">
           <button
             className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -137,11 +137,11 @@ export default function PocketShell({ basePath = "/user", variant = "user" }) {
           </div>
         </header>
 
-        {commandInfo && (
+        {/* {commandInfo && (
           <p className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-900">
             {commandInfo}
           </p>
-        )}
+        )} */}
 
         <Outlet />
       </div>

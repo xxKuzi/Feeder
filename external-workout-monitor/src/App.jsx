@@ -5,9 +5,8 @@ import UserPage from "./pages/UserPage";
 import DevPage from "./pages/DevPage";
 import {
   PocketControlTab,
-  PocketMenuTab,
-  PocketOverviewTab,
   PocketModeEditTab,
+  PocketModesTab,
   PocketStatsTab,
 } from "./pages/pocket/Tabs";
 import { MonitorContext } from "./monitor/MonitorContext";
@@ -479,7 +478,7 @@ export default function App() {
     }
   };
 
-  const roleHome = isDeveloper ? "/dev/control" : "/user/control";
+  const roleHome = isDeveloper ? "/dev/modes" : "/user/modes";
   const startPath = !connected || !isAuthenticated ? "/login" : roleHome;
 
   const monitorValue = useMemo(
@@ -568,25 +567,27 @@ export default function App() {
         <Route path="/" element={<Navigate to={startPath} replace />} />
         <Route path="/login" element={loginElement} />
         <Route path="/user" element={<UserPage />}>
-          <Route index element={<Navigate to="control" replace />} />
+          <Route index element={<Navigate to="modes" replace />} />
+          <Route path="modes" element={<PocketModesTab />} />
           <Route path="control" element={<PocketControlTab />} />
           <Route
             path="control/edit/:modeId"
             element={<PocketModeEditTab basePath="/user" />}
           />
-          <Route path="manual" element={<PocketMenuTab />} />
-          <Route path="menu" element={<Navigate to="../manual" replace />} />
+          <Route path="manual" element={<Navigate to="../modes" replace />} />
+          <Route path="menu" element={<Navigate to="../modes" replace />} />
           <Route path="stats" element={<PocketStatsTab />} />
         </Route>
         <Route path="/dev" element={<DevPage />}>
-          <Route index element={<Navigate to="control" replace />} />
+          <Route index element={<Navigate to="modes" replace />} />
+          <Route path="modes" element={<PocketModesTab />} />
           <Route path="control" element={<PocketControlTab />} />
           <Route
             path="control/edit/:modeId"
             element={<PocketModeEditTab basePath="/dev" />}
           />
-          <Route path="manual" element={<PocketMenuTab />} />
-          <Route path="menu" element={<Navigate to="../manual" replace />} />
+          <Route path="manual" element={<Navigate to="../modes" replace />} />
+          <Route path="menu" element={<Navigate to="../modes" replace />} />
           <Route path="stats" element={<PocketStatsTab />} />
         </Route>
         <Route path="*" element={<Navigate to={startPath} replace />} />
