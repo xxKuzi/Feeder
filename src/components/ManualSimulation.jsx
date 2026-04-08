@@ -13,11 +13,10 @@ export default function ManualSimulation({ formData, setFormData }) {
   // }, [point]);
 
   useEffect(() => {
-    // setFormData((prev) => ({ ...prev, angle: globalAngle }));
-    console.log("setting new angle: ", globalAngle);
+    // Keep manual simulation synced with live feeder angle updates.
     const radius = 180; // Half of 360px width
 
-    const distanceMM = formData.distance; // Distance is stored in mm
+    const distanceMM = Number(formData.distance) || 3700; // Distance is stored in mm
     const distancePx = distanceMM / MM_PER_PIXEL; // Convert to pixels
     const radianAngle = (globalAngle * Math.PI) / 180; // Convert angle to radians
 
@@ -26,9 +25,8 @@ export default function ManualSimulation({ formData, setFormData }) {
     const y = distancePx * Math.sin(radianAngle);
 
     const tempPoint = { x, y, angle: globalAngle, distance: distanceMM }; // Keep distance in mm
-    console.log("tempPoint: ", tempPoint);
     setPoint(tempPoint);
-  }, []);
+  }, [globalAngle]);
 
   const handleDragStart = (index) => {
     setDragIndex(index);
@@ -148,7 +146,7 @@ export default function ManualSimulation({ formData, setFormData }) {
                   showKeyboard(e, (newValue) =>
                     newValue <= 178 && newValue >= 2
                       ? handlePointChange("angle", newValue)
-                      : null
+                      : null,
                   )
                 }
                 className="w-16 border border-gray-300 rounded p-1"
@@ -176,7 +174,7 @@ export default function ManualSimulation({ formData, setFormData }) {
                   showKeyboard(e, (newValue) =>
                     newValue <= 6750 && newValue >= 0
                       ? handlePointChange("distance", newValue)
-                      : null
+                      : null,
                   )
                 }
                 className="w-16 border border-gray-300 rounded p-1"

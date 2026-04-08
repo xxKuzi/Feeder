@@ -50,6 +50,19 @@ static TELEMETRY_SERVER: OnceCell<TcpTelemetryServer> = OnceCell::new();
 static AUTH_CONFIG: OnceCell<Arc<Mutex<AuthConfig>>> = OnceCell::new();
 static NEXT_CLIENT_ID: AtomicU64 = AtomicU64::new(1);
 static ACTIVE_MODE_ID: AtomicI32 = AtomicI32::new(0);
+static GLOBAL_ANGLE_MILLIDEG: AtomicI32 = AtomicI32::new(90_000);
+
+fn angle_to_millideg(angle: f64) -> i32 {
+    (angle * 1000.0).round() as i32
+}
+
+fn millideg_to_angle(value: i32) -> f64 {
+    f64::from(value) / 1000.0
+}
+
+fn clamp_angle(angle: f64) -> f64 {
+    angle.clamp(0.0, 180.0)
+}
 
 fn now_unix_ms() -> u128 {
     SystemTime::now()
@@ -252,6 +265,12 @@ fn extract_string(args: &Value, key: &str) -> Result<String, String> {
         .ok_or_else(|| format!("Missing or invalid string field: {key}"))
 }
 
+fn extract_f64(args: &Value, key: &str) -> Result<f64, String> {
+    args.get(key)
+        .and_then(|v| v.as_f64().or_else(|| v.as_i64().map(|n| n as f64)))
+        .ok_or_else(|| format!("Missing or invalid number field: {key}"))
+}
+
 fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppHandle) -> Result<Value, String> {
     match command {
         "manual_move_position" => {
@@ -259,8 +278,37 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             let steps = extract_i32(args, "steps")?;
             let safety = args.get("safety").and_then(Value::as_bool).unwrap_or(false);
             let queued = electro::motor_system::rotate_stepper_motor(app.clone(), steps, safety)?;
+            let _ = app.emit(
+                "remote-manual-move-position",
+                json!({ "steps": steps, "safety": safety }),
+            );
             Ok(json!({
                 "ok": true,
+                "steps": steps,
+                "safety": safety,
+                "queued": queued
+            }))
+        }
+        "manual_move_to_angle" => {
+            let _ = requires_auth(role)?;
+            let target_angle = clamp_angle(extract_f64(args, "target_angle")?);
+            let safety = args.get("safety").and_then(Value::as_bool).unwrap_or(false);
+
+            let current_angle = millideg_to_angle(GLOBAL_ANGLE_MILLIDEG.load(Ordering::Relaxed));
+            let delta_degrees = target_angle - current_angle;
+            let steps = ((6400.0 / 360.0) * delta_degrees * 3.0).round() as i32;
+
+            let queued = electro::motor_system::rotate_stepper_motor(app.clone(), steps, safety)?;
+            let _ = app.emit(
+                "remote-manual-move-position",
+                json!({ "steps": steps, "safety": safety, "target_angle": target_angle }),
+            );
+
+            Ok(json!({
+                "ok": true,
+                "targetAngle": target_angle,
+                "currentAngle": current_angle,
+                "deltaDegrees": delta_degrees,
                 "steps": steps,
                 "safety": safety,
                 "queued": queued
@@ -277,15 +325,49 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             let interval_ms = args
                 .get("interval_ms")
                 .and_then(Value::as_u64)
-                .unwrap_or(1200)
+                .unwrap_or(2000)
                 .clamp(120, 15000);
 
-            for _ in 0..shots {
-                electro::motor_system::feed_ball_to_servo1()?;
-                std::thread::sleep(Duration::from_millis(interval_ms));
-            }
+            let angle = args
+                .get("angle")
+                .and_then(Value::as_f64)
+                .unwrap_or_else(|| millideg_to_angle(GLOBAL_ANGLE_MILLIDEG.load(Ordering::Relaxed)));
+            let clamped_angle = clamp_angle(angle);
+            let interval_seconds = (interval_ms as f64) / 1000.0;
 
-            Ok(json!({ "ok": true, "shots": shots, "interval_ms": interval_ms }))
+            ACTIVE_MODE_ID.store(0, Ordering::Relaxed);
+
+            tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(
+                bluetooth::WORKOUT_STATE_RUNNING,
+            ))?;
+
+            let mode_data = json!({
+                "modeId": 0,
+                "name": "Pocket Manual Sequence",
+                "category": 1,
+                "predefined": false,
+                "repetition": shots,
+                "angles": [clamped_angle],
+                "distances": [3700],
+                "intervals": [interval_seconds],
+                "image": ""
+            });
+
+            let _ = app.emit("active-mode-changed", json!({ "mode_id": 0 }));
+            let _ = app.emit(
+                "remote-start-workout",
+                json!({
+                    "mode_id": 0,
+                    "mode_data": mode_data
+                }),
+            );
+
+            Ok(json!({
+                "ok": true,
+                "started": true,
+                "shots": shots,
+                "interval_ms": interval_ms
+            }))
         }
         "pause_workout" => {
             let _ = requires_auth(role)?;
@@ -336,6 +418,11 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             let modes = tauri::async_runtime::block_on(sql::load_modes())?;
             Ok(json!({ "modes": modes, "activeModeId": ACTIVE_MODE_ID.load(Ordering::Relaxed) }))
         }
+        "load_records" => {
+            let _ = requires_auth(role)?;
+            let records = tauri::async_runtime::block_on(sql::load_records())?;
+            Ok(json!({ "records": records }))
+        }
         "select_mode" => {
             let _ = requires_auth(role)?;
             let mode_id = extract_i32(args, "mode_id")?;
@@ -382,6 +469,12 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             let user_id = extract_i32(args, "user_id")?;
             tauri::async_runtime::block_on(sql::delete_user(user_id))?;
             Ok(json!({ "ok": true }))
+        }
+        "select_user" => {
+            let _ = requires_auth(role)?;
+            let user_id = extract_i32(args, "user_id")?;
+            tauri::async_runtime::block_on(sql::select_user(user_id))?;
+            Ok(json!({ "ok": true, "user_id": user_id }))
         }
         "add_mode" => {
             let _ = requires_developer(role)?;
@@ -447,6 +540,7 @@ fn handle_client(mut stream: TcpStream, app_handle: AppHandle, server: TcpTeleme
         "commands": [
             "auth",
             "manual_move_position",
+            "manual_move_to_angle",
             "manual_try_shot",
             "manual_run_shots",
             "pause_workout",
@@ -454,11 +548,13 @@ fn handle_client(mut stream: TcpStream, app_handle: AppHandle, server: TcpTeleme
             "exit_workout",
             "get_workout_state",
             "load_modes",
+            "load_records",
             "select_mode",
             "export_all_data",
             "add_user",
             "rename_user",
             "delete_user",
+            "select_user",
             "add_mode",
             "update_mode",
             "delete_mode",
@@ -660,6 +756,12 @@ pub fn start_tcp_server(app_handle: AppHandle) -> Result<(), String> {
 }
 
 pub fn send_event(event: &str, payload: Value) -> Result<usize, String> {
+    if event == "global_angle_changed" {
+        if let Some(angle) = payload.get("angle").and_then(Value::as_f64) {
+            GLOBAL_ANGLE_MILLIDEG.store(angle_to_millideg(clamp_angle(angle)), Ordering::Relaxed);
+        }
+    }
+
     let server = TELEMETRY_SERVER
         .get()
         .ok_or_else(|| "TCP telemetry server is not initialized".to_string())?

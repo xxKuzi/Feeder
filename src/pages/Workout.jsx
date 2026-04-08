@@ -44,12 +44,72 @@ export default function Workout() {
   const [isOpen, setIsOpen] = useState(false);
   const isOpenRef = useRef(false);
   const initializationRef = useRef(true); //to prevent multiple initialization calls in development mode with StrictMode
+  const timeRef = useRef(0);
+  const fullTimeRef = useRef(5);
+  const attemptedShotsRef = useRef(0);
+  const madeShotsRef = useRef(0);
 
   const navigate = useNavigate(); //used for navigation between pages
 
   useEffect(() => {
     isOpenRef.current = isOpen;
   }, [isOpen]);
+
+  useEffect(() => {
+    timeRef.current = time;
+  }, [time]);
+
+  useEffect(() => {
+    fullTimeRef.current = fullTime;
+  }, [fullTime]);
+
+  useEffect(() => {
+    attemptedShotsRef.current = Math.max(0, Number(attemptedShots) || 0);
+  }, [attemptedShots]);
+
+  useEffect(() => {
+    madeShotsRef.current = Math.max(
+      0,
+      Math.min(Number(basketPoints) || 0, attemptedShotsRef.current),
+    );
+  }, [basketPoints, attemptedShots]);
+
+  const syncWorkoutTimer = async () => {
+    const elapsedSeconds = Math.max(0, Number(timeRef.current) || 0);
+    const totalSeconds = Math.max(0, Number(fullTimeRef.current) || 0);
+    const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+    const attempted = Math.max(0, Number(attemptedShotsRef.current) || 0);
+    const made = Math.max(0, Number(madeShotsRef.current) || 0);
+
+    try {
+      await invoke("tcp_send_event", {
+        event: "workout_timer_sync",
+        payload: {
+          elapsed_seconds: Number(elapsedSeconds.toFixed(1)),
+          total_seconds: Number(totalSeconds.toFixed(1)),
+          remaining_seconds: Number(remainingSeconds.toFixed(1)),
+          attempted_shots: attempted,
+          made_shots: made,
+        },
+      });
+    } catch {
+      // Ignore telemetry failures when no remote client is connected.
+    }
+  };
+
+  useEffect(() => {
+    syncWorkoutTimer();
+
+    const timerId = setInterval(() => {
+      syncWorkoutTimer();
+    }, 3000);
+
+    return () => clearInterval(timerId);
+  }, []);
+
+  useEffect(() => {
+    syncWorkoutTimer();
+  }, [attemptedShots, basketPoints]);
 
   const pauseWorkout = async () => {
     try {
@@ -154,6 +214,8 @@ export default function Workout() {
     countdownRef.current.startCountdown(4); //Shows counter for 4s
     updateStatistics(0, 0); //reset statistics
     setAttemptedShots(0);
+    attemptedShotsRef.current = 0;
+    madeShotsRef.current = 0;
     resetBasketPoints();
 
     // Loader preparation: servo2 open, servo1 closed.
@@ -161,14 +223,17 @@ export default function Workout() {
     await toggleServo(false);
 
     startWorkout(); //BLUETOOTH
-    setFullTime(
+    const nextFullTime =
       workoutData.intervals.length > 1
         ? workoutData.repetition *
-            workoutData.intervals.reduce((total, current) => total + current, 0)
+          workoutData.intervals.reduce((total, current) => total + current, 0)
         : workoutData.repetition *
-            workoutData.intervals[0] *
-            workoutData.angles.length,
-    ); //calculate fullTime + ONE second safety
+          workoutData.intervals[0] *
+          workoutData.angles.length;
+
+    setFullTime(nextFullTime); //calculate fullTime + ONE second safety
+    fullTimeRef.current = nextFullTime;
+    syncWorkoutTimer();
   };
 
   useEffect(() => {
@@ -198,6 +263,7 @@ export default function Workout() {
 
   //At the end
   const end = async () => {
+    exitWorkout(); //BLUETOOTH
     navigate("/result", {
       state: {
         category: workoutData.category,
@@ -252,6 +318,7 @@ export default function Workout() {
   const releaseBall = async () => {
     console.log("A ball was released");
     setAttemptedShots((prev) => prev + 1);
+    console.log("Attempted shots:", attemptedShots + 1);
     await runAutoBallCycle();
   };
 
