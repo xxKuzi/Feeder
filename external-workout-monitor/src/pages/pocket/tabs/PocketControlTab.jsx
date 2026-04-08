@@ -70,19 +70,9 @@ export function PocketControlTab() {
 
   return (
     <div className="grid gap-4">
-      <section className="rounded-xl border border-slate-300 bg-gray-200 p-4 shadow-sm">
-        <div className="mb-4 mt-2 grid grid-cols-2 gap-3 xl:grid-cols-4">
-          <Card title={t("shotsTaken")} value={estimatedAttempts} />
-          <Card title={t("shotsMade")} value={made} tone="green" />
-          <Card title={t("successRatio")} value={`${successRate}%`} />
-          <Card
-            title={t("workoutTime")}
-            value={formatTime(now - (workoutStateAt || now))}
-          />
-        </div>
-
+      <section className="rounded-xl border border-blue-300 bg-gray-200 p-4 border-2 shadow-sm">
         <div
-          className={`mb-4 mt-8 rounded-xl border-2 p-4 shadow-sm ${isRunning ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}`}
+          className={`mb-4 rounded-xl border-2 p-4 shadow-sm ${isRunning ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}`}
         >
           <p className="m-0 text-xs font-bold uppercase tracking-widest text-slate-700">
             {t("workoutState")}
@@ -96,9 +86,16 @@ export function PocketControlTab() {
               {isRunning ? t("running") : t("paused")}
             </p>
           </div>
-          <p className="m-0 mt-3 text-sm font-semibold text-slate-700">
-            {isRunning ? t("workoutRunning") : t("workoutPaused")}
-          </p>
+        </div>
+
+        <div className="mb-4 mt-10 grid grid-cols-2 gap-3 xl:grid-cols-4">
+          <Card title={t("shotsTaken")} value={estimatedAttempts} />
+          <Card title={t("shotsMade")} value={made} tone="green" />
+          <Card title={t("successRatio")} value={`${successRate}%`} />
+          <Card
+            title={t("workoutTime")}
+            value={isRunning ? formatTime(now - (workoutStateAt || now)) : ""}
+          />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -118,13 +115,10 @@ export function PocketControlTab() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+      <section className="rounded-xl  border-blue-300 border-2 bg-white p-4 shadow-sm">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-              {t("modeActions")}
-            </p>
-            <h2 className="m-0 mt-1 text-xl font-bold leading-tight text-slate-900">
+            <h2 className="m-0 mt-1 text-3xl font-bold leading-tight text-slate-900">
               {t("keepItSimple")}
             </h2>
           </div>
@@ -145,7 +139,7 @@ export function PocketControlTab() {
           </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+        {/* <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
               {t("selectedWorkout")}
@@ -168,7 +162,7 @@ export function PocketControlTab() {
               {t("refreshModes")}
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div className="mb-4">
           <label

@@ -341,6 +341,11 @@ export default function App() {
   const doExit = async () => {
     try {
       await runCommand("exit_workout");
+      setActiveModeId(0);
+      setSnapshot((prev) => ({
+        ...(prev || {}),
+        activeModeId: 0,
+      }));
       setCommandInfo(t("commandWorkoutExited"));
     } catch (error) {
       setCommandInfo(error.message || String(error));
@@ -474,7 +479,7 @@ export default function App() {
     }
   };
 
-  const roleHome = isDeveloper ? "/dev/home" : "/user/home";
+  const roleHome = isDeveloper ? "/dev/control" : "/user/control";
   const startPath = !connected || !isAuthenticated ? "/login" : roleHome;
 
   const monitorValue = useMemo(
@@ -563,8 +568,7 @@ export default function App() {
         <Route path="/" element={<Navigate to={startPath} replace />} />
         <Route path="/login" element={loginElement} />
         <Route path="/user" element={<UserPage />}>
-          <Route index element={<Navigate to="home" replace />} />
-          <Route path="home" element={<PocketOverviewTab />} />
+          <Route index element={<Navigate to="control" replace />} />
           <Route path="control" element={<PocketControlTab />} />
           <Route
             path="control/edit/:modeId"
@@ -575,8 +579,7 @@ export default function App() {
           <Route path="stats" element={<PocketStatsTab />} />
         </Route>
         <Route path="/dev" element={<DevPage />}>
-          <Route index element={<Navigate to="home" replace />} />
-          <Route path="home" element={<PocketOverviewTab />} />
+          <Route index element={<Navigate to="control" replace />} />
           <Route path="control" element={<PocketControlTab />} />
           <Route
             path="control/edit/:modeId"
