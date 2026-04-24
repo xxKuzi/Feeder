@@ -18,6 +18,7 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
 
+const DEFAULT_TCP_BIND_ADDRESS: &str = "0.0.0.0:7878";
 const DEFAULT_TCP_ADDRESS: &str = "127.0.0.1:7878";
 const REMOTE_AUTH_ENV_FILE: &str = ".remote-control.env";
 const USER_PASSWORD_KEY: &str = "REMOTE_USER_PASSWORD";
@@ -703,14 +704,14 @@ pub fn start_tcp_server(app_handle: AppHandle) -> Result<(), String> {
     }
     let _ = AUTH_CONFIG.set(Arc::new(Mutex::new(auth)));
 
-    let listener = TcpListener::bind(DEFAULT_TCP_ADDRESS)
-        .map_err(|e| format!("Failed to bind TCP server on {DEFAULT_TCP_ADDRESS}: {e}"))?;
+    let listener = TcpListener::bind(DEFAULT_TCP_BIND_ADDRESS)
+        .map_err(|e| format!("Failed to bind TCP server on {DEFAULT_TCP_BIND_ADDRESS}: {e}"))?;
     let clients = Arc::new(Mutex::new(Vec::<ClientConnection>::new()));
     let server = TcpTelemetryServer { clients };
 
     let server_for_accept = server.clone();
     thread::spawn(move || {
-        info!("TCP telemetry server listening on {DEFAULT_TCP_ADDRESS}");
+        info!("TCP telemetry server listening on {DEFAULT_TCP_BIND_ADDRESS}");
         for stream in listener.incoming() {
             match stream {
                 Ok(incoming) => {
