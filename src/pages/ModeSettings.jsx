@@ -3,6 +3,27 @@ import { useData } from "../parts/Memory";
 import { useLocation, useNavigate } from "react-router-dom";
 import FieldSimulation from "../components/FieldSimulation"; // Import the separated field logic
 
+const MOTOR_DEGREES_PER_SECOND = 15;
+
+const getRequiredIntervalSeconds = (fromAngle, toAngle) =>
+  Math.max(
+    1,
+    Math.ceil(
+      Math.abs(Number(toAngle) - Number(fromAngle)) / MOTOR_DEGREES_PER_SECOND,
+    ),
+  );
+
+const getIntervalRequirements = (angles = []) => {
+  if (!Array.isArray(angles) || angles.length === 0) {
+    return [];
+  }
+
+  return angles.map((angle, index) => {
+    const nextAngle = angles[(index + 1) % angles.length];
+    return getRequiredIntervalSeconds(angle, nextAngle);
+  });
+};
+
 export default function ModeSettings() {
   const { createMode, updateMode, showKeyboard } = useData();
   const [formData, setFormData] = useState({
@@ -41,6 +62,27 @@ export default function ModeSettings() {
 
   const [customInterval, setCustomInterval] = useState(false);
   const navigate = useNavigate();
+  const intervalRequirements = getIntervalRequirements(formData.angles);
+  const singleIntervalRequirement =
+    intervalRequirements.length > 0 ? Math.max(...intervalRequirements) : 1;
+  const currentIntervals = customInterval
+    ? formData.intervals.slice(0, intervalRequirements.length)
+    : [formData.intervals[0]];
+  const areIntervalsValid = customInterval
+    ? intervalRequirements.every(
+        (required, index) => Number(currentIntervals[index] ?? 0) >= required,
+      ) && currentIntervals.length === intervalRequirements.length
+    : Number(currentIntervals[0] ?? 0) >= singleIntervalRequirement;
+  const firstInvalidIntervalIndex = customInterval
+    ? intervalRequirements.findIndex(
+        (required, index) => Number(currentIntervals[index] ?? 0) < required,
+      )
+    : Number(currentIntervals[0] ?? 0) < singleIntervalRequirement
+      ? 0
+      : -1;
+
+  const getIntervalMinimum = (index) =>
+    customInterval ? intervalRequirements[index] ?? 1 : singleIntervalRequirement;
 
   const handleCategoryChange = (indexValue) => {
     setFormData((prev) => ({
@@ -76,6 +118,11 @@ export default function ModeSettings() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!areIntervalsValid) {
+      return;
+    }
+
     const finalData = {
       ...formData,
       interval: customInterval ? formData.intervals : formData.intervals[0],
@@ -201,8 +248,11 @@ export default function ModeSettings() {
                 key={value}
                 type="button"
                 onClick={() => handleIntervalChange(0, value)}
+                disabled={value < getIntervalMinimum(0)}
                 className={`px-4 py-2 rounded ${
-                  formData.intervals[0] === value
+                  value < getIntervalMinimum(0)
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : formData.intervals[0] === value
                     ? "bg-blue-600 text-white"
                     : "bg-gray-200 text-gray-700"
                 }`}
@@ -212,11 +262,14 @@ export default function ModeSettings() {
             ))}
             <input
               type="number"
-              min="1"
+              min={getIntervalMinimum(0)}
               value={formData.intervals[0]}
               onFocus={(e) =>
                 showKeyboard(e, (newValue) =>
-                  handleIntervalChange(0, Number(newValue))
+                  handleIntervalChange(
+                    0,
+                    Math.max(Number(newValue), getIntervalMinimum(0)),
+                  )
                 )
               }
               onChange={() => {}}
@@ -240,8 +293,11 @@ export default function ModeSettings() {
                     key={value}
                     type="button"
                     onClick={() => handleIntervalChange(i + 1, value)}
+                    disabled={value < getIntervalMinimum(i + 1)}
                     className={`px-4 py-2 rounded transition-opacity duration-00 ease-out ${
-                      formData.intervals[i + 1] === value
+                      value < getIntervalMinimum(i + 1)
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : formData.intervals[i + 1] === value
                         ? "bg-blue-600 text-white" // Delay on active button
                         : "bg-gray-200 text-gray-700"
                     }`}
@@ -251,12 +307,18 @@ export default function ModeSettings() {
                 ))}
                 <input
                   type="number"
-                  min="1"
+                  min={getIntervalMinimum(i + 1)}
                   step={1}
                   value={formData.intervals[i + 1] || ""}
                   onFocus={(e) =>
                     showKeyboard(e, () =>
-                      handleIntervalChange(i + 1, Number(e.target.value))
+                      handleIntervalChange(
+                        i + 1,
+                        Math.max(
+                          Number(e.target.value),
+                          getIntervalMinimum(i + 1),
+                        ),
+                      )
                     )
                   }
                   onChange={() => {}}
@@ -271,9 +333,18 @@ export default function ModeSettings() {
         <button
           className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 focus:ring focus:ring-blue-300"
           onClick={handleSubmit}
+          disabled={!areIntervalsValid}
         >
           {previousData === null ? "Vytvořit mode" : "Upravit mode"}
         </button>
+        {!areIntervalsValid && (
+          <p className="text-sm text-red-600">
+            Interval je moc krátký. Při 15°/s potřebujete alespoň {customInterval
+              ? getIntervalMinimum(firstInvalidIntervalIndex >= 0 ? firstInvalidIntervalIndex : 0)
+              : singleIntervalRequirement
+            } s.
+          </p>
+        )}
       </div>
     </div>
   );
