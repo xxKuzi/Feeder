@@ -57,7 +57,7 @@ export default function MotorControl({
         globalMotorSpeed,
         motorData.distances[0],
         3,
-        setGlobalMotorSpeed
+        setGlobalMotorSpeed,
       );
       changeMotorSpeed(motorData.distances[0], 3);
     }
@@ -82,7 +82,7 @@ export default function MotorControl({
     endValue,
     duration,
     updateFunc,
-    onComplete
+    onComplete,
   ) => {
     const startTime = performance.now();
 
@@ -138,7 +138,11 @@ export default function MotorControl({
       setRound(currentRound);
     }
 
-    if (currentRound >= motorData.repetition) {
+    // First shot is fired in CountdownEnd, so this loop runs only totalShots - 1 times.
+    const timedShotIndex = currentRound * anglesCount + index;
+    const totalTimedShots = motorData.repetition * anglesCount - 1;
+
+    if (timedShotIndex >= totalTimedShots) {
       runningRef.current = false;
       stopMotor();
       end();
@@ -198,22 +202,22 @@ export default function MotorControl({
           newWorkout ? actualAngle : globalAngle,
           nextAngle,
           timeLeft > 2 ? timeLeft - 1 : 1, //one second delay at the beginning of every countdown(before shoot)
-          setGlobalAngle
+          setGlobalAngle,
         );
         changeMotorAngle(
           newWorkout ? actualAngle : globalAngle,
           nextAngle,
-          timeLeft > 2 ? timeLeft - 1 : 1
+          timeLeft > 2 ? timeLeft - 1 : 1,
         );
         smoothTransition(
           newWorkout ? actualSpeed : globalMotorSpeed,
           nextSpeed,
           timeLeft > 2 ? timeLeft - 1 : 1,
-          setGlobalMotorSpeed
+          setGlobalMotorSpeed,
         );
         changeMotorSpeed(nextSpeed, timeLeft > 2 ? timeLeft - 1 : 1);
       },
-      newWorkout ? 1000 : 0
+      newWorkout ? 1000 : 0,
     );
   };
 
