@@ -50,7 +50,7 @@ export default function ModeSettings() {
 
   const location = useLocation();
   const [previousData, setPreviousData] = useState(
-    location.state ? location.state.data : null
+    location.state ? location.state.data : null,
   );
 
   useEffect(() => {
@@ -82,7 +82,9 @@ export default function ModeSettings() {
       : -1;
 
   const getIntervalMinimum = (index) =>
-    customInterval ? intervalRequirements[index] ?? 1 : singleIntervalRequirement;
+    customInterval
+      ? (intervalRequirements[index] ?? 1)
+      : singleIntervalRequirement;
 
   const handleCategoryChange = (indexValue) => {
     setFormData((prev) => ({
@@ -150,7 +152,7 @@ export default function ModeSettings() {
                 setFormData((prev) => ({
                   ...prev,
                   name: newValue,
-                }))
+                })),
               );
             }}
             readOnly
@@ -217,7 +219,7 @@ export default function ModeSettings() {
               value={formData.repetition}
               onFocus={(e) =>
                 showKeyboard(e, (newValue) =>
-                  handleRepetitionChange(Number(newValue))
+                  handleRepetitionChange(Number(newValue)),
                 )
               }
               readOnly
@@ -253,8 +255,8 @@ export default function ModeSettings() {
                   value < getIntervalMinimum(0)
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : formData.intervals[0] === value
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-700"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-700"
                 }`}
               >
                 {value}
@@ -269,7 +271,7 @@ export default function ModeSettings() {
                   handleIntervalChange(
                     0,
                     Math.max(Number(newValue), getIntervalMinimum(0)),
-                  )
+                  ),
                 )
               }
               onChange={() => {}}
@@ -298,8 +300,8 @@ export default function ModeSettings() {
                       value < getIntervalMinimum(i + 1)
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                         : formData.intervals[i + 1] === value
-                        ? "bg-blue-600 text-white" // Delay on active button
-                        : "bg-gray-200 text-gray-700"
+                          ? "bg-blue-600 text-white" // Delay on active button
+                          : "bg-gray-200 text-gray-700"
                     }`}
                   >
                     {value}
@@ -318,7 +320,7 @@ export default function ModeSettings() {
                           Number(e.target.value),
                           getIntervalMinimum(i + 1),
                         ),
-                      )
+                      ),
                     )
                   }
                   onChange={() => {}}
@@ -339,10 +341,15 @@ export default function ModeSettings() {
         </button>
         {!areIntervalsValid && (
           <p className="text-sm text-red-600">
-            Interval je moc krátký. Při 15°/s potřebujete alespoň {customInterval
-              ? getIntervalMinimum(firstInvalidIntervalIndex >= 0 ? firstInvalidIntervalIndex : 0)
-              : singleIntervalRequirement
-            } s.
+            Interval je moc krátký. Při 15°/s potřebujete alespoň{" "}
+            {customInterval
+              ? getIntervalMinimum(
+                  firstInvalidIntervalIndex >= 0
+                    ? firstInvalidIntervalIndex
+                    : 0,
+                )
+              : singleIntervalRequirement}{" "}
+            s.
           </p>
         )}
       </div>
