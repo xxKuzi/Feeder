@@ -24,8 +24,13 @@ export default function MotorControl({
     useData();
 
   const stepIndexRef = useRef(0);
+  const roundRef = useRef(0);
   const requestRef = useRef(null);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
 
   //CLEAN UP
   useEffect(() => {
@@ -41,6 +46,7 @@ export default function MotorControl({
   useEffect(() => {
     if (reset) {
       setRound(0);
+      roundRef.current = 0;
       stepIndexRef.current = 0;
 
       setTimer(Math.max(motorData.intervals[0], 0).toFixed(1));
@@ -110,22 +116,33 @@ export default function MotorControl({
   const nextStep = (newWorkout = true) => {
     if (!runningRef.current) return;
 
+    const anglesCount = motorData.angles.length;
+    if (anglesCount === 0 || motorData.repetition <= 0) {
+      runningRef.current = false;
+      stopMotor();
+      end();
+      return;
+    }
+
     //ROUND AND INDEX OF CYCLE LOGIC
     let index = stepIndexRef.current;
+    let currentRound = roundRef.current;
+
     if (index >= motorData.angles.length) {
       //new round
       index = 0;
       stepIndexRef.current = 0;
 
-      setRound((prev) => {
-        let newRound = prev + 1;
-        if (newRound >= motorData.repetition) {
-          runningRef.current = false;
-          // console.log("Workout finished");
-          end();
-        }
-        return newRound;
-      });
+      currentRound += 1;
+      roundRef.current = currentRound;
+      setRound(currentRound);
+    }
+
+    if (currentRound >= motorData.repetition) {
+      runningRef.current = false;
+      stopMotor();
+      end();
+      return;
     }
 
     let actualInterval = motorData.intervals[0];

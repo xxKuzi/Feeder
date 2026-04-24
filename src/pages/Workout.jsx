@@ -223,13 +223,25 @@ export default function Workout() {
     await toggleServo(false);
 
     startWorkout(); //BLUETOOTH
-    const nextFullTime =
-      workoutData.intervals.length > 1
-        ? workoutData.repetition *
-          workoutData.intervals.reduce((total, current) => total + current, 0)
-        : workoutData.repetition *
-          workoutData.intervals[0] *
-          workoutData.angles.length;
+    const anglesCount = Math.max(0, workoutData.angles.length);
+    const repetitionCount = Math.max(0, workoutData.repetition);
+
+    let nextFullTime = 0;
+    if (anglesCount > 0 && repetitionCount > 0) {
+      if (workoutData.intervals.length > 1) {
+        // First shot is immediate, so the workout uses one interval less overall.
+        const sumIntervals = workoutData.intervals.reduce(
+          (total, current) => total + current,
+          0,
+        );
+        const lastInterval = workoutData.intervals[anglesCount - 1] ?? 0;
+        nextFullTime = repetitionCount * sumIntervals - lastInterval;
+      } else {
+        const interval = workoutData.intervals[0] ?? 0;
+        nextFullTime =
+          Math.max(repetitionCount * anglesCount - 1, 0) * interval;
+      }
+    }
 
     setFullTime(nextFullTime); //calculate fullTime + ONE second safety
     fullTimeRef.current = nextFullTime;
