@@ -118,13 +118,21 @@ export default function Modes() {
     } = data;
 
     const calculateOverallTime = () => {
-      let time = 0;
-      if (intervals.length === 1) {
-        time = repetition * intervals[0] * angles.length;
-      } else if (intervals.length > 1) {
-        time = repetition * intervals.reduce((acc, num) => acc + num, 0);
+      const anglesCount = Math.max(0, angles.length);
+      const repetitionCount = Math.max(0, repetition);
+
+      if (anglesCount === 0 || repetitionCount === 0 || intervals.length === 0) {
+        return 0;
       }
-      return time;
+
+      if (intervals.length === 1) {
+        const interval = intervals[0] ?? 0;
+        return Math.max(repetitionCount * anglesCount - 1, 0) * interval;
+      }
+
+      const sumIntervals = intervals.reduce((acc, num) => acc + num, 0);
+      const lastInterval = intervals[anglesCount - 1] ?? 0;
+      return repetitionCount * sumIntervals - lastInterval;
     };
     return (
       <div className="flex flex-col bg-white items-center relative justify-center border-2 rounded-lg wx-[30%] px-8 py-4">
