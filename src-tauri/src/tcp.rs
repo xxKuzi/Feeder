@@ -19,7 +19,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
 
 const DEFAULT_TCP_BIND_ADDRESS: &str = "0.0.0.0:7878";
-const DEFAULT_TCP_ADDRESS: &str = "127.0.0.1:7878";
+const DEFAULT_TCP_ADDRESS: &str = "0.0.0.0:7878";
 const REMOTE_AUTH_ENV_FILE: &str = ".remote-control.env";
 const USER_PASSWORD_KEY: &str = "REMOTE_USER_PASSWORD";
 const DEV_PASSWORD_KEY: &str = "REMOTE_DEV_PASSWORD";
