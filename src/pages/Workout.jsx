@@ -235,7 +235,7 @@ export default function Workout() {
           0,
         );
         const lastInterval = workoutData.intervals[anglesCount - 1] ?? 0;
-        nextFullTime = repetitionCount * sumIntervals - lastInterval;
+        nextFullTime = (repetitionCount - 1) * sumIntervals - lastInterval;
       } else {
         const interval = workoutData.intervals[0] ?? 0;
         nextFullTime =
