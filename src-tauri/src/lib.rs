@@ -10,6 +10,9 @@ use limit_switch::platform::watch_limit_switch;
 
 use bluetooth::{exit_workout, get_workout_state, init_ble, pause_workout, start_workout};
 use tcp::{start_tcp_server, tcp_send_event};
+use std::path::PathBuf;
+use std::process::{Child, Command, Stdio};
+use std::sync::Mutex;
 use sql::{
     connect_to_database, add_record, add_user, load_users, select_user, delete_user,
     load_current_data, load_records, rename_user, add_mode, load_modes, delete_mode, update_mode, save_angle, save_last_calibration
@@ -30,9 +33,14 @@ use electro::motor_system::{
 };
 
 use tauri::{Manager, AppHandle};
+use tauri::WindowEvent;
 use once_cell::sync::OnceCell;
 
 static GLOBAL_APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
+
+struct PocketBridgeState {
+    child: Mutex<Option<Child>>,
+}
 
 #[derive(Clone, serde::Serialize)]
 pub struct Payload {
@@ -46,6 +54,60 @@ pub fn my_callback_on_click(message: impl Into<String>) {
          app_handle
              .emit("onClick", Payload { message: message.into() })
              .unwrap();
+    }
+}
+
+fn feeder_pocket_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join("FeederPocket")
+}
+
+fn start_pocket_bridge() -> Option<Child> {
+    if !cfg!(debug_assertions) {
+        info!("Skipping Pocket bridge child process in release build");
+        return None;
+    }
+
+    let pocket_dir = feeder_pocket_dir();
+    let mut cmd = Command::new("npm");
+    cmd.arg("run")
+        .arg("start")
+        .current_dir(&pocket_dir)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+
+    match cmd.spawn() {
+        Ok(child) => {
+            info!("Started Pocket bridge from {:?}", pocket_dir);
+            Some(child)
+        }
+        Err(err) => {
+            warn!("Failed to start Pocket bridge from {:?}: {}", pocket_dir, err);
+            None
+        }
+    }
+}
+
+fn stop_pocket_bridge(app: &AppHandle) {
+    let state = app.state::<PocketBridgeState>();
+    let mut child_guard = match state.child.lock() {
+        Ok(guard) => guard,
+        Err(err) => {
+            warn!("Pocket bridge child mutex poisoned: {}", err);
+            return;
+        }
+    };
+
+    if let Some(mut child) = child_guard.take() {
+        if let Err(err) = child.kill() {
+            warn!("Failed to kill Pocket bridge child: {}", err);
+        }
+        if let Err(err) = child.wait() {
+            warn!("Failed to wait for Pocket bridge child shutdown: {}", err);
+        }
     }
 }
 
@@ -72,6 +134,11 @@ pub async fn run() {
             warn!("TCP telemetry server failed to start: {e}");
         }
 
+        let pocket_child = start_pocket_bridge();
+        app.manage(PocketBridgeState {
+            child: Mutex::new(pocket_child),
+        });
+
         // Blocking call to initialize BLE using the app handle from Tauri.
         // Note: This may block the setup, so ensure the BLE initialization is quick.
         let ble_state = tauri::async_runtime::block_on(init_ble(app.handle().clone()))
@@ -81,6 +148,11 @@ pub async fn run() {
 
         watch_limit_switch();
         Ok(())
+    })
+    .on_window_event(|window, event| {
+        if let WindowEvent::CloseRequested { .. } = event {
+            stop_pocket_bridge(&window.app_handle());
+        }
     })
     .plugin(tauri_plugin_shell::init())
     .invoke_handler(tauri::generate_handler![
@@ -122,6 +194,7 @@ pub async fn run() {
 }
 
 #[tauri::command]
-fn exit_app() {
+fn exit_app(app: AppHandle) {
+    stop_pocket_bridge(&app);
     std::process::exit(0);
 }
