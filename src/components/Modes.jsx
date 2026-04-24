@@ -121,7 +121,11 @@ export default function Modes() {
       const anglesCount = Math.max(0, angles.length);
       const repetitionCount = Math.max(0, repetition);
 
-      if (anglesCount === 0 || repetitionCount === 0 || intervals.length === 0) {
+      if (
+        anglesCount === 0 ||
+        repetitionCount === 0 ||
+        intervals.length === 0
+      ) {
         return 0;
       }
 
