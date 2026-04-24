@@ -11,6 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 const WORKOUT_STATE_PAUSE = 0;
 const WORKOUT_STATE_RUNNING = 1;
 const WORKOUT_STATE_BREAK = 2;
+const MOTOR_DEGREES_PER_SECOND = 15;
 
 export default function Workout() {
   const {
@@ -211,7 +212,16 @@ export default function Workout() {
     exitWorkout(); //BLUETOOTH
     setTime(0);
     setReset(true); //changes angle and motorSpeed to first value in array
-    countdownRef.current.startCountdown(4); //Shows counter for 4s
+    const firstShotAngle = Number(workoutData.angles?.[0] ?? globalAngle ?? 90);
+    const currentAngle = Number(globalAngle ?? 90);
+    const requiredStartupSeconds = Math.max(
+      4,
+      Math.ceil(
+        Math.abs(firstShotAngle - currentAngle) / MOTOR_DEGREES_PER_SECOND,
+      ),
+    );
+
+    countdownRef.current.startCountdown(requiredStartupSeconds); // Wait for the motor to reach the first shot position
     updateStatistics(0, 0); //reset statistics
     setAttemptedShots(0);
     attemptedShotsRef.current = 0;
