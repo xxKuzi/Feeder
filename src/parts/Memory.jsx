@@ -270,7 +270,7 @@ export function Memory({ children }) {
           payload.message?.includes("Stopped early due to limit switch")
         ) {
           // Exit workout if calibration is triggered during a workout
-          console.log("CALIBRATION SDLFLŮSDA");
+
           //if (location.pathname === "/workout") {
           invoke("exit_workout").catch((error) => {
             // Ignore failures
@@ -278,10 +278,9 @@ export function Memory({ children }) {
           });
           navigate("/menu");
           //}
-          setTimeout(() => {
-            // setCalibrationState("false");
-            //openCalibration();
-          }, 100);
+
+          setCalibrationState("false");
+          openCalibration();
         }
 
         const resolver = pendingMotorRequestsRef.current.get(requestId);
