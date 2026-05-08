@@ -271,6 +271,14 @@ export function Memory({ children }) {
         ) {
           setCalibrationState("false");
           openCalibration();
+
+          // Exit workout if calibration is triggered during a workout
+          if (location.pathname === "/workout") {
+            invoke("exit_workout").catch(() => {
+              // Ignore failures
+            });
+            navigate("/menu");
+          }
         }
 
         const resolver = pendingMotorRequestsRef.current.get(requestId);
