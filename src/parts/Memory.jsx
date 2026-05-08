@@ -797,6 +797,20 @@ export function Memory({ children }) {
     loadCurrentData();
   };
 
+  // Initialize servos to closed state on app load
+  useEffect(() => {
+    const initializeServos = async () => {
+      try {
+        await toggleServo(false);
+        await toggleFeederServo(false);
+      } catch (err) {
+        console.error("Failed to initialize servos on app load:", err);
+      }
+    };
+    
+    initializeServos();
+  }, []);
+
   const contextData = {
     statistics,
     updateStatistics,

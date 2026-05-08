@@ -24,6 +24,8 @@ export default function Testing() {
     addBasketPoints,
     resetBasketPoints,
     sendArduinoRawCommand,
+    toggleServo,
+    toggleFeederServo,
   } = useData();
 
   useEffect(() => {
@@ -49,6 +51,45 @@ export default function Testing() {
       </button>
       <MotorTest />
       <BluetoothControls />
+      <p className="mt-32">
+        --------------------------------------------------------------------------------------------------------------------------------
+      </p>
+
+      <div className="flex flex-col items-center justify-center bg-blue-100 rounded-xl mt-8 px-4 py-3 w-[680px] max-w-full">
+        <h2 className="text-2xl font-bold">Servo Manual Control</h2>
+        <p className="mt-2 text-lg">Hold/Release buttons for manual servo testing</p>
+
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <button
+            onClick={() => toggleServo(false)}
+            className="button button__positive"
+          >
+            Servo 1 - Hold (Close)
+          </button>
+          <button
+            onClick={() => toggleServo(true)}
+            className="button button__negative"
+          >
+            Servo 1 - Release (Open)
+          </button>
+        </div>
+
+        <div className="flex items-center justify-center gap-4 mt-3">
+          <button
+            onClick={() => toggleFeederServo(false)}
+            className="button button__positive"
+          >
+            Servo 2 - Hold (Close)
+          </button>
+          <button
+            onClick={() => toggleFeederServo(true)}
+            className="button button__negative"
+          >
+            Servo 2 - Release (Open)
+          </button>
+        </div>
+      </div>
+
       <p className="mt-32">
         --------------------------------------------------------------------------------------------------------------------------------
       </p>
