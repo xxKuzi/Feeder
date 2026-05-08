@@ -40,8 +40,8 @@ export default function Navbar() {
   });
 
   return (
-    <div className="flex flex-col items-center justify-center bg-gray-100 fixed top-0 left-0 w-[135px]">
-      <div className="text-md justify-between h-screen flex py-2 px-2 flex-col">
+    <div className="fixed top-0 left-0 h-screen w-[135px] overflow-y-auto bg-gray-100">
+      <div className="text-md flex min-h-full flex-col justify-between py-2 px-2">
         {/* Profile Section */}
 
         <div className="h-32">

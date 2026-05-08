@@ -396,7 +396,7 @@ export function Memory({ children }) {
     //Calibration only REQUIRED if angle is 666 or if it is older than 7 days
     const needsCalibration = userDataRust.angle === 666 || isOld();
     //ALWAYS TRUE WE DO NOT KNOW IF SOMEONE DID NOT MOVE IT
-    if (true) {
+    if (false) {
       openCalibration();
     } else {
       //NEVER HAPPENS NOW
