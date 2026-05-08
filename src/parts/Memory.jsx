@@ -270,6 +270,7 @@ export function Memory({ children }) {
           payload.message?.includes("Stopped early due to limit switch")
         ) {
           // Exit workout if calibration is triggered during a workout
+          console.log("CALIBRATION SDLFLŮSDA");
           if (location.pathname === "/workout") {
             invoke("exit_workout").catch(() => {
               // Ignore failures
