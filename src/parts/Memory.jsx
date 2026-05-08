@@ -807,7 +807,7 @@ export function Memory({ children }) {
         console.error("Failed to initialize servos on app load:", err);
       }
     };
-    
+
     initializeServos();
   }, []);
 

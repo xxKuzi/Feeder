@@ -179,7 +179,10 @@ export default function Workout() {
           await toggleFeederServo(false);
           await toggleServo(false);
         } catch (err) {
-          console.error("Failed to ensure servos closed on RUNNING state:", err);
+          console.error(
+            "Failed to ensure servos closed on RUNNING state:",
+            err,
+          );
         }
         // if (wasPaused) {
         //   setNewWorkout(false);
@@ -237,6 +240,18 @@ export default function Workout() {
     );
 
     countdownRef.current.startCountdown(requiredStartupSeconds); // Wait for the motor to reach the first shot position
+
+    // Load one ball during startup countdown: open servo to release, then close to hold
+    setTimeout(async () => {
+      try {
+        await toggleServo(true); // Open servo 1 to load/release ball
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Hold open for 1s
+        await toggleServo(false); // Close servo 1 to hold the ball
+      } catch (err) {
+        console.error("Failed to load ball during startup:", err);
+      }
+    }, 1000); // Start ball loading after 1s to let motor start moving
+
     updateStatistics(0, 0); //reset statistics
     setAttemptedShots(0);
     attemptedShotsRef.current = 0;
