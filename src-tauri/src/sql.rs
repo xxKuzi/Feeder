@@ -74,17 +74,17 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
         category        INTEGER DEFAULT 0,  
         predefined      BOOL DEFAULT false,
         repetition      INTEGER DEFAULT 10,
-        angles          TEXT DEFAULT '[30,90,150]',
+        angles          TEXT DEFAULT '[60,90,120]',
         distances       TEXT DEFAULT '[5000,6000,3000]',
-        intervals       TEXT DEFAULT '[5,5,5]'
+        intervals       TEXT DEFAULT '[5,5,6]'
         
     );    
 
     INSERT INTO users (user_id, name, number)    VALUES (1, 'Default', 69);
     INSERT INTO data (user_id)                VALUES (1);
-    INSERT INTO modes (mode_id, category, name, predefined)                VALUES (0, 0, 'DEFAULT random New', true);
+    INSERT INTO modes (mode_id, category, name, predefined, angles, intervals)                VALUES (0, 0, 'Free throws', true, '[90]', '[5]');
     INSERT INTO modes (category, name, predefined)                VALUES (1, 'Two Point', true);
-    INSERT INTO modes (category, name, predefined, distances)                VALUES (2, 'Three Point', true, '[6650,6500,6700]');
+    INSERT INTO modes (category, name, predefined, distances, intervals, angles)                VALUES (2, 'Three Point', true, '[6700,6700]', '[4,4]', '[120,150]');
     ";
 
     sqlx::query(&qry).execute(&*pool).await // Execute the query
