@@ -269,9 +269,6 @@ export function Memory({ children }) {
             "Aborted: Limit switch already pressed at start." ||
           payload.message?.includes("Stopped early due to limit switch")
         ) {
-          setCalibrationState("false");
-          openCalibration();
-
           // Exit workout if calibration is triggered during a workout
           if (location.pathname === "/workout") {
             invoke("exit_workout").catch(() => {
@@ -279,6 +276,8 @@ export function Memory({ children }) {
             });
             navigate("/menu");
           }
+          setCalibrationState("false");
+          openCalibration();
         }
 
         const resolver = pendingMotorRequestsRef.current.get(requestId);
