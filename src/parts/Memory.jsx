@@ -71,15 +71,11 @@ export function Memory({ children }) {
 
   useEffect(() => {
     workoutDataRef.current = workoutData;
-            (async () => {
-              try {
-                await invoke("exit_workout");
-              } catch (error) {
-                console.error("Failed to exit workout:", error);
-              } finally {
-                navigate("/menu");
-              }
-            })();
+  }, [workoutData]);
+
+  useEffect(() => {
+    invoke("tcp_send_event", {
+      event: "global_angle_changed",
       payload: { angle: Number(globalAngle) },
     }).catch(() => {
       // Ignore telemetry failures when TCP clients are disconnected.
