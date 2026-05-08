@@ -13,6 +13,8 @@ import Calibration from "./Calibration.jsx";
 import { useLocation, useNavigate } from "react-router-dom";
 import KeyboardOverlay from "../parts/Keyboard";
 
+const developerModePassword = import.meta.env.VITE_DEVELOPER_MODE_PASSWORD;
+
 export function Memory({ children }) {
   const modalRef = useRef();
   const calibrationRef = useRef();
@@ -688,7 +690,7 @@ export function Memory({ children }) {
       },
       confirmHandle: (data) => {
         console.log("data", data);
-        if (data.password === "jkl") {
+        if (developerModePassword && data.password === developerModePassword) {
           setDeveloperMode(true);
         } else {
           navigate("/");
