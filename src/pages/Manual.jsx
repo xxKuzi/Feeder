@@ -23,16 +23,6 @@ export default function Manual() {
   } = useData();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const setupServosForLoader = async () => {
-      // Initial loader state: servo2 open, servo1 closed.
-      await toggleFeederServo(false);
-      await toggleServo(false);
-    };
-
-    setupServosForLoader();
-  }, []);
-
   const changeAngle = () => {
     let difference = manualMemory.angle - globalAngle;
     rotateStepperMotor(difference);
