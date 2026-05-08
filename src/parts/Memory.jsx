@@ -279,8 +279,8 @@ export function Memory({ children }) {
             navigate("/menu");
           }
           setTimeout(() => {
-            setCalibrationState("false");
-            openCalibration();
+            // setCalibrationState("false");
+            //openCalibration();
           }, 100);
         }
 
