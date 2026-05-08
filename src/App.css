@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+#root {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
 @font-face {
   font-family: "SpaceMono";
   src: url("/fonts/SpaceMono-Regular.ttf") format("truetype");
