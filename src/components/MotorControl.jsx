@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useData } from "../parts/Memory";
 
+const MOTOR_DEGREES_PER_SECOND = 18;
+
+const getTransitionDurationSeconds = (startValue, endValue) => {
+  const angleDelta = Math.abs(Number(endValue) - Number(startValue));
+  return Math.max(angleDelta / MOTOR_DEGREES_PER_SECOND, 0.1);
+};
+
 export default function MotorControl({
   motorData,
   runningRef,
@@ -51,8 +58,22 @@ export default function MotorControl({
 
       setTimer(Math.max(motorData.intervals[0], 0).toFixed(1));
 
-      smoothTransition(globalAngle, motorData.angles[0], 3, setGlobalAngle);
-      changeMotorAngle(globalAngle, motorData.angles[0], 3);
+      const angleTransitionSeconds = getTransitionDurationSeconds(
+        globalAngle,
+        motorData.angles[0],
+      );
+
+      smoothTransition(
+        globalAngle,
+        motorData.angles[0],
+        angleTransitionSeconds,
+        setGlobalAngle,
+      );
+      changeMotorAngle(
+        globalAngle,
+        motorData.angles[0],
+        angleTransitionSeconds,
+      );
       smoothTransition(
         globalMotorSpeed,
         motorData.distances[0],
@@ -198,16 +219,21 @@ export default function MotorControl({
 
     setTimeout(
       () => {
+        const angleTransitionSeconds = getTransitionDurationSeconds(
+          newWorkout ? actualAngle : globalAngle,
+          nextAngle,
+        );
+
         smoothTransition(
           newWorkout ? actualAngle : globalAngle,
           nextAngle,
-          timeLeft > 2 ? timeLeft - 1 : 1, //one second delay at the beginning of every countdown(before shoot)
+          angleTransitionSeconds,
           setGlobalAngle,
         );
         changeMotorAngle(
           newWorkout ? actualAngle : globalAngle,
           nextAngle,
-          timeLeft > 2 ? timeLeft - 1 : 1,
+          angleTransitionSeconds,
         );
         smoothTransition(
           newWorkout ? actualSpeed : globalMotorSpeed,
