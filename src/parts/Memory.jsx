@@ -272,13 +272,16 @@ export function Memory({ children }) {
           // Exit workout if calibration is triggered during a workout
           console.log("CALIBRATION SDLFLŮSDA");
           if (location.pathname === "/workout") {
-            invoke("exit_workout").catch(() => {
+            invoke("exit_workout").catch((error) => {
               // Ignore failures
+              console.error(error);
             });
             navigate("/menu");
           }
-          setCalibrationState("false");
-          openCalibration();
+          setTimeout(() => {
+            setCalibrationState("false");
+            openCalibration();
+          }, 100);
         }
 
         const resolver = pendingMotorRequestsRef.current.get(requestId);
