@@ -44,7 +44,7 @@ export function Memory({ children }) {
   const [globalServoState, setGlobalServoState] = useState(false);
   const [basketPoints, setBasketPoints] = useState(0);
   const [motorQueueLength, setMotorQueueLength] = useState(0);
-  const [developerMode, setDeveloperMode] = useState(true);
+  const [developerMode, setDeveloperMode] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [manualMemory, setManualMemory] = useState({
     repetition: 10,
