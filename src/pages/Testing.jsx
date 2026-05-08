@@ -57,7 +57,9 @@ export default function Testing() {
 
       <div className="flex flex-col items-center justify-center bg-blue-100 rounded-xl mt-8 px-4 py-3 w-[680px] max-w-full">
         <h2 className="text-2xl font-bold">Servo Manual Control</h2>
-        <p className="mt-2 text-lg">Hold/Release buttons for manual servo testing</p>
+        <p className="mt-2 text-lg">
+          Hold/Release buttons for manual servo testing
+        </p>
 
         <div className="flex items-center justify-center gap-4 mt-4">
           <button
