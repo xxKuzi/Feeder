@@ -71,11 +71,15 @@ export function Memory({ children }) {
 
   useEffect(() => {
     workoutDataRef.current = workoutData;
-  }, [workoutData]);
-
-  useEffect(() => {
-    invoke("tcp_send_event", {
-      event: "global_angle_changed",
+            (async () => {
+              try {
+                await invoke("exit_workout");
+              } catch (error) {
+                console.error("Failed to exit workout:", error);
+              } finally {
+                navigate("/menu");
+              }
+            })();
       payload: { angle: Number(globalAngle) },
     }).catch(() => {
       // Ignore telemetry failures when TCP clients are disconnected.
@@ -271,13 +275,13 @@ export function Memory({ children }) {
         ) {
           // Exit workout if calibration is triggered during a workout
           console.log("CALIBRATION SDLFLŮSDA");
-          if (location.pathname === "/workout") {
-            invoke("exit_workout").catch((error) => {
-              // Ignore failures
-              console.error(error);
-            });
-            navigate("/menu");
-          }
+          //if (location.pathname === "/workout") {
+          invoke("exit_workout").catch((error) => {
+            // Ignore failures
+            console.error(error);
+          });
+          navigate("/menu");
+          //}
           setTimeout(() => {
             // setCalibrationState("false");
             //openCalibration();
