@@ -134,11 +134,11 @@ pub async fn run() {
             warn!("TCP telemetry server failed to start: {e}");
         }
 
-        if let Some(window) = app.webview_windows().values().next() {
+        /*if let Some(window) = app.webview_windows().values().next() {
             window.open_devtools();
         } else {
             warn!("No webview window was available to open devtools");
-        }
+        }*/
 
         let pocket_child = start_pocket_bridge();
         app.manage(PocketBridgeState {
