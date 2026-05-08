@@ -124,6 +124,14 @@ export default function Workout() {
 
   const startWorkout = async () => {
     try {
+      // Ensure both servos are closed before starting the workout
+      try {
+        await toggleFeederServo(false);
+        await toggleServo(false);
+      } catch (err) {
+        console.error("Failed to close servos before start_workout:", err);
+      }
+
       await invoke("start_workout");
       // Optionally, you can update the state immediately.
     } catch (err) {
@@ -151,7 +159,7 @@ export default function Workout() {
 
   // Remote event listener for state changes from TCP commands
   useEffect(() => {
-    const unlistenStateChanged = listen("state-changed", (event) => {
+    const unlistenStateChanged = listen("state-changed", async (event) => {
       console.log("Remote state-changed event:", event.payload);
 
       console.log("INCIALIZATION", initializationRef.current);
@@ -165,6 +173,13 @@ export default function Workout() {
           //RESUME
           setIsOpen(false);
           pauseCountdownRef.current.startCountdown(2);
+        }
+        // Ensure both servos are closed when workout is running
+        try {
+          await toggleFeederServo(false);
+          await toggleServo(false);
+        } catch (err) {
+          console.error("Failed to ensure servos closed on RUNNING state:", err);
         }
         // if (wasPaused) {
         //   setNewWorkout(false);
