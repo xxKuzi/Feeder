@@ -16,14 +16,13 @@ import Manual from "./pages/Manual";
 function App() {
   const location = useLocation(); // Get the current route
   return (
-    <main className="flex items-center justify-center">
-      {/* ADD FIXED CLASS or something like that*/}
+    <main className="flex h-screen w-screen overflow-hidden">
+      {location.pathname !== "/workout" && <Navbar />}
       <div
-        className={`flex flex-col items-center justify-center w-full ${
-          location.pathname !== "/workout" ? "ml-[135px]" : ""
+        className={`flex h-full min-h-0 w-full flex-col overflow-y-auto ${
+          location.pathname !== "/workout" ? "pl-[135px]" : ""
         }`}
       >
-        {location.pathname !== "/workout" && <Navbar />}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/menu" element={<Menu />} />
