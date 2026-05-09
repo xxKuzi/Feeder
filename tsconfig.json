@@ -5,9 +5,8 @@
     "jsx": "react-jsx", // Enable React JSX support
     "strict": true, // Enable strict type-checking
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "target": "esnext",
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
