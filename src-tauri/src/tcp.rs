@@ -18,6 +18,34 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
 
+fn update_env_file(path: &std::path::Path, key: &str, value: &str) -> std::io::Result<()> {
+    let content = fs::read_to_string(path).unwrap_or_default();
+    let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+    let mut found = false;
+    for line in lines.iter_mut() {
+        if line.starts_with(&format!("{}=", key)) {
+            *line = format!("{}={}", key, value);
+            found = true;
+            break;
+        }
+    }
+    if !found {
+        lines.push(format!("{}={}", key, value));
+    }
+    fs::write(path, lines.join("\n") + "\n")
+}
+
+fn resolve_feeder_env_path() -> PathBuf {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    if cwd.join(".env").exists() {
+        cwd.join(".env")
+    } else if cwd.parent().map(|p| p.join(".env").exists()).unwrap_or(false) {
+        cwd.parent().unwrap().join(".env")
+    } else {
+        PathBuf::from(".env")
+    }
+}
+
 const DEFAULT_TCP_BIND_ADDRESS: &str = "0.0.0.0:7878";
 const DEFAULT_TCP_ADDRESS: &str = "0.0.0.0:7878";
 const REMOTE_AUTH_ENV_FILE: &str = ".remote-control.env";
@@ -279,6 +307,16 @@ fn extract_f64(args: &Value, key: &str) -> Result<f64, String> {
 
 fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppHandle) -> Result<Value, String> {
     match command {
+        "load_current_data" => {
+            let _ = requires_auth(role)?;
+            let current_data = tauri::async_runtime::block_on(sql::load_current_data())?;
+            Ok(json!({ "currentData": current_data }))
+        }
+        "calibrate_stepper_motor" => {
+            let _ = requires_auth(role)?;
+            let response = electro::motor_system::calibrate_stepper_motor(app.clone())?;
+            Ok(response)
+        }
         "manual_move_position" => {
             let _ = requires_auth(role)?;
             let steps = extract_i32(args, "steps")?;
@@ -514,6 +552,34 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             update_password(role, &new_password)?;
             Ok(json!({ "ok": true }))
         }
+        "change_feeder_dev_password" => {
+            let _ = requires_developer(role)?;
+            let new_password = extract_string(args, "new_password")?;
+            if new_password.trim().is_empty() {
+                return Err("Password cannot be empty".to_string());
+            }
+            if let Err(e) = update_env_file(&resolve_feeder_env_path(), "VITE_DEVELOPER_MODE_PASSWORD", new_password.trim()) {
+                return Err(format!("Failed to update feeder .env: {}", e));
+            }
+            let _ = app.emit("feeder-dev-password-changed", json!({ "ok": true }));
+            Ok(json!({ "ok": true }))
+        }
+        "lock_feeder" => {
+            let _ = requires_developer(role)?;
+            if let Err(e) = update_env_file(&resolve_feeder_env_path(), "VITE_APP_LOCKED", "true") {
+                return Err(format!("Failed to update feeder .env: {}", e));
+            }
+            let _ = app.emit("remote-feeder-locked", json!({ "locked": true }));
+            Ok(json!({ "ok": true }))
+        }
+        "unlock_feeder" => {
+            let _ = requires_developer(role)?;
+            if let Err(e) = update_env_file(&resolve_feeder_env_path(), "VITE_APP_LOCKED", "false") {
+                return Err(format!("Failed to update feeder .env: {}", e));
+            }
+            let _ = app.emit("remote-feeder-locked", json!({ "locked": false }));
+            Ok(json!({ "ok": true }))
+        }
         "list_profiles" => {
             let _ = requires_auth(role)?;
             let users = tauri::async_runtime::block_on(sql::load_users())?;
@@ -553,6 +619,7 @@ fn handle_client(mut stream: TcpStream, app_handle: AppHandle, server: TcpTeleme
             "start_workout",
             "exit_workout",
             "get_workout_state",
+            "load_current_data",
             "load_modes",
             "load_records",
             "select_mode",
