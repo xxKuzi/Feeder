@@ -85,8 +85,8 @@ fn start_pocket_bridge() -> Option<Child> {
         .arg("start")
         .current_dir(&pocket_dir)
         .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit());
 
     match cmd.spawn() {
         Ok(child) => {
@@ -124,7 +124,18 @@ fn stop_pocket_bridge(app: &AppHandle) {
 /// initializes BLE (using a separate Tokio runtime), and builds the Tauri app.
 pub async fn run() {
     // Load environment variables from .remote-control.env
-    let _ = dotenv::dotenv();
+    // Try multiple locations: project root first, then current directory
+    let project_root_env = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join(".remote-control.env");
+    let current_dir_env = PathBuf::from(".remote-control.env");
+    
+    if project_root_env.exists() {
+        let _ = dotenv::from_path(&project_root_env);
+    } else if current_dir_env.exists() {
+        let _ = dotenv::from_path(&current_dir_env);
+    }
     
     std::env::set_var("RUST_LOG", "info");
     if let Err(err) = pretty_env_logger::try_init() {
