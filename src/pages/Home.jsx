@@ -11,7 +11,7 @@ export default function Home() {
   const [shutdown, setShutdown] = useState(false);
   return (
     <div className="relative flex flex-col items-center h-screen justify-center">
-      <button
+      {/* <button
         onClick={() => {
           setShutdown(true);
           saveAngle(globalAngle);
@@ -36,7 +36,7 @@ export default function Home() {
             }`}
           />
         </div>
-      </button>
+      </button> */}
       <p className="headline">Home</p>
 
       <div className="flex items-center justify-center gap-16">
