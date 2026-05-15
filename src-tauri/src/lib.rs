@@ -65,41 +65,25 @@ fn feeder_pocket_dir() -> PathBuf {
 }
 
 fn start_pocket_bridge() -> Option<Child> {
-    // Allow enabling the pocket bridge in release via env var
-    // Set `START_POCKET_BRIDGE=1` to override the default skip in release builds.
-    if !cfg!(debug_assertions) && std::env::var("START_POCKET_BRIDGE").ok().as_deref() != Some("1") {
-        info!(
-            "Skipping Pocket bridge child process in release build (set START_POCKET_BRIDGE=1 to enable)"
-        );
+    let should_skip = if cfg!(debug_assertions) {
+        false  // Always try in debug mode
+    } else {
+        // In release, only skip if START_POCKET_BRIDGE is not set to "1"
+        std::env::var("START_POCKET_BRIDGE")
+            .map(|v| v != "1")
+            .unwrap_or(true)  // Default to skip if env var not set
+    };
+
+    if should_skip {
+        info!("Skipping Pocket bridge child process");
         return None;
     }
 
     let pocket_dir = feeder_pocket_dir();
-
-    // Allow customizing the exact command via POCKET_BRIDGE_CMD env var (e.g. "node bridge/server.js").
-    // In development we default to `npm run start` to preserve current behavior.
-    // In release (when enabled) we default to `node bridge/server.js` to avoid building on-device.
-    let cmd_env = std::env::var("POCKET_BRIDGE_CMD").ok();
-
-    let mut cmd = if let Some(cmdline) = cmd_env {
-        let mut parts = cmdline.split_whitespace();
-        let program = parts.next().unwrap_or("node");
-        let mut c = Command::new(program);
-        for arg in parts {
-            c.arg(arg);
-        }
-        c
-    } else if cfg!(debug_assertions) {
-        let mut c = Command::new("npm");
-        c.arg("run").arg("start");
-        c
-    } else {
-        let mut c = Command::new("node");
-        c.arg("bridge/server.js");
-        c
-    };
-
-    cmd.current_dir(&pocket_dir)
+    let mut cmd = Command::new("npm");
+    cmd.arg("run")
+        .arg("start")
+        .current_dir(&pocket_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
