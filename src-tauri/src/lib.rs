@@ -123,6 +123,9 @@ fn stop_pocket_bridge(app: &AppHandle) {
 /// The main run function that initializes logging, connects to the database,
 /// initializes BLE (using a separate Tokio runtime), and builds the Tauri app.
 pub async fn run() {
+    // Load environment variables from .remote-control.env
+    let _ = dotenv::dotenv();
+    
     std::env::set_var("RUST_LOG", "info");
     if let Err(err) = pretty_env_logger::try_init() {
         eprintln!("WARNING: failed to initialize logging framework: {}", err);
