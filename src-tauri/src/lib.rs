@@ -65,20 +65,11 @@ fn feeder_pocket_dir() -> PathBuf {
 }
 
 fn start_pocket_bridge() -> Option<Child> {
-    // Allow enabling the pocket bridge in release via env var
-    // Set `START_POCKET_BRIDGE=1` to override the default skip in release builds.
-    if !cfg!(debug_assertions) && std::env::var("START_POCKET_BRIDGE").ok().as_deref() != Some("1") {
-        info!(
-            "Skipping Pocket bridge child process in release build (set START_POCKET_BRIDGE=1 to enable)"
-        );
-        return None;
-    }
-
     let pocket_dir = feeder_pocket_dir();
 
     // Allow customizing the exact command via POCKET_BRIDGE_CMD env var (e.g. "node bridge/server.js").
     // In development we default to `npm run start` to preserve current behavior.
-    // In release (when enabled) we default to `node bridge/server.js` to avoid building on-device.
+    // In release we default to `node bridge/server.js` so production launches the bridge automatically.
     let cmd_env = std::env::var("POCKET_BRIDGE_CMD").ok();
 
     let mut cmd = if let Some(cmdline) = cmd_env {
