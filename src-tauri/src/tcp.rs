@@ -115,10 +115,10 @@ fn resolve_auth_env_path() -> PathBuf {
         .map(|dir| dir.join(REMOTE_AUTH_ENV_FILE))
         .unwrap_or_else(|| cwd.join(REMOTE_AUTH_ENV_FILE));
 
-    for candidate in [exe_candidate, Some(cwd_candidate), Some(src_tauri_candidate), Some(root_candidate)] {
-        if let Some(path) = candidate {
+    for candidate in [&exe_candidate, &Some(cwd_candidate), &Some(src_tauri_candidate), &Some(root_candidate)] {
+        if let Some(path) = candidate.as_ref() {
             if path.exists() {
-                return path;
+                return path.clone();
             }
         }
     }
