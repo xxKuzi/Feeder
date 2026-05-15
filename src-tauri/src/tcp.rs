@@ -105,22 +105,27 @@ fn write_env_file(path: &PathBuf, user_password: &str, dev_password: &str) -> Re
 
 fn resolve_auth_env_path() -> PathBuf {
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    let root_candidate = cwd.join(REMOTE_AUTH_ENV_FILE);
+    let exe_candidate = std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|dir| dir.join(REMOTE_AUTH_ENV_FILE)));
+    let cwd_candidate = cwd.join(REMOTE_AUTH_ENV_FILE);
     let src_tauri_candidate = cwd.join("src-tauri").join(REMOTE_AUTH_ENV_FILE);
+    let root_candidate = cwd
+        .parent()
+        .map(|dir| dir.join(REMOTE_AUTH_ENV_FILE))
+        .unwrap_or_else(|| cwd.join(REMOTE_AUTH_ENV_FILE));
 
-    if root_candidate.exists() {
-        return root_candidate;
+    for candidate in [exe_candidate, Some(cwd_candidate), Some(src_tauri_candidate), Some(root_candidate)] {
+        if let Some(path) = candidate {
+            if path.exists() {
+                return path;
+            }
+        }
     }
 
-    if src_tauri_candidate.exists() {
-        return src_tauri_candidate;
-    }
-
-    if cwd.join("src-tauri").is_dir() {
-        return src_tauri_candidate;
-    }
-
-    root_candidate
+    exe_candidate
+        .or_else(|| Some(cwd.join(REMOTE_AUTH_ENV_FILE)))
+        .unwrap_or_else(|| PathBuf::from(REMOTE_AUTH_ENV_FILE))
 }
 
 fn load_auth_config() -> AuthConfig {

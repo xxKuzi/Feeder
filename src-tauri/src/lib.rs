@@ -124,14 +124,19 @@ fn stop_pocket_bridge(app: &AppHandle) {
 /// initializes BLE (using a separate Tokio runtime), and builds the Tauri app.
 pub async fn run() {
     // Load environment variables from .remote-control.env
-    // Try multiple locations: project root first, then current directory
+    // Try the released app directory first, then fall back to the repo/dev locations.
+    let exe_env = std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|dir| dir.join(".remote-control.env")));
     let project_root_env = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("..")
         .join(".remote-control.env");
     let current_dir_env = PathBuf::from(".remote-control.env");
-    
-    if project_root_env.exists() {
+
+    if let Some(path) = exe_env.as_ref().filter(|path| path.exists()) {
+        let _ = dotenv::from_path(path);
+    } else if project_root_env.exists() {
         let _ = dotenv::from_path(&project_root_env);
     } else if current_dir_env.exists() {
         let _ = dotenv::from_path(&current_dir_env);
