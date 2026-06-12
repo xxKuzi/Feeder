@@ -28,5 +28,5 @@ src-tauri/data.db
 src-tauri/.remote-control.env
 external-workout-monitor/.env
 
-
+.firebase/*
 
