@@ -5,12 +5,21 @@ import React, {
   useEffect,
 } from "react";
 import { useData } from "@/parts/Memory";
+import { Eye, EyeOff } from "lucide-react";
 
 const Modal = forwardRef((_, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState({}); //expects {name: "petr", age: 18} - name, age are placeholders
   const [modalProps, setModalProps] = useState({});
+  const [isPasswordVisible, setIsPasswordVisible] = useState({});
   const { showKeyboard } = useData();
+
+  const togglePasswordVisibility = (index) => {
+    setIsPasswordVisible((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
 
   // Expose the openModal function via the ref
   useImperativeHandle(ref, () => ({
@@ -44,6 +53,7 @@ const Modal = forwardRef((_, ref) => {
       inputData = [""],
       inputPlaceholders = ["age"], //for order of inputs (input array can have different order of elements than in modal window)
       placeholders = ["Age"], //Visible placeholders
+      inputTypes = [],
     }) => {
       setModalProps({
         buttons: {
@@ -88,8 +98,10 @@ const Modal = forwardRef((_, ref) => {
         inputData,
         inputPlaceholders,
         placeholders,
+        inputTypes,
       });
       setInput(inputData);
+      setIsPasswordVisible({});
       setIsOpen(true);
     },
   }));
@@ -137,39 +149,63 @@ const Modal = forwardRef((_, ref) => {
               </div>
               {modalProps.input &&
                 Array.from({ length: modalProps.numberOfInputs }).map(
-                  (_, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-center gap-4 text-start"
-                    >
-                      <p className="w-32">{modalProps.placeholders[i]}</p>
-                      <input
-                        className="input w-[200px]"
-                        value={input[modalProps.inputPlaceholders[i]]}
-                        onFocus={(e) =>
-                          showKeyboard(e, (newValue) => {
-                            setInput((prev) => {
-                              const updated = { ...prev };
-                              console.log("new value ", newValue);
-                              console.log(modalProps.inputPlaceholders[i]);
-                              updated[modalProps.inputPlaceholders[i]] =
-                                newValue;
-                              console.log("updated ", updated);
-                              return updated;
-                            });
-                          })
-                        }
-                        onChange={(e) => {
-                          setInput((prev) => {
-                            const updated = { ...prev };
-                            updated[modalProps.inputPlaceholders[i]] =
-                              e.target.value;
-                            return updated;
-                          });
-                        }}
-                      />
-                    </div>
-                  )
+                  (_, i) => {
+                    const isPassword =
+                      modalProps.inputTypes?.[i] === "password" ||
+                      modalProps.inputPlaceholders?.[i]?.toLowerCase() === "password";
+                    const inputType = isPassword
+                      ? (isPasswordVisible[i] ? "text" : "password")
+                      : "text";
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-center justify-center gap-4 text-start"
+                      >
+                        <p className="w-32">{modalProps.placeholders[i]}</p>
+                        <div className="relative flex items-center">
+                          <input
+                            type={inputType}
+                            className={`input w-[200px] ${isPassword ? "pr-10" : ""}`}
+                            value={input[modalProps.inputPlaceholders[i]]}
+                            onFocus={(e) =>
+                              showKeyboard(e, (newValue) => {
+                                setInput((prev) => {
+                                  const updated = { ...prev };
+                                  console.log("new value ", newValue);
+                                  console.log(modalProps.inputPlaceholders[i]);
+                                  updated[modalProps.inputPlaceholders[i]] =
+                                    newValue;
+                                  console.log("updated ", updated);
+                                  return updated;
+                                });
+                              })
+                            }
+                            onChange={(e) => {
+                              setInput((prev) => {
+                                const updated = { ...prev };
+                                updated[modalProps.inputPlaceholders[i]] =
+                                  e.target.value;
+                                return updated;
+                              });
+                            }}
+                          />
+                          {isPassword && (
+                            <button
+                              type="button"
+                              onClick={() => togglePasswordVisibility(i)}
+                              className="absolute right-2 text-gray-500 hover:text-gray-700 focus:outline-none flex items-center justify-center"
+                            >
+                              {isPasswordVisible[i] ? (
+                                <EyeOff size={20} />
+                              ) : (
+                                <Eye size={20} />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
                 )}
 
               <div className="flex justify-center w-full items-center mt-6 gap-8">

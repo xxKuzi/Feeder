@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
+import { Eye, EyeOff } from "lucide-react";
 
 interface KeyboardOverlayProps {
   children?: React.ReactNode;
@@ -25,6 +26,8 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
     const [layoutName, setLayoutName] = useState("default");
     const [input, setInput] = useState("");
     const [isVisible, setIsVisible] = useState(false);
+    const [inputType, setInputType] = useState("text");
+    const [isPassword, setIsPassword] = useState(false);
     const stateSetterRef = useRef<React.Dispatch<
       React.SetStateAction<string>
     > | null>(null);
@@ -68,6 +71,9 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
         console.log("E bro ", e);
         console.log("set State ", setState);
         setInput(e ? e.target.value : "");
+        const isPass = !!(e && e.target && e.target.type === "password");
+        setIsPassword(isPass);
+        setInputType(isPass ? "password" : "text");
         setIsVisible(true);
         //for some reason - it needs time to load
         setTimeout(() => {
@@ -121,12 +127,28 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
             >
               Zavřít
             </button>
-            <input
-              autoFocus
-              className="mb-12 py-2 px-2 text-5xl border rounded"
-              value={input}
-              onChange={(e) => onChange(e.target.value)}
-            />
+            <div className="relative flex items-center mb-12 w-[600px] max-w-full">
+              <input
+                autoFocus
+                type={inputType}
+                className={`py-2 pl-2 text-5xl border rounded w-full ${isPassword ? "pr-16" : "pr-2"}`}
+                value={input}
+                onChange={(e) => onChange(e.target.value)}
+              />
+              {isPassword && (
+                <button
+                  type="button"
+                  onClick={() => setInputType((prev) => (prev === "password" ? "text" : "password"))}
+                  className="absolute right-4 text-gray-500 hover:text-gray-700 focus:outline-none flex items-center justify-center"
+                >
+                  {inputType === "password" ? (
+                    <Eye size={36} />
+                  ) : (
+                    <EyeOff size={36} />
+                  )}
+                </button>
+              )}
+            </div>
 
             <Keyboard
               keyboardRef={(r) => (keyboardRef.current = r)}
