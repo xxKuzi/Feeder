@@ -53,10 +53,10 @@ export default function Navbar() {
                   page === "/profiles" && "text-default_blue"
                 }`}
               />
-              <p className="text-xl">#{profile.number}</p>
+              <p className="text-xl">#{profile?.number ?? ""}</p>
             </div>
             <p className="text-2xl font-semibold max-w-[115px] text-wrap">
-              {profile.name}
+              {profile?.name ?? ""}
             </p>
             <div className="relative w-[100px]">
               <div

@@ -66,7 +66,7 @@ export default function Home() {
             <div className="flex items-center flex-col justify-center border-2 h-[84px] hover:border-gray-300 duration-300 border-sky-400 px-4 py-2 rounded-lg">
               <p className="">Aktuálně přihlášený uživatel:</p>
               <p className="text-3xl">
-                {profile.name} #{profile.number}
+                {profile?.name ?? ""} #{profile?.number ?? ""}
               </p>
             </div>
             <div className="flex items-center flex-col hover:border-gray-300 justify-center border-2 duration-300 border-sky-400 px-4 py-2 rounded-lg">

@@ -15,7 +15,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use sql::{
     connect_to_database, add_record, add_user, load_users, select_user, delete_user,
-    load_current_data, load_records, rename_user, add_mode, load_modes, delete_mode, update_mode, save_angle, save_last_calibration
+    load_current_data, load_records, rename_user, add_mode, load_modes, delete_mode, update_mode, save_angle, save_last_calibration, save_calibration_state
 };
 use electro::motor_system::{
     rotate_stepper_motor,
@@ -212,6 +212,7 @@ pub async fn run() {
         check_limit_switch,     
         save_angle,
         save_last_calibration,
+        save_calibration_state,
         init_instance,
         move_servo,
         move_feeder_servo,

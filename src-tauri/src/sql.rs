@@ -63,7 +63,8 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
         data_id         INTEGER PRIMARY KEY NOT NULL,
         user_id         INTEGER,
         angle           INTEGER DEFAULT 0,
-        last_calibration DATETIME DEFAULT (datetime('now', 'localtime'))    
+        last_calibration DATETIME DEFAULT (datetime('now', 'localtime')),   
+        calibration_state BOOL 
     );     
 
     CREATE TABLE IF NOT EXISTS modes
@@ -187,6 +188,19 @@ pub async fn save_last_calibration(date: String) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+pub async fn save_calibration_state(state: bool) -> Result<(), String> {  
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    sqlx::query("UPDATE data SET calibration_state = $1 WHERE data_id = 1")
+        .bind(state)
+        .execute(&*pool)
+        .await
+        .map(|_| ()) // Map success to Ok(())
+        .map_err(|e| e.to_string())
+}
+
 
 
 #[tauri::command]
@@ -237,6 +251,7 @@ pub struct SavedData {
     number: u32,
     angle: i32,
     last_calibration: String,
+    calibration_state: bool,
 }
 
 #[tauri::command]
@@ -250,7 +265,8 @@ pub async fn load_current_data() -> Result<Vec<SavedData>, String> {
         u.name AS name,       
         u.number AS number,
         d.angle AS angle,
-        d.last_calibration AS last_calibration
+        d.last_calibration AS last_calibration,
+        d.calibration_state AS calibration_state
     FROM users u 
     INNER JOIN data d ON u.user_id = d.user_id 
     WHERE d.data_id = 1

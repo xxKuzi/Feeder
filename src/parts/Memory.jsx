@@ -13,7 +13,8 @@ import Calibration from "./Calibration.jsx";
 import { useLocation, useNavigate } from "react-router-dom";
 import KeyboardOverlay from "../parts/Keyboard";
 
-const developerModePassword = import.meta.env.VITE_DEVELOPER_MODE_PASSWORD;
+const INITIAL_DEV_PASSWORD = import.meta.env.VITE_DEVELOPER_MODE_PASSWORD;
+const INITIAL_IS_LOCKED = import.meta.env.VITE_APP_LOCKED === "true";
 const ALWAYS_CALIBRATE = import.meta.env.VITE_ALWAYS_CALIBRATE !== undefined
   ? import.meta.env.VITE_ALWAYS_CALIBRATE === "true"
   : true;
@@ -26,6 +27,10 @@ export function Memory({ children }) {
   const pendingMotorTimeoutsRef = useRef(new Map());
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [dynamicDevPassword, setDynamicDevPassword] =
+    useState(INITIAL_DEV_PASSWORD);
+  const [isAppLocked, setIsAppLocked] = useState(INITIAL_IS_LOCKED);
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
   const [workoutData, setWorkoutData] = useState({
     modeId: 0,
@@ -44,7 +49,7 @@ export function Memory({ children }) {
   const [modes, setModes] = useState([{ name: "XYZ" }]);
   const [globalAngle, setGlobalAngle] = useState(90);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
-  const [calibrationState, setCalibrationState] = useState("false"); //false, running, end_place, true
+  const [calibrationState, setCalibrationState] = useState(false); // false (boolean), "running", "end_place", true (boolean)
   const [lastCalibration, setLastCalibration] = useState("0");
   const [globalServoState, setGlobalServoState] = useState(false);
   const [basketPoints, setBasketPoints] = useState(0);
@@ -68,7 +73,12 @@ export function Memory({ children }) {
     loadModes();
     initMotorInstance();
     startArduinoBridge();
+    saveCalibrationState(false);
   }, []);
+
+  useEffect(() => {
+    saveCalibrationState(calibrationState);
+  }, [calibrationState]);
 
   useEffect(() => {
     modesRef.current = modes;
@@ -292,6 +302,28 @@ export function Memory({ children }) {
         if (resolver?.resolve) {
           resolver.resolve(payload);
           clearPendingRequest(requestId);
+        } else if (
+          payload.message === "end_place" ||
+          payload.message === "end_place_left" ||
+          payload.message === "end_place_right"
+        ) {
+          // Mobile triggered calibration or direct backend calibration
+          setCalibrationState("end_place");
+          setTimeout(async () => {
+            const centerMoveDegrees = payload.message === "end_place_right" ? -90 : 90;
+            const defaultPosition = await rotateStepperMotor(
+              centerMoveDegrees,
+              false,
+              {
+                waitForCompletion: true,
+              },
+            );
+            if (defaultPosition && !defaultPosition.startsWith("Aborted:")) {
+              setCalibrationState("true");
+              saveLastCalibration();
+            }
+            setGlobalAngle(90);
+          }, 1000);
         }
       });
 
@@ -311,9 +343,26 @@ export function Memory({ children }) {
       });
     };
 
+    let unlistenLocked, unlistenDevChanged;
+    const bindRemoteDevListeners = async () => {
+      unlistenLocked = await listen("remote-feeder-locked", (event) => {
+        setIsAppLocked(event.payload.locked);
+        if (event.payload.locked) {
+          navigate("/");
+          setDeveloperMode(false);
+        }
+      });
+      unlistenDevChanged = await listen("feeder-dev-password-changed", () => {
+        window.location.reload(); // naive reload to re-read `.env` if Vite supports it, or just let users know
+      });
+    };
+
     bindMotorListeners();
+    bindRemoteDevListeners();
 
     return () => {
+      if (unlistenLocked) unlistenLocked();
+      if (unlistenDevChanged) unlistenDevChanged();
       if (unlistenStarted) {
         unlistenStarted();
       }
@@ -336,9 +385,9 @@ export function Memory({ children }) {
   }, []);
 
   useEffect(() => {
-    if (users[0].name !== "XYZ") {
-      const userData = users.find((user) => user.userId === profile.userId);
-      updateProfile(userData);
+    if (users && users.length > 0 && users[0].name !== "XYZ") {
+      const userData = users.find((user) => user.userId === profile?.userId);
+      if (userData) updateProfile(userData);
     }
   }, [users]);
 
@@ -375,15 +424,17 @@ export function Memory({ children }) {
   };
 
   const loadCurrentData = async () => {
-    let userDataRust = (await invoke("load_current_data"))[0]; //because it returns an object in an array
+    const loaded = await invoke("load_current_data");
+    const userDataRust =
+      Array.isArray(loaded) && loaded.length > 0 ? loaded[0] : null; //because it returns an object in an array
 
-    //Load user data
-    const userData = {
-      userId: userDataRust.user_id,
-      name: userDataRust.name,
-      number: userDataRust.number,
-    };
-    if (userData) {
+    //Load user data if available
+    if (userDataRust) {
+      const userData = {
+        userId: userDataRust.user_id,
+        name: userDataRust.name,
+        number: userDataRust.number,
+      };
       updateProfile(userData);
     }
 
@@ -396,16 +447,42 @@ export function Memory({ children }) {
       return now - lastCalibration.getTime() > oneWeekInMs;
     };
 
-    //Calibration only REQUIRED if angle is 666 or if it is older than 7 days
-    const needsCalibration = userDataRust.angle === 666 || isOld();
     
-    if (ALWAYS_CALIBRATE) {
-      openCalibration();
-    } else {/*
+    
+
+    
+    
+
+    // We only force ALWAYS_CALIBRATE if the session calibration has not run yet
+    const forceCalibrate =
+      ALWAYS_CALIBRATE &&
+      calibrationState !== "true" &&
+      calibrationState !== "running" &&
+      calibrationState !== "end_place";
+
+    if (forceCalibrate) {
+      setCalibrationState("false");
+      saveCalibrationState(false);
+      invoke("tcp_send_event", {
+        event: "needs_calibration",
+        payload: { needsCalibration: true },
+      }).catch(() => {});
+
+      if (forceCalibrate) {
+        openCalibration();
+      }
+    } else {
+      setCalibrationState("true");
+      saveCalibrationState(true);
+      invoke("tcp_send_event", {
+        event: "needs_calibration",
+        payload: { needsCalibration: false },
+      }).catch(() => {});
+      
+      // Restore states if calibrated
       setGlobalAngle(userDataRust.angle);
-      setCalibrationState(true);
       toggleServo(true);
-      updateLastCalibration(userDataRust.last_calibration);*/
+      updateLastCalibration(userDataRust.last_calibration);
     }
   };
 
@@ -452,7 +529,7 @@ export function Memory({ children }) {
           category,
           made,
           taken,
-          user_id: profile.userId,
+          user_id: profile?.userId ?? null,
         },
       });
       console.log("Record added successfully");
@@ -692,7 +769,7 @@ export function Memory({ children }) {
       },
       confirmHandle: (data) => {
         console.log("data", data);
-        if (developerModePassword && data.password === developerModePassword) {
+        if (dynamicDevPassword && data.password === dynamicDevPassword) {
           setDeveloperMode(true);
         } else {
           navigate("/");
@@ -797,10 +874,25 @@ export function Memory({ children }) {
       await invoke("save_last_calibration", {
         date: new Date().toISOString(),
       });
+      await saveAngle(90);
     } catch (error) {
       console.error("Failed to set last calibration:", error);
     }
     loadCurrentData();
+  };
+
+  const saveCalibrationState = async (state) => {
+    console.log("saving calibration state");
+    try {
+      // The Rust command expects a boolean. Map the possible JS states
+      // to a boolean: only explicit true (boolean or string) means calibrated.
+      const boolState = state === true || state === "true";
+      await invoke("save_calibration_state", {
+        state: boolState,
+      });
+    } catch (error) {
+      console.error("Failed to set calibration state: ", error);
+    }
   };
 
   // Initialize servos to closed state on app load
@@ -862,9 +954,11 @@ export function Memory({ children }) {
     manualMemory,
     setManualMemory,
     singOutDeveloperMode,
+    saveCalibrationState,
     saveAngle,
     openCalibration,
     lastCalibration,
+    isAppLocked,
   };
 
   return (

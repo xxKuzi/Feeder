@@ -18,6 +18,8 @@ export default function Testing() {
     developerMode,
     unlockDeveloperMode,
     singOutDeveloperMode,
+    saveCalibrationState,
+    saveLastCalibration,
     setGlobalAngle,
     openCalibration,
     basketPoints,
@@ -37,6 +39,13 @@ export default function Testing() {
   return (
     <div className="relative flex flex-col items-center justify-center">
       <h1 className="headline mt-8">Testing</h1>
+
+      <button onClick={() => saveCalibrationState(false)}>
+        calibration false
+      </button>
+      <button onClick={() => saveCalibrationState(true)}>
+        calibration true
+      </button>
 
       <button
         onClick={() => {

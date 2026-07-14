@@ -44,7 +44,7 @@ const CalibrationModal = forwardRef((_, ref) => {
               <h2 className="text-4xl font-bold text-gray-800 mb-16">
                 Kalibrace
               </h2>
-              {calibrationState === "false" && (
+              {(calibrationState === "false" || calibrationState === false) && (
                 <p className="text-gray-600 mb-32">
                   Odstupte od zařízení a zahajte kalibraci stisknutím tlačítka
                   "Začít".
@@ -58,7 +58,7 @@ const CalibrationModal = forwardRef((_, ref) => {
                   Vracení do základní polohy.
                 </p>
               )}
-              {calibrationState === "true" && (
+              {(calibrationState === "true" || calibrationState === true) && (
                 <h1 className="text-4xl text-green-400 mb-32">
                   Kalibrace dokončena!
                 </h1>
@@ -67,14 +67,14 @@ const CalibrationModal = forwardRef((_, ref) => {
               <div className="flex justify-center">
                 <button
                   onClick={() =>
-                    calibrationState === "true"
+                    calibrationState === "true" || calibrationState === true
                       ? closeModal()
-                      : calibrationState === "false"
+                      : calibrationState === "false" || calibrationState === false
                       ? calibrate()
                       : null
                   }
                   className={`button text-white duration-300 ${
-                    calibrationState === "true"
+                    calibrationState === "true" || calibrationState === true
                       ? "bg-blue-500"
                       : calibrationState === "end_place"
                       ? "bg-yellow-300"
@@ -83,13 +83,13 @@ const CalibrationModal = forwardRef((_, ref) => {
                       : "bg-black"
                   }`}
                 >
-                  {calibrationState === "true"
+                  {calibrationState === "true" || calibrationState === true
                     ? "Zavřít"
                     : calibrationState === "end_place"
                     ? "Konec nalezen"
                     : calibrationState === "running"
                     ? "Kalibrování➡️"
-                    : "Kalibraci vyžádána❗"}
+                    : "Začít"}
                 </button>
 
                 {calibrationState === "true" && (
