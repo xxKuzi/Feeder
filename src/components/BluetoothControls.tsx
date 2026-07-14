@@ -6,10 +6,14 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 const WORKOUT_STATE_PAUSE = 0;
 const WORKOUT_STATE_RUNNING = 1;
 const WORKOUT_STATE_BREAK = 2;
+const WORKOUT_STATE_STARTING = 3;
 
 function stateCodeToLabel(stateCode: number): string {
   if (stateCode === WORKOUT_STATE_RUNNING) {
     return "running";
+  }
+  if (stateCode === WORKOUT_STATE_STARTING) {
+    return "starting";
   }
   if (stateCode === WORKOUT_STATE_PAUSE) {
     return "pause";

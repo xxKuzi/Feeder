@@ -423,7 +423,7 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             ACTIVE_MODE_ID.store(0, Ordering::Relaxed);
 
             tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(
-                bluetooth::WORKOUT_STATE_RUNNING,
+                bluetooth::WORKOUT_STATE_STARTING,
             ))?;
 
             let mode_data = json!({
@@ -474,7 +474,7 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
                 ACTIVE_MODE_ID.load(Ordering::Relaxed)
             };
             tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(
-                bluetooth::WORKOUT_STATE_RUNNING,
+                bluetooth::WORKOUT_STATE_STARTING,
             ))?;
             let _ = app.emit("active-mode-changed", json!({ "mode_id": active_mode_id }));
             let _ = app.emit(

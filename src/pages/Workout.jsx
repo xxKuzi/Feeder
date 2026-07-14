@@ -11,6 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 const WORKOUT_STATE_PAUSE = 0;
 const WORKOUT_STATE_RUNNING = 1;
 const WORKOUT_STATE_BREAK = 2;
+const WORKOUT_STATE_STARTING = 3;
 const MOTOR_DEGREES_PER_SECOND = 15;
 
 export default function Workout() {
@@ -139,6 +140,14 @@ export default function Workout() {
     }
   };
 
+  const setStartingWorkout = async () => {
+    try {
+      await invoke("set_starting_workout");
+    } catch (err) {
+      console.error("Error setting starting workout state:", err);
+    }
+  };
+
   const exitWorkout = async () => {
     try {
       await invoke("exit_workout");
@@ -168,19 +177,19 @@ export default function Workout() {
       }
       const code = Number(event.payload);
       console.log("here-1");
-      if (code === WORKOUT_STATE_RUNNING) {
+      if (code === WORKOUT_STATE_RUNNING || code === WORKOUT_STATE_STARTING) {
         if (isRunningRef.current === false) {
           //RESUME
           setIsOpen(false);
           pauseCountdownRef.current.startCountdown(2);
         }
-        // Ensure both servos are closed when workout is running
+        // Ensure both servos are closed when workout is running or starting
         try {
           await toggleFeederServo(false);
           await toggleServo(false);
         } catch (err) {
           console.error(
-            "Failed to ensure servos closed on RUNNING state:",
+            "Failed to ensure servos closed on RUNNING/STARTING state:",
             err,
           );
         }
@@ -227,7 +236,6 @@ export default function Workout() {
     setIsOpen(false);
     setNewWorkout(false);
     setRefresh((prev) => !prev);
-    exitWorkout(); //BLUETOOTH
     setTime(0);
     setReset(true); //changes angle and motorSpeed to first value in array
     const firstShotAngle = Number(workoutData.angles?.[0] ?? globalAngle ?? 90);
@@ -262,7 +270,7 @@ export default function Workout() {
     await toggleFeederServo(false);
     await toggleServo(false);
 
-    startWorkout(); //BLUETOOTH
+    await setStartingWorkout(); //BLUETOOTH
     const anglesCount = Math.max(0, workoutData.angles.length);
     const repetitionCount = Math.max(0, workoutData.repetition);
 
@@ -395,6 +403,7 @@ export default function Workout() {
           }}
           handleResume={() => {
             setIsOpen(false);
+            setStartingWorkout();
             pauseCountdownRef.current.startCountdown(2);
           }}
           handleReset={() => {

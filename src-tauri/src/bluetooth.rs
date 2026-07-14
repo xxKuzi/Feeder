@@ -28,6 +28,7 @@ use ble_peripheral_rust::{
 pub const WORKOUT_STATE_PAUSE: i32 = 0;
 pub const WORKOUT_STATE_RUNNING: i32 = 1;
 pub const WORKOUT_STATE_BREAK: i32 = 2;
+pub const WORKOUT_STATE_STARTING: i32 = 3;
 
 /// Global workout state represented as integer codes.
 pub static STATE: AtomicI32 = AtomicI32::new(WORKOUT_STATE_RUNNING);
@@ -44,11 +45,11 @@ static REMOTE_APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
 
 async fn set_workout_state_internal(state_code: i32, source: &str) -> Result<(), String> {
     let normalized = match state_code {
-        WORKOUT_STATE_RUNNING | WORKOUT_STATE_PAUSE | WORKOUT_STATE_BREAK => state_code,
+        WORKOUT_STATE_RUNNING | WORKOUT_STATE_PAUSE | WORKOUT_STATE_BREAK | WORKOUT_STATE_STARTING => state_code,
         _ => WORKOUT_STATE_PAUSE,
     };
     STATE.store(normalized, Ordering::SeqCst);
-    let ble_value = if normalized == WORKOUT_STATE_RUNNING { "on" } else { "off" };
+    let ble_value = if normalized == WORKOUT_STATE_RUNNING || normalized == WORKOUT_STATE_STARTING { "on" } else { "off" };
 
     // Try to update BLE characteristic if available
     if let Some(app_state) = BLE_APP_STATE.get() {
@@ -314,4 +315,12 @@ pub async fn exit_workout(app_state: tauri::State<'_, AppState>) -> Result<(), S
 pub async fn get_workout_state() -> i32 {
     println!("get_workout_state");
     STATE.load(Ordering::SeqCst)
+}
+
+/// Tauri command to set the starting state.
+#[tauri::command]
+pub async fn set_starting_workout() -> Result<(), String> {
+    set_workout_state_internal(WORKOUT_STATE_STARTING, "tauri_command").await?;
+    info!("Workout set to starting state");
+    Ok(())
 }

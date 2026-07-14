@@ -8,7 +8,7 @@ use log::{info, warn};
 
 use limit_switch::platform::watch_limit_switch;
 
-use bluetooth::{exit_workout, get_workout_state, init_ble, pause_workout, start_workout};
+use bluetooth::{exit_workout, get_workout_state, init_ble, pause_workout, start_workout, set_starting_workout};
 use tcp::{start_tcp_server, tcp_send_event};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
@@ -207,6 +207,7 @@ pub async fn run() {
         pause_workout,        
         exit_workout,
         get_workout_state,
+        set_starting_workout,
         rotate_stepper_motor,
         calibrate_stepper_motor,
         check_limit_switch,     
