@@ -14,6 +14,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import KeyboardOverlay from "../parts/Keyboard";
 
 const developerModePassword = import.meta.env.VITE_DEVELOPER_MODE_PASSWORD;
+const ALWAYS_CALIBRATE = import.meta.env.VITE_ALWAYS_CALIBRATE !== undefined
+  ? import.meta.env.VITE_ALWAYS_CALIBRATE === "true"
+  : true;
 
 export function Memory({ children }) {
   const modalRef = useRef();
@@ -395,15 +398,14 @@ export function Memory({ children }) {
 
     //Calibration only REQUIRED if angle is 666 or if it is older than 7 days
     const needsCalibration = userDataRust.angle === 666 || isOld();
-    //ALWAYS TRUE WE DO NOT KNOW IF SOMEONE DID NOT MOVE IT
-    if (true) {
+    
+    if (ALWAYS_CALIBRATE) {
       openCalibration();
-    } else {
-      //NEVER HAPPENS NOW
-      // setGlobalAngle(userDataRust.angle);
-      // setCalibrationState("true");
-      // toggleServo(true);
-      // updateLastCalibration(userDataRust.last_calibration);
+    } else {/*
+      setGlobalAngle(userDataRust.angle);
+      setCalibrationState(true);
+      toggleServo(true);
+      updateLastCalibration(userDataRust.last_calibration);*/
     }
   };
 
