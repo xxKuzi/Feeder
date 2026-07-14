@@ -776,10 +776,11 @@ pub mod motor_system {
                     let pressed_right = pos >= 5000;
                     let pressed_left = pos <= -5000;
 
-                    if (pressed_right || pressed_left) && safety {
+                    //NOT WORKING - DISABLED
+                    /*if (pressed_right || pressed_left) && safety {
                         println!("⚠️ Emulator Limit switch triggered – stopping rotation (Pos: {})", pos);
                         return Ok("Stopped early due to limit switch being triggered".to_string());
-                    }
+                    }*/ 
 
                     EMULATOR_POSITION.fetch_add(step_dir, Ordering::SeqCst);
 
