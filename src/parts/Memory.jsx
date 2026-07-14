@@ -108,6 +108,7 @@ export function Memory({ children }) {
     let unlistenActiveModeChanged = null;
     let unlistenRemoteExit = null;
     let unlistenRemoteManualMove = null;
+    let unlistenRemoteStartCalibration = null;
 
     const resolveModeById = (modeId) => {
       if (!modeId) {
@@ -202,6 +203,14 @@ export function Memory({ children }) {
           });
         },
       );
+
+      unlistenRemoteStartCalibration = await listen(
+        "remote-start-calibration",
+        () => {
+          openCalibration();
+          calibrate();
+        },
+      );
     };
 
     bindRemoteListeners();
@@ -218,6 +227,9 @@ export function Memory({ children }) {
       }
       if (unlistenRemoteManualMove) {
         unlistenRemoteManualMove();
+      }
+      if (unlistenRemoteStartCalibration) {
+        unlistenRemoteStartCalibration();
       }
     };
   }, [navigate, location.pathname]);

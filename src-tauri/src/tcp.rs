@@ -355,8 +355,8 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
         }
         "calibrate_stepper_motor" => {
             let _ = requires_auth(role)?;
-            let response = electro::motor_system::calibrate_stepper_motor(app.clone())?;
-            Ok(response)
+            let _ = app.emit("remote-start-calibration", serde_json::json!({}));
+            Ok(json!({ "ok": true }))
         }
         "manual_move_position" => {
             let _ = requires_auth(role)?;

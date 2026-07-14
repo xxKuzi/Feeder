@@ -31,7 +31,7 @@ pub const WORKOUT_STATE_BREAK: i32 = 2;
 pub const WORKOUT_STATE_STARTING: i32 = 3;
 
 /// Global workout state represented as integer codes.
-pub static STATE: AtomicI32 = AtomicI32::new(WORKOUT_STATE_RUNNING);
+pub static STATE: AtomicI32 = AtomicI32::new(WORKOUT_STATE_BREAK);
 
 /// Shared app state that holds the BLE peripheral and characteristic UUID.
 #[derive(Clone)]
