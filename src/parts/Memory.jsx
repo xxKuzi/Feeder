@@ -81,6 +81,12 @@ export function Memory({ children }) {
   }, [calibrationState]);
 
   useEffect(() => {
+    if (isAppLocked) {
+      calibrationRef.current?.closeModal();
+    }
+  }, [isAppLocked]);
+
+  useEffect(() => {
     modesRef.current = modes;
   }, [modes]);
 
@@ -295,7 +301,9 @@ export function Memory({ children }) {
           //}
 
           setCalibrationState("false");
-          openCalibration();
+          if (!isAppLocked) {
+            openCalibration();
+          }
         }
 
         const resolver = pendingMotorRequestsRef.current.get(requestId);
@@ -473,7 +481,7 @@ export function Memory({ children }) {
         payload: { needsCalibration: true },
       }).catch(() => {});
 
-      if (forceCalibrate) {
+      if (forceCalibrate && !isAppLocked) {
         openCalibration();
       }
     } else {

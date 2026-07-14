@@ -340,7 +340,18 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
         "load_current_data" => {
             let _ = requires_auth(role)?;
             let current_data = tauri::async_runtime::block_on(sql::load_current_data())?;
-            Ok(json!({ "currentData": current_data }))
+            
+            // Read lock state from env file
+            let feeder_env = resolve_feeder_env_path();
+            let is_locked = if feeder_env.exists() {
+                let content = fs::read_to_string(&feeder_env).unwrap_or_default();
+                let map = parse_env(&content);
+                map.get("VITE_APP_LOCKED").map(|v| v == "true").unwrap_or(false)
+            } else {
+                false
+            };
+
+            Ok(json!({ "currentData": current_data, "isLocked": is_locked }))
         }
         "calibrate_stepper_motor" => {
             let _ = requires_auth(role)?;
@@ -600,6 +611,7 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
                 return Err(format!("Failed to update feeder .env: {}", e));
             }
             let _ = app.emit("remote-feeder-locked", json!({ "locked": true }));
+            let _ = send_event("remote-feeder-locked", json!({ "locked": true }));
             Ok(json!({ "ok": true }))
         }
         "unlock_feeder" => {
@@ -608,6 +620,7 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
                 return Err(format!("Failed to update feeder .env: {}", e));
             }
             let _ = app.emit("remote-feeder-locked", json!({ "locked": false }));
+            let _ = send_event("remote-feeder-locked", json!({ "locked": false }));
             Ok(json!({ "ok": true }))
         }
         "list_profiles" => {
