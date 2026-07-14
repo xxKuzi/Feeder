@@ -321,6 +321,11 @@ export function Memory({ children }) {
             if (defaultPosition && !defaultPosition.startsWith("Aborted:")) {
               setCalibrationState("true");
               saveLastCalibration();
+              
+              // Automatically close calibration window for remote calibration after 2 seconds
+              setTimeout(() => {
+                calibrationRef.current?.closeModal();
+              }, 2000);
             }
             setGlobalAngle(90);
           }, 1000);
