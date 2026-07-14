@@ -37,13 +37,23 @@ fn update_env_file(path: &std::path::Path, key: &str, value: &str) -> std::io::R
 
 fn resolve_feeder_env_path() -> PathBuf {
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    if cwd.join(".env").exists() {
-        cwd.join(".env")
-    } else if cwd.parent().map(|p| p.join(".env").exists()).unwrap_or(false) {
-        cwd.parent().unwrap().join(".env")
-    } else {
-        PathBuf::from(".env")
+    let exe_candidate = std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|dir| dir.join(".env")));
+    let cwd_candidate = cwd.join(".env");
+    let parent_candidate = cwd.parent().map(|p| p.join(".env"));
+
+    for candidate in [&exe_candidate, &Some(cwd_candidate), &parent_candidate] {
+        if let Some(path) = candidate.as_ref() {
+            if path.exists() {
+                return path.clone();
+            }
+        }
     }
+
+    exe_candidate
+        .or_else(|| Some(cwd.join(".env")))
+        .unwrap_or_else(|| PathBuf::from(".env"))
 }
 
 const DEFAULT_TCP_BIND_ADDRESS: &str = "0.0.0.0:7878";
