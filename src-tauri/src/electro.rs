@@ -715,98 +715,306 @@ impl Controller {
 
 #[cfg(not(target_os = "linux"))]
 pub mod motor_system {
-    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::sync::atomic::{AtomicI32, AtomicU32, AtomicU64, Ordering};
+    use std::sync::{mpsc, Mutex};
+    use once_cell::sync::Lazy;
     use tauri::{AppHandle, Emitter};
 
-    static STUB_JOB_COUNTER: AtomicU64 = AtomicU64::new(1);
-    #[tauri::command]
-    pub fn init_instance() -> Result<String, String> {
-        Err("You can not init instance supported on this platform".to_string())
+    // Emulator state tracking
+    static EMULATOR_POSITION: AtomicI32 = AtomicI32::new(1000); // Start off-center so calibration runs
+    static MOTOR_QUEUE_LENGTH: AtomicU32 = AtomicU32::new(0);
+    static MOTOR_JOB_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+    static MOTOR_JOB_SENDER: Lazy<Mutex<Option<mpsc::Sender<MotorJob>>>> = Lazy::new(|| Mutex::new(None));
+
+    #[derive(Clone, Copy)]
+    enum MotorJobKind {
+        Rotate { times: i32, safety: bool },
+        Calibrate,
     }
 
-    #[tauri::command]
-    pub fn check_limit_switch() -> Result<String, String> {
-        Err("Checking limit switch state is not supported on this platform".to_string())
+    impl MotorJobKind {
+        fn as_str(self) -> &'static str {
+            match self {
+                MotorJobKind::Rotate { .. } => "rotate",
+                MotorJobKind::Calibrate => "calibrate",
+            }
+        }
     }
 
-    #[tauri::command]
-    pub fn rotate_stepper_motor(app: AppHandle, _times: i32, _safety: bool) -> Result<serde_json::Value, String> {
-        let request_id = STUB_JOB_COUNTER.fetch_add(1, Ordering::Relaxed);
+    #[derive(Clone, Copy)]
+    struct MotorJob {
+        request_id: u64,
+        kind: MotorJobKind,
+    }
 
-        app.emit(
-            "motor_move_started",
-            serde_json::json!({
-                "requestId": request_id,
-                "jobType": "rotate"
-            }),
-        )
-        .map_err(|e| e.to_string())?;
+    fn emit_motor_event(app: &AppHandle, event: &str, payload: serde_json::Value) {
+        let _ = crate::tcp::send_event(event, payload.clone());
+        if let Err(e) = app.emit(event, payload) {
+            println!("Failed to emit {event}: {e}");
+        }
+    }
 
-        app.emit(
-            "motor_move_completed",
-            serde_json::json!({
-                "requestId": request_id,
-                "jobType": "rotate",
-                "message": "Rotated stepper motor 4800 steps (safety: false)"
-            }),
-        )
-        .map_err(|e| e.to_string())?;
-
-        app.emit(
+    fn emit_motor_queue_length(app: &AppHandle) {
+        emit_motor_event(
+            app,
             "motor_queue_length",
             serde_json::json!({
-                "queueLength": 0
+                "queueLength": MOTOR_QUEUE_LENGTH.load(Ordering::SeqCst)
             }),
-        )
-        .map_err(|e| e.to_string())?;
+        );
+    }
+
+    fn run_motor_job(job: MotorJob) -> Result<String, String> {
+        match job.kind {
+            MotorJobKind::Rotate { times, safety } => {
+                println!("Emulator: Rotating stepper motor for {} steps (safety: {})", times, safety);
+                let steps = times.abs();
+                let step_dir = if times >= 0 { 1 } else { -1 };
+
+                for i in 0..steps {
+                    let pos = EMULATOR_POSITION.load(Ordering::SeqCst);
+                    let pressed_right = pos >= 5000;
+                    let pressed_left = pos <= -5000;
+
+                    if (pressed_right || pressed_left) && safety {
+                        println!("⚠️ Emulator Limit switch triggered – stopping rotation (Pos: {})", pos);
+                        return Ok("Stopped early due to limit switch being triggered".to_string());
+                    }
+
+                    EMULATOR_POSITION.fetch_add(step_dir, Ordering::SeqCst);
+
+                    // Sleep occasionally to simulate motor movement time
+                    if i % 100 == 0 {
+                        std::thread::sleep(std::time::Duration::from_millis(5));
+                    }
+                }
+
+                Ok(format!("Rotated stepper motor {} steps (safety: {})", times, safety))
+            }
+            MotorJobKind::Calibrate => {
+                println!("Emulator: Starting calibration...");
+
+                let pos = EMULATOR_POSITION.load(Ordering::SeqCst);
+                let pressed_right = pos >= 5000;
+                let pressed_left = pos <= -5000;
+
+                if pressed_right && pressed_left {
+                    return Err("Calibration failed: both limit switches are pressed.".to_string());
+                }
+
+                let end_place: &str;
+
+                if pressed_right {
+                    println!("Right limit switch is pressed. Moving left to release it...");
+                    let mut steps = 0;
+                    while EMULATOR_POSITION.load(Ordering::SeqCst) >= 5000 && steps < 25000 {
+                        EMULATOR_POSITION.fetch_sub(1, Ordering::SeqCst);
+                        steps += 1;
+                        if steps % 100 == 0 {
+                            std::thread::sleep(std::time::Duration::from_millis(5));
+                        }
+                    }
+
+                    if EMULATOR_POSITION.load(Ordering::SeqCst) >= 5000 {
+                        return Err("Calibration failed: right limit switch stayed pressed while moving left.".to_string());
+                    }
+
+                    println!("Searching for left limit switch...");
+                    let mut steps_to_home = 0;
+                    while EMULATOR_POSITION.load(Ordering::SeqCst) > -5000 && steps_to_home < 60000 {
+                        EMULATOR_POSITION.fetch_sub(1, Ordering::SeqCst);
+                        steps_to_home += 1;
+                        if steps_to_home % 100 == 0 {
+                            std::thread::sleep(std::time::Duration::from_millis(5));
+                        }
+                    }
+
+                    if EMULATOR_POSITION.load(Ordering::SeqCst) > -5000 {
+                        return Err("Calibration failed: left limit switch not reached within expected travel.".to_string());
+                    }
+
+                    end_place = "left";
+                } else if pressed_left {
+                    println!("Left limit switch is pressed. Moving right to release it...");
+                    let mut steps = 0;
+                    while EMULATOR_POSITION.load(Ordering::SeqCst) <= -5000 && steps < 25000 {
+                        EMULATOR_POSITION.fetch_add(1, Ordering::SeqCst);
+                        steps += 1;
+                        if steps % 100 == 0 {
+                            std::thread::sleep(std::time::Duration::from_millis(5));
+                        }
+                    }
+
+                    if EMULATOR_POSITION.load(Ordering::SeqCst) <= -5000 {
+                        return Err("Calibration failed: left limit switch stayed pressed while moving right.".to_string());
+                    }
+
+                    println!("Searching for right limit switch...");
+                    let mut steps_to_home = 0;
+                    while EMULATOR_POSITION.load(Ordering::SeqCst) < 5000 && steps_to_home < 60000 {
+                        EMULATOR_POSITION.fetch_add(1, Ordering::SeqCst);
+                        steps_to_home += 1;
+                        if steps_to_home % 100 == 0 {
+                            std::thread::sleep(std::time::Duration::from_millis(5));
+                        }
+                    }
+
+                    if EMULATOR_POSITION.load(Ordering::SeqCst) < 5000 {
+                        return Err("Calibration failed: right limit switch not reached within expected travel.".to_string());
+                    }
+
+                    end_place = "right";
+                } else {
+                    println!("No limit switch pressed. Moving left to find a limit switch...");
+                    let mut steps = 0;
+                    while EMULATOR_POSITION.load(Ordering::SeqCst) > -5000 && EMULATOR_POSITION.load(Ordering::SeqCst) < 5000 && steps < 60000 {
+                        EMULATOR_POSITION.fetch_sub(1, Ordering::SeqCst);
+                        steps += 1;
+                        if steps % 100 == 0 {
+                            std::thread::sleep(std::time::Duration::from_millis(5));
+                        }
+                    }
+
+                    let final_pos = EMULATOR_POSITION.load(Ordering::SeqCst);
+                    if final_pos > -5000 && final_pos < 5000 {
+                        return Err("Calibration failed: no limit switch reached within expected travel.".to_string());
+                    }
+
+                    if final_pos <= -5000 {
+                        end_place = "left";
+                    } else {
+                        end_place = "right";
+                    }
+                }
+
+                println!("Emulator calibration complete: end place is {}.", end_place);
+                Ok(format!("end_place_{}", end_place))
+            }
+        }
+    }
+
+    fn ensure_motor_worker(app: &AppHandle) {
+        let mut sender_guard = MOTOR_JOB_SENDER.lock().unwrap();
+        if sender_guard.is_some() {
+            return;
+        }
+
+        let (tx, rx) = std::sync::mpsc::channel::<MotorJob>();
+        let worker_app = app.clone();
+
+        std::thread::spawn(move || {
+            for job in rx {
+                emit_motor_event(
+                    &worker_app,
+                    "motor_move_started",
+                    serde_json::json!({
+                        "requestId": job.request_id,
+                        "jobType": job.kind.as_str()
+                    }),
+                );
+
+                match run_motor_job(job) {
+                    Ok(message) => {
+                        emit_motor_event(
+                            &worker_app,
+                            "motor_move_completed",
+                            serde_json::json!({
+                                "requestId": job.request_id,
+                                "jobType": job.kind.as_str(),
+                                "message": message
+                            }),
+                        );
+                    }
+                    Err(error) => {
+                        emit_motor_event(
+                            &worker_app,
+                            "motor_move_failed",
+                            serde_json::json!({
+                                "requestId": job.request_id,
+                                "jobType": job.kind.as_str(),
+                                "error": error
+                            }),
+                        );
+                    }
+                }
+
+                MOTOR_QUEUE_LENGTH.fetch_sub(1, Ordering::SeqCst);
+                emit_motor_queue_length(&worker_app);
+            }
+        });
+
+        *sender_guard = Some(tx);
+    }
+
+    fn enqueue_motor_job(app: &AppHandle, kind: MotorJobKind) -> Result<(u64, u32), String> {
+        ensure_motor_worker(app);
+
+        let sender = {
+            let sender_guard = MOTOR_JOB_SENDER.lock().unwrap();
+            sender_guard
+                .as_ref()
+                .cloned()
+                .ok_or_else(|| "Motor worker is unavailable".to_string())?
+        };
+
+        let request_id = MOTOR_JOB_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let queue_length = MOTOR_QUEUE_LENGTH.fetch_add(1, Ordering::SeqCst) + 1;
+
+        let job = MotorJob { request_id, kind };
+        if let Err(e) = sender.send(job) {
+            MOTOR_QUEUE_LENGTH.fetch_sub(1, Ordering::SeqCst);
+            return Err(format!("Failed to queue motor job: {e}"));
+        }
+
+        emit_motor_queue_length(app);
+        Ok((request_id, queue_length))
+    }
+
+    #[tauri::command]
+    pub fn init_instance() -> Result<String, String> {
+        Ok("Emulator auto-initialized or already initialized".to_string())
+    }
+
+    #[tauri::command]
+    pub fn check_limit_switch() {
+        std::thread::spawn(|| {
+            for _ in 0..10 {
+                let pos = EMULATOR_POSITION.load(Ordering::SeqCst);
+                let pressed_right = pos >= 5000;
+                let pressed_left = pos <= -5000;
+                let status = if pressed_right || pressed_left {
+                    format!("PRESSED (Right: {}, Left: {})", pressed_right, pressed_left)
+                } else {
+                    "NOT PRESSED".to_string()
+                };
+                println!("Limit switch state (emulator): {}", status);
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+        });
+    }
+
+    #[tauri::command]
+    pub fn rotate_stepper_motor(app: AppHandle, times: i32, safety: bool) -> Result<serde_json::Value, String> {
+        let (request_id, queue_length) = enqueue_motor_job(&app, MotorJobKind::Rotate { times, safety })?;
 
         Ok(serde_json::json!({
             "status": "queued",
             "requestId": request_id,
-            "queueLength": 0,
+            "queueLength": queue_length,
             "jobType": "rotate"
         }))
-        // Err("Stepper motor control not supported on this platform".to_string())
     }
 
     #[tauri::command]
     pub fn calibrate_stepper_motor(app: AppHandle) -> Result<serde_json::Value, String> {
-        let request_id = STUB_JOB_COUNTER.fetch_add(1, Ordering::Relaxed);
-
-        app.emit(
-            "motor_move_started",
-            serde_json::json!({
-                "requestId": request_id,
-                "jobType": "calibrate"
-            }),
-        )
-        .map_err(|e| e.to_string())?;
-
-        app.emit(
-            "motor_move_completed",
-            serde_json::json!({
-                "requestId": request_id,
-                "jobType": "calibrate",
-                "message": "end_place"
-            }),
-        )
-        .map_err(|e| e.to_string())?;
-
-        app.emit(
-            "motor_queue_length",
-            serde_json::json!({
-                "queueLength": 0
-            }),
-        )
-        .map_err(|e| e.to_string())?;
+        let (request_id, queue_length) = enqueue_motor_job(&app, MotorJobKind::Calibrate)?;
 
         Ok(serde_json::json!({
             "status": "queued",
             "requestId": request_id,
-            "queueLength": 0,
+            "queueLength": queue_length,
             "jobType": "calibrate"
         }))
-        //Err("Calibration not supported on this platform".to_string())
     }
 
     #[tauri::command]
