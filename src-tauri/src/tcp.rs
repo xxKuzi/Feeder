@@ -151,31 +151,51 @@ fn resolve_auth_env_path() -> PathBuf {
         }
     }
 
+    // If the file does not exist anywhere, check if we are in the development repository root
+    // (i.e. cwd/src-tauri exists). If so, default to creating it inside src-tauri/.
+    let dev_src_tauri = cwd.join("src-tauri");
+    if dev_src_tauri.exists() && dev_src_tauri.is_dir() {
+        return dev_src_tauri.join(REMOTE_AUTH_ENV_FILE);
+    }
+
     exe_candidate
         .or_else(|| Some(cwd.join(REMOTE_AUTH_ENV_FILE)))
         .unwrap_or_else(|| PathBuf::from(REMOTE_AUTH_ENV_FILE))
 }
 
-fn load_auth_config() -> AuthConfig {
+fn load_auth_config() -> Result<AuthConfig, String> {
     let env_path = resolve_auth_env_path();
-    let from_file = fs::read_to_string(&env_path).unwrap_or_default();
+    
+    if !env_path.exists() {
+        return Err(format!(
+            "Authentication env file not found at path: {}. Please copy .remote-control.env.example to .remote-control.env and set secure secrets.",
+            env_path.display()
+        ));
+    }
+
+    let from_file = fs::read_to_string(&env_path)
+        .map_err(|e| format!("Failed to read env file ({}): {}", env_path.display(), e))?;
     let map = parse_env(&from_file);
 
     let user_password = std::env::var(USER_PASSWORD_KEY)
         .ok()
         .or_else(|| map.get(USER_PASSWORD_KEY).cloned())
-        .unwrap_or_else(|| "user123".to_string());
+        .ok_or_else(|| format!("{USER_PASSWORD_KEY} is not set in environment or file: {}", env_path.display()))?;
 
     let dev_password = std::env::var(DEV_PASSWORD_KEY)
         .ok()
         .or_else(|| map.get(DEV_PASSWORD_KEY).cloned())
-        .unwrap_or_else(|| "dev123".to_string());
+        .ok_or_else(|| format!("{DEV_PASSWORD_KEY} is not set in environment or file: {}", env_path.display()))?;
 
-    AuthConfig {
+    if user_password == "xxx" || dev_password == "xxx" {
+        return Err("Passwords in .remote-control.env cannot be the default 'xxx' placeholder".to_string());
+    }
+
+    Ok(AuthConfig {
         user_password,
         dev_password,
         env_path,
-    }
+    })
 }
 
 fn write_json_line(stream: &mut TcpStream, payload: &Value) -> std::io::Result<()> {
@@ -770,11 +790,26 @@ pub fn start_tcp_server(app_handle: AppHandle) -> Result<(), String> {
         return Ok(());
     }
 
-    let auth = load_auth_config();
-    if !auth.env_path.exists() {
-        let _ = write_env_file(&auth.env_path, &auth.user_password, &auth.dev_password);
-    }
+    let auth = load_auth_config()?;
     let _ = AUTH_CONFIG.set(Arc::new(Mutex::new(auth)));
+
+    // Verify that Feeder/.env exists and is properly configured
+    let feeder_env = resolve_feeder_env_path();
+    if !feeder_env.exists() {
+        return Err(format!(
+            "Frontend environment file not found at path: {}. Please copy .env.example to .env and set secure secrets.",
+            feeder_env.display()
+        ));
+    }
+
+    let feeder_content = fs::read_to_string(&feeder_env)
+        .map_err(|e| format!("Failed to read frontend env file: {e}"))?;
+    let feeder_map = parse_env(&feeder_content);
+    if let Some(pw) = feeder_map.get("VITE_DEVELOPER_MODE_PASSWORD") {
+        if pw == "xxx" {
+            return Err("Developer mode password in .env cannot be the default 'xxx' placeholder".to_string());
+        }
+    }
 
     let listener = TcpListener::bind(DEFAULT_TCP_BIND_ADDRESS)
         .map_err(|e| format!("Failed to bind TCP server on {DEFAULT_TCP_BIND_ADDRESS}: {e}"))?;
