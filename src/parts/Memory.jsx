@@ -878,7 +878,7 @@ export function Memory({ children }) {
     } catch (error) {
       console.error("Failed to set last calibration:", error);
     }
-    loadCurrentData();
+    
   };
 
   const saveCalibrationState = async (state) => {
