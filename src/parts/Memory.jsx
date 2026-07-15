@@ -243,6 +243,15 @@ export function Memory({ children }) {
       unlistenRemoteStartCalibration = await listen(
         "remote-start-calibration",
         () => {
+          if (
+            calibrationStateRef.current === "running" ||
+            calibrationStateRef.current === "end_place"
+          ) {
+            console.warn(
+              "Calibration is already running. Ignoring remote start request."
+            );
+            return;
+          }
           if (location.pathname === "/workout") {
             navigate("/menu");
           }
@@ -754,6 +763,13 @@ export function Memory({ children }) {
   };
 
   const calibrate = () => {
+    if (
+      calibrationStateRef.current === "running" ||
+      calibrationStateRef.current === "end_place"
+    ) {
+      console.warn("Calibration is already running. Ignoring start request.");
+      return;
+    }
     setCalibrationState("running");
     setRefresh(false);
     setTimeout(() => {
