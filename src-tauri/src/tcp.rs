@@ -943,3 +943,15 @@ pub fn send_event(event: &str, payload: Value) -> Result<usize, String> {
 pub fn tcp_send_event(event: String, payload: Value) -> Result<usize, String> {
     send_event(event.trim(), payload)
 }
+
+#[tauri::command]
+pub fn get_feeder_env() -> Result<HashMap<String, String>, String> {
+    let path = resolve_feeder_env_path();
+    if !path.exists() {
+        return Ok(HashMap::new());
+    }
+    let content = fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read .env file: {}", e))?;
+    Ok(parse_env(&content))
+}
+

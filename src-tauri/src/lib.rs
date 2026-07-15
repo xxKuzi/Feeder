@@ -9,7 +9,7 @@ use log::{info, warn};
 use limit_switch::platform::watch_limit_switch;
 
 use bluetooth::{exit_workout, get_workout_state, init_ble, pause_workout, start_workout, set_starting_workout};
-use tcp::{start_tcp_server, tcp_send_event};
+use tcp::{start_tcp_server, tcp_send_event, get_feeder_env};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
@@ -227,7 +227,8 @@ pub async fn run() {
         reset_basket_score,
         send_arduino_raw_command,
         start_arduino_bridge,
-        tcp_send_event
+        tcp_send_event,
+        get_feeder_env
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

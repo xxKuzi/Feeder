@@ -31,6 +31,7 @@ export function Memory({ children }) {
   const [dynamicDevPassword, setDynamicDevPassword] =
     useState(INITIAL_DEV_PASSWORD);
   const [isAppLocked, setIsAppLocked] = useState(INITIAL_IS_LOCKED);
+  const [alwaysCalibrate, setAlwaysCalibrate] = useState(ALWAYS_CALIBRATE);
   const [statistics, setStatistics] = useState({ taken: 0, made: 0 });
   const [workoutData, setWorkoutData] = useState({
     modeId: 0,
@@ -75,13 +76,17 @@ export function Memory({ children }) {
   //at the beginning IT IS NOT VALID
 
   useEffect(() => {
-    loadCurrentData();
-    loadRecords();
-    loadUsers();
-    loadModes();
-    initMotorInstance();
-    startArduinoBridge();
-    saveCalibrationState(false);
+    const init = async () => {
+      await loadEnvSettings();
+      await loadCurrentData();
+      loadRecords();
+      loadUsers();
+      loadModes();
+      initMotorInstance();
+      startArduinoBridge();
+      saveCalibrationState(false);
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -429,7 +434,7 @@ export function Memory({ children }) {
         }
       });
       unlistenDevChanged = await listen("feeder-dev-password-changed", () => {
-        window.location.reload(); // naive reload to re-read `.env` if Vite supports it, or just let users know
+        loadEnvSettings();
       });
     };
 
@@ -499,6 +504,25 @@ export function Memory({ children }) {
     }
   };
 
+  const loadEnvSettings = async () => {
+    try {
+      const env = await invoke("get_feeder_env");
+      if (env) {
+        if (env.VITE_DEVELOPER_MODE_PASSWORD) {
+          setDynamicDevPassword(env.VITE_DEVELOPER_MODE_PASSWORD);
+        }
+        if (env.VITE_APP_LOCKED) {
+          setIsAppLocked(env.VITE_APP_LOCKED === "true");
+        }
+        if (env.VITE_ALWAYS_CALIBRATE) {
+          setAlwaysCalibrate(env.VITE_ALWAYS_CALIBRATE === "true");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load env settings:", err);
+    }
+  };
+
   const loadCurrentData = async () => {
     const loaded = await invoke("load_current_data");
     const userDataRust =
@@ -531,7 +555,7 @@ export function Memory({ children }) {
 
     // We only force ALWAYS_CALIBRATE if the session calibration has not run yet
     const forceCalibrate =
-      ALWAYS_CALIBRATE &&
+      alwaysCalibrate &&
       calibrationState !== "true" &&
       calibrationState !== "running" &&
       calibrationState !== "end_place";
