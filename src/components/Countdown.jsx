@@ -1,6 +1,6 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 
-const Countdown = forwardRef(({ onCountdownEnd }, ref) => {
+const Countdown = forwardRef(({ onCountdownEnd, onStop }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [count, setCount] = useState(null);
 
@@ -42,6 +42,21 @@ const Countdown = forwardRef(({ onCountdownEnd }, ref) => {
           <p className="text-white text-9xl font-bold animate-bounce">
             {count}
           </p>
+          {onStop && (
+            <button
+              onClick={onStop}
+              className="absolute bottom-16 px-10 py-4 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-2xl rounded-full shadow-lg shadow-red-900/40 hover:shadow-red-800/60 transition-all duration-200 border border-red-500/50 flex items-center gap-3 tracking-wide"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-7 h-7 fill-current"
+                viewBox="0 0 24 24"
+              >
+                <rect x="5" y="5" width="14" height="14" rx="2" />
+              </svg>
+              Stop
+            </button>
+          )}
         </div>
       )}
     </>

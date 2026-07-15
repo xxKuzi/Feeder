@@ -165,6 +165,13 @@ export default function Workout() {
     }
   };
 
+  const handleStopCountdown = async () => {
+    console.log("Stopping workout during initial countdown...");
+    countdownRef.current?.stopCountdown();
+    await exitWorkout();
+    navigate("/menu");
+  };
+
   useEffect(() => {
     initialization();
   }, []);
@@ -450,6 +457,7 @@ export default function Workout() {
       <Countdown
         ref={(fn) => (countdownRef.current = fn)}
         onCountdownEnd={CountdownEnd}
+        onStop={handleStopCountdown}
       />
       <Countdown
         ref={(fn) => (pauseCountdownRef.current = fn)}
