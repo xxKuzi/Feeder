@@ -10,8 +10,11 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-// Database URL
-static DB_URL: Lazy<String> = Lazy::new(|| String::from("sqlite://data.db"));
+static DB_URL: once_cell::sync::OnceCell<String> = once_cell::sync::OnceCell::new();
+
+pub fn get_db_url() -> String {
+    DB_URL.get().cloned().unwrap_or_else(|| String::from("sqlite://data.db"))
+}
 
 // Database connection pool
 static DB_POOL: Lazy<OnceCell<Arc<Mutex<SqlitePool>>>> = Lazy::new(OnceCell::new);
@@ -20,7 +23,8 @@ static SESSION_USER_SELECTED: AtomicBool = AtomicBool::new(false);
 
 // Initialize the database pool asynchronously
 async fn init_db_pool() -> Arc<Mutex<SqlitePool>> {
-    let pool = SqlitePool::connect(&*DB_URL).await.unwrap();
+    let url = get_db_url();
+    let pool = SqlitePool::connect(&url).await.unwrap();
     Arc::new(Mutex::new(pool))
 }
 
@@ -96,20 +100,46 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
 }
 
 // Initialize and connect to the database
-pub async fn connect_to_database() {
-    if !Sqlite::database_exists(&*DB_URL).await.unwrap_or(false) {
-        Sqlite::create_database(&*DB_URL).await.unwrap();
+pub async fn connect_to_database(custom_path: Option<std::path::PathBuf>) {
+    if let Some(path) = custom_path {
+        let db_url = format!("sqlite://{}", path.to_string_lossy());
+        let _ = DB_URL.set(db_url);
+    }
+
+    let url = get_db_url();
+    if !Sqlite::database_exists(&url).await.unwrap_or(false) {
+        Sqlite::create_database(&url).await.unwrap();
         match create_schema().await {
             Ok(_) => println!("Database created successfully"),
             Err(e) => panic!("{}", e),
         }
     } else {
-        // Run migration for existing databases: add archived column if it doesn't exist
+        // Double check if tables exist. If they don't, create schema.
         let pool = get_db_pool().await;
-        let pool = pool.lock().await;
-        let _ = sqlx::query("ALTER TABLE users ADD COLUMN archived INTEGER DEFAULT 0")
-            .execute(&*pool)
+        let pool_guard = pool.lock().await;
+        let table_exists = sqlx::query("SELECT 1 FROM users LIMIT 1")
+            .execute(&*pool_guard)
             .await;
+        
+        drop(pool_guard); // Drop the lock before running create_schema or migration
+        
+        match table_exists {
+            Ok(_) => {
+                // Run migration for existing databases: add archived column if it doesn't exist
+                let pool = get_db_pool().await;
+                let pool = pool.lock().await;
+                let _ = sqlx::query("ALTER TABLE users ADD COLUMN archived INTEGER DEFAULT 0")
+                    .execute(&*pool)
+                    .await;
+            }
+            Err(_) => {
+                // Table does not exist, create schema
+                match create_schema().await {
+                    Ok(_) => println!("Database schema created successfully"),
+                    Err(e) => println!("Failed to create schema: {}", e),
+                }
+            }
+        }
     }
 }
 

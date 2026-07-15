@@ -28,6 +28,7 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
     const [isVisible, setIsVisible] = useState(false);
     const [inputType, setInputType] = useState("text");
     const [isPassword, setIsPassword] = useState(false);
+    const [hasNavbar, setHasNavbar] = useState(false);
     const stateSetterRef = useRef<React.Dispatch<
       React.SetStateAction<string>
     > | null>(null);
@@ -51,6 +52,7 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
 
     useEffect(() => {
       if (isVisible) {
+        setHasNavbar(!!document.getElementById("main-navbar"));
         document.body.style.overflow = "hidden"; // disables scroll
       } else {
         document.body.style.overflow = ""; // restores scroll
@@ -116,7 +118,7 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
     return (
       <div>
         {isVisible && (
-          <div className="ml-[135px] px-6 py-6 fixed z-50 inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-end">
+          <div className={`px-6 py-6 fixed z-50 inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-end ${hasNavbar ? "pl-[135px]" : ""}`}>
             <button
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded fixed text-xl top-2 right-6" // 2, 6 - because of 4 padding
               onClick={() => {

@@ -150,8 +150,7 @@ pub async fn run() {
     println!("Starting the application...");
     info!("Starting the application... 222");
 
-    // Connect to the SQLite database.
-    connect_to_database().await;
+    // Database will be initialized in the tauri setup hook below.
 
     // // Create a new Tokio runtime to initialize BLE.
     // let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
@@ -159,6 +158,21 @@ pub async fn run() {
 
     tauri::Builder::default()
     .setup(|app| {
+        let app_handle = app.handle();
+        let db_path = app_handle
+            .path()
+            .app_data_dir()
+            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_default())
+            .join("data.db");
+
+        if let Some(parent) = db_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+
+        tauri::async_runtime::block_on(async {
+            connect_to_database(Some(db_path)).await;
+        });
+
         if let Err(e) = start_tcp_server(app.handle().clone()) {
             warn!("TCP telemetry server failed to start: {e}");
         }

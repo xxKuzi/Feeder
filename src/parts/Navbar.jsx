@@ -40,7 +40,7 @@ export default function Navbar() {
   });
 
   return (
-    <div className="fixed top-0 left-0 h-screen w-[135px] overflow-y-auto bg-gray-100">
+    <div id="main-navbar" className="fixed top-0 left-0 h-screen w-[135px] overflow-y-auto bg-gray-100">
       <div className="text-md flex min-h-full flex-col justify-between py-2 px-2">
         {/* Profile Section */}
 

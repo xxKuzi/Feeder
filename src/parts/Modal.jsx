@@ -12,7 +12,14 @@ const Modal = forwardRef((_, ref) => {
   const [input, setInput] = useState({}); //expects {name: "petr", age: 18} - name, age are placeholders
   const [modalProps, setModalProps] = useState({});
   const [isPasswordVisible, setIsPasswordVisible] = useState({});
+  const [hasNavbar, setHasNavbar] = useState(false);
   const { showKeyboard } = useData();
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasNavbar(!!document.getElementById("main-navbar"));
+    }
+  }, [isOpen]);
 
   const togglePasswordVisibility = (index) => {
     setIsPasswordVisible((prev) => ({
@@ -123,7 +130,9 @@ const Modal = forwardRef((_, ref) => {
           onClick={() => {
             modalProps.buttonConfig.area.handle();
           }}
-          className="ml-[135px] fixed z-50 inset-0 flex justify-center items-center bg-black/20 backdrop-blur-md duration-1000 transition-colors "
+          className={`fixed z-50 inset-0 flex justify-center items-center bg-black/20 backdrop-blur-md duration-1000 transition-colors ${
+            hasNavbar ? "pl-[135px]" : ""
+          }`}
         >
           <div
             onClick={(e) => e.stopPropagation()}

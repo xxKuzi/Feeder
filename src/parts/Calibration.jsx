@@ -1,9 +1,16 @@
-import React, { useState, forwardRef, useImperativeHandle } from "react";
+import React, { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { useData } from "../parts/Memory.jsx";
 
 const CalibrationModal = forwardRef((_, ref) => {
   const { openModal, calibrate, calibrationState } = useData();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasNavbar, setHasNavbar] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasNavbar(!!document.getElementById("main-navbar"));
+    }
+  }, [isOpen]);
 
   // Expose openModal method via ref
   useImperativeHandle(ref, () => ({
@@ -22,11 +29,13 @@ const CalibrationModal = forwardRef((_, ref) => {
       {isOpen && (
         <div
           onClick={calibrationState === "true" ? closeModal : () => {}}
-          className="fixed z-40 inset-0 flex justify-center items-center bg-black/20 backdrop-blur-sm transition-colors"
+          className={`fixed z-40 inset-0 flex justify-center items-center bg-black/20 backdrop-blur-sm transition-colors ${
+            hasNavbar ? "pl-[135px]" : ""
+          }`}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="ml-[135px] relative bg-white flex flex-col justify-center items-center w-[40vw] h-[40vh] min-w-[650px] min-h-[350px] rounded-xl shadow px-10 py-6"
+            className="relative bg-white flex flex-col justify-center items-center w-[40vw] h-[40vh] min-w-[650px] min-h-[350px] rounded-xl shadow px-10 py-6"
           >
             {/* Close button */}
             {calibrationState === "true" && (
