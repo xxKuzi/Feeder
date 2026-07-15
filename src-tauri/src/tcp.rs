@@ -502,6 +502,11 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             let _ = app.emit("remote-exit-workout", json!({ "to": "menu" }));
             Ok(json!({ "ok": true }))
         }
+        "reset_workout" => {
+            let _ = requires_auth(role)?;
+            let _ = app.emit("remote-reset-workout", json!({}));
+            Ok(json!({ "ok": true }))
+        }
         "get_workout_state" => {
             let _ = requires_auth(role)?;
             Ok(json!({ "state": tauri::async_runtime::block_on(bluetooth::get_workout_state()) }))
@@ -669,6 +674,7 @@ fn handle_client(mut stream: TcpStream, app_handle: AppHandle, server: TcpTeleme
             "pause_workout",
             "start_workout",
             "exit_workout",
+            "reset_workout",
             "get_workout_state",
             "load_current_data",
             "load_modes",

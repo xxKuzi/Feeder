@@ -210,6 +210,23 @@ export default function Workout() {
     };
   }, []);
 
+  const initializationRefFunc = useRef(null);
+  useEffect(() => {
+    initializationRefFunc.current = initialization;
+  });
+
+  // remote-reset-workout TCP command listener
+  useEffect(() => {
+    const unlistenReset = listen("remote-reset-workout", () => {
+      console.log("Remote reset command received from TCP");
+      initializationRefFunc.current?.();
+    });
+
+    return () => {
+      unlistenReset.then((fn) => fn());
+    };
+  }, []);
+
   //BLUETOOTH
   useEffect(() => {
     const unlistenPause = listen("pause", () => {
