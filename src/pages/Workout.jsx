@@ -401,7 +401,7 @@ export default function Workout() {
   };
 
   const formatTime = () => {
-    let remainingTime = fullTime - time;
+    let remainingTime = Math.max(0, fullTime - time);
     let minutes = Math.floor((remainingTime % 3600) / 60);
     let seconds;
     if (remainingTime < 10) {
@@ -552,7 +552,7 @@ export default function Workout() {
         <div className="relative w-[1000px] h-2 mt-2 rounded-md bg-black/10">
           <div
             className="absolute h-2 rounded-md  bg-green-400 duration-500"
-            style={{ width: `${((time + 0.3) / fullTime) * 1000}` + "px" }} //not using timeProgress because of delay animation for smoother animations
+            style={{ width: `${fullTime > 0 ? Math.min(1000, ((time + 0.3) / fullTime) * 1000) : 0}px` }} //not using timeProgress because of delay animation for smoother animations
           ></div>
         </div>
       </div>
