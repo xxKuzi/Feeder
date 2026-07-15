@@ -233,6 +233,10 @@ export default function Workout() {
   //INITIALIZATION OR RESET
   const initialization = async () => {
     console.log("STARTING INITIALIZATION");
+    initializationRef.current = true;
+    isRunningRef.current = false;
+    countdownRef.current?.stopCountdown();
+    pauseCountdownRef.current?.stopCountdown();
     setIsOpen(false);
     setNewWorkout(false);
     setRefresh((prev) => !prev);

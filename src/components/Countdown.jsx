@@ -11,6 +11,10 @@ const Countdown = forwardRef(({ onCountdownEnd }, ref) => {
       setIsOpen(true);
       setCount(seconds);
     },
+    stopCountdown: () => {
+      setIsOpen(false);
+      setCount(null);
+    },
   }));
 
   useEffect(() => {
