@@ -558,7 +558,7 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
         "select_user" => {
             let _ = requires_auth(role)?;
             let user_id = extract_i32(args, "user_id")?;
-            tauri::async_runtime::block_on(sql::select_user(user_id))?;
+            tauri::async_runtime::block_on(sql::select_user(user_id, app.clone()))?;
             Ok(json!({ "ok": true, "user_id": user_id }))
         }
         "add_mode" => {

@@ -1,6 +1,7 @@
 // src-tauri/src/sql.rs
 
 use std::result::Result;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::{OnceCell, Mutex}; // Use tokio's async Mutex
 use sqlx::{sqlite::SqliteQueryResult, Sqlite, SqlitePool, migrate::MigrateDatabase};
@@ -14,6 +15,8 @@ static DB_URL: Lazy<String> = Lazy::new(|| String::from("sqlite://data.db"));
 
 // Database connection pool
 static DB_POOL: Lazy<OnceCell<Arc<Mutex<SqlitePool>>>> = Lazy::new(OnceCell::new);
+
+static SESSION_USER_SELECTED: AtomicBool = AtomicBool::new(false);
 
 // Initialize the database pool asynchronously
 async fn init_db_pool() -> Arc<Mutex<SqlitePool>> {
@@ -158,7 +161,11 @@ pub async fn delete_user(user_id: i32) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn select_user(user_id: i32) -> Result<(), String> {  
+pub async fn select_user(user_id: i32, app: tauri::AppHandle) -> Result<(), String> {  
+    use tauri::Emitter;
+    
+    SESSION_USER_SELECTED.store(true, Ordering::SeqCst);
+
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
@@ -166,8 +173,31 @@ pub async fn select_user(user_id: i32) -> Result<(), String> {
         .bind(user_id)
         .execute(&*pool)
         .await
-        .map(|_| ()) // Map success to Ok(())
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    // Load name and number of selected user
+    let user_row = sqlx::query_as::<_, User>("SELECT user_id, name, number, created_at FROM users WHERE user_id = ?")
+        .bind(user_id)
+        .fetch_one(&*pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let name = user_row.name;
+    let number = user_row.number.unwrap_or(0);
+
+    let payload = serde_json::json!({
+        "user_id": user_id,
+        "name": name,
+        "number": number
+    });
+
+    // Emit event to React desktop frontend
+    let _ = app.emit("active-user-changed", payload.clone());
+
+    // Send TCP event to the node.js bridge so it can broadcast to FeederPocket
+    let _ = crate::tcp::send_event("active_user_changed", payload);
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -254,7 +284,7 @@ pub async fn load_users() -> Result<Vec<User>, String> {
 pub struct SavedData {
     user_id: u32,
     name: String,
-    number: u32,
+    number: Option<u32>,
     angle: i32,
     last_calibration: String,
     calibration_state: bool,
@@ -278,11 +308,20 @@ pub async fn load_current_data() -> Result<Vec<SavedData>, String> {
     WHERE d.data_id = 1
     "#;
 
-      // Directly return the result of the query with error mapping
-      sqlx::query_as::<_, SavedData>(qry)
-      .fetch_all(&*pool)
-      .await
-      .map_err(|e| e.to_string()) // Map errors to String
+    let mut data = sqlx::query_as::<_, SavedData>(qry)
+        .fetch_all(&*pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !SESSION_USER_SELECTED.load(Ordering::SeqCst) {
+        for row in data.iter_mut() {
+            row.user_id = 0;
+            row.name = "".to_string();
+            row.number = None;
+        }
+    }
+
+    Ok(data)
 }
 
 // Data structures and Tauri commands

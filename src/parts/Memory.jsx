@@ -64,6 +64,14 @@ export function Memory({ children }) {
   });
   const modesRef = useRef([]);
   const workoutDataRef = useRef(workoutData);
+  const usersRef = useRef(users);
+  useEffect(() => {
+    usersRef.current = users;
+  }, [users]);
+  const calibrationStateRef = useRef(calibrationState);
+  useEffect(() => {
+    calibrationStateRef.current = calibrationState;
+  }, [calibrationState]);
   //at the beginning IT IS NOT VALID
 
   useEffect(() => {
@@ -106,6 +114,7 @@ export function Memory({ children }) {
   useEffect(() => {
     let unlistenRemoteStart = null;
     let unlistenActiveModeChanged = null;
+    let unlistenActiveUserChanged = null;
     let unlistenRemoteExit = null;
     let unlistenRemoteManualMove = null;
     let unlistenRemoteStartCalibration = null;
@@ -127,6 +136,33 @@ export function Memory({ children }) {
           const selectedMode = resolveModeById(modeId);
           if (selectedMode) {
             setWorkoutData(selectedMode);
+          }
+        },
+      );
+
+      unlistenActiveUserChanged = await listen(
+        "active-user-changed",
+        (event) => {
+          console.log("active-user-changed event received:", event);
+          const payload = event.payload || {};
+          const userId = Number(payload.user_id ?? payload.userId ?? 0);
+          const selectedUser = usersRef.current.find((u) => u.userId === userId);
+          if (selectedUser) {
+            updateProfile(selectedUser);
+          } else if (payload.name) {
+            updateProfile({
+              userId,
+              name: payload.name,
+              number: Number(payload.number ?? 0),
+            });
+          }
+
+          if (
+            calibrationStateRef.current !== "true" &&
+            calibrationStateRef.current !== "running" &&
+            calibrationStateRef.current !== "end_place"
+          ) {
+            openCalibration();
           }
         },
       );
@@ -221,6 +257,9 @@ export function Memory({ children }) {
       }
       if (unlistenActiveModeChanged) {
         unlistenActiveModeChanged();
+      }
+      if (unlistenActiveUserChanged) {
+        unlistenActiveUserChanged();
       }
       if (unlistenRemoteExit) {
         unlistenRemoteExit();
@@ -493,8 +532,9 @@ export function Memory({ children }) {
         payload: { needsCalibration: true },
       }).catch(() => {});
 
+      // openCalibration is now deferred until after user selection
       if (forceCalibrate && !isAppLocked) {
-        openCalibration();
+        // deferred
       }
     } else {
       setCalibrationState("true");

@@ -1,5 +1,6 @@
-import { useState, useRef, useContext } from "react";
+import { useState, useRef, useContext, useEffect } from "react";
 import {} from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./parts/Navbar";
@@ -18,6 +19,21 @@ function App() {
   const location = useLocation(); // Get the current route
   const { isAppLocked } = useData();
   const [sessionUserSelected, setSessionUserSelected] = useState(false);
+
+  useEffect(() => {
+    let unlisten = null;
+    const bindListener = async () => {
+      unlisten = await listen("active-user-changed", () => {
+        setSessionUserSelected(true);
+      });
+    };
+    bindListener();
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, []);
 
   if (isAppLocked) {
     return (
