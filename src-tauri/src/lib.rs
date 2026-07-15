@@ -66,14 +66,10 @@ fn feeder_pocket_dir() -> PathBuf {
 }
 
 fn start_pocket_bridge() -> Option<Child> {
-    let should_skip = if cfg!(debug_assertions) {
-        false  // Always try in debug mode
-    } else {
-        // In release, only skip if START_POCKET_BRIDGE is not set to "1"
-        std::env::var("START_POCKET_BRIDGE")
-            .map(|v| v != "1")
-            .unwrap_or(true)  // Default to skip if env var not set
-    };
+    // Skip only if START_POCKET_BRIDGE is explicitly set to "0" or "false"
+    let should_skip = std::env::var("START_POCKET_BRIDGE")
+        .map(|v| v == "0" || v == "false")
+        .unwrap_or(false);  // Default to run if env var not set
 
     if should_skip {
         info!("Skipping Pocket bridge child process");
