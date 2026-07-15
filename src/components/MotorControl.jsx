@@ -27,13 +27,20 @@ export default function MotorControl({
   releaseBall,
   end,
 }) {
-  const { globalAngle, setGlobalAngle, globalMotorSpeed, setGlobalMotorSpeed } =
-    useData();
+  const {
+    globalAngle,
+    setGlobalAngle,
+    globalMotorSpeed,
+    setGlobalMotorSpeed,
+    saveAngle,
+  } = useData();
 
   const stepIndexRef = useRef(0);
   const roundRef = useRef(0);
   const requestRef = useRef(null);
   const timerRef = useRef(null);
+  const targetAngleRef = useRef(null);
+  const shotFiredRef = useRef(false);
 
   useEffect(() => {
     roundRef.current = round;
@@ -45,7 +52,13 @@ export default function MotorControl({
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+      if (targetAngleRef.current !== null) {
+        setGlobalAngle(targetAngleRef.current);
+        saveAngle(targetAngleRef.current);
+      }
     };
   }, []);
 
@@ -55,6 +68,7 @@ export default function MotorControl({
       setRound(0);
       roundRef.current = 0;
       stepIndexRef.current = 0;
+      shotFiredRef.current = false;
 
       setTimer(Math.max(motorData.intervals[0], 0).toFixed(1));
 
@@ -190,21 +204,25 @@ export default function MotorControl({
     }
 
     setNextAngle(nextAngle);
+    targetAngleRef.current = nextAngle;
 
     //setting actual time left - after pause - only remaining time (SAVED IN TIMER) | after reset - NEW TIME
     let timeLeft = newWorkout ? actualInterval : timer;
     setTimer(Math.max(timeLeft, 0).toFixed(1));
 
+    if (newWorkout) {
+      shotFiredRef.current = false;
+    }
+
     if (timerRef.current) clearInterval(timerRef.current);
-    let shot = false; //for not shotting twice - maybe do not work
 
     timerRef.current = setInterval(() => {
       if (!runningRef.current) return;
       timeLeft -= 0.1;
       setTimer(Math.max(timeLeft, 0).toFixed(1));
-      if (timeLeft <= 1 && !shot) {
+      if (timeLeft <= 1 && !shotFiredRef.current) {
         releaseBall();
-        shot = true;
+        shotFiredRef.current = true;
         setStopButton(false);
         setTimeout(() => {
           setStopButton(true);
@@ -254,6 +272,10 @@ export default function MotorControl({
   const stopMotor = () => {
     if (requestRef.current) cancelAnimationFrame(requestRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
+    if (targetAngleRef.current !== null) {
+      setGlobalAngle(targetAngleRef.current);
+      saveAngle(targetAngleRef.current);
+    }
   };
 
   return (
