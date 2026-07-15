@@ -123,7 +123,7 @@ const Modal = forwardRef((_, ref) => {
           onClick={() => {
             modalProps.buttonConfig.area.handle();
           }}
-          className="ml-[135px] fixed z-50 inset-0 flex justify-center items-center bg-black/20 duration-1000 transition-colors "
+          className="ml-[135px] fixed z-50 inset-0 flex justify-center items-center bg-black/20 backdrop-blur-md duration-1000 transition-colors "
         >
           <div
             onClick={(e) => e.stopPropagation()}

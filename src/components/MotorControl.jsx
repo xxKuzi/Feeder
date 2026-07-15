@@ -107,7 +107,11 @@ export default function MotorControl({
         startMotor(false);
       }
     } else {
-      stopMotor();
+      // Pause: only clear the countdown timer interval, let smoothTransition finish its animation.
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
   }, [refresh]); //because refresh changes value every time NewWorkout CHANGES
 
@@ -122,9 +126,6 @@ export default function MotorControl({
     const startTime = performance.now();
 
     const animate = (currentTime) => {
-      //RUN only when it is globally enabled or in reset mode
-      if (!runningRef.current && !reset) return;
-
       //during the reset - Do NOT want TIMER to run
       if (reset && updateFunc === setTimer) return;
 
