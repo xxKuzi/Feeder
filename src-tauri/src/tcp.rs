@@ -355,6 +355,14 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
         }
         "calibrate_stepper_motor" => {
             let _ = requires_auth(role)?;
+            ACTIVE_MODE_ID.store(0, Ordering::Relaxed);
+            tauri::async_runtime::block_on(bluetooth::set_workout_state_remote(
+                bluetooth::WORKOUT_STATE_BREAK,
+            ))?;
+            let _ = send_event("active_mode_changed", json!({ "mode_id": 0 }));
+            let _ = app.emit("active-mode-changed", json!({ "mode_id": 0 }));
+            let _ = app.emit("remote-exit-workout", json!({ "to": "menu" }));
+
             let _ = app.emit("remote-start-calibration", serde_json::json!({}));
             Ok(json!({ "ok": true }))
         }

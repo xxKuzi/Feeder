@@ -243,6 +243,9 @@ export function Memory({ children }) {
       unlistenRemoteStartCalibration = await listen(
         "remote-start-calibration",
         () => {
+          if (location.pathname === "/workout") {
+            navigate("/menu");
+          }
           openCalibration();
           calibrate();
         },
