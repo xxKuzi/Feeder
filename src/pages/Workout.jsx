@@ -26,6 +26,7 @@ export default function Workout() {
     basketPoints,
     resetBasketPoints,
     rotateStepperMotor,
+    motorQueueLength,
   } = useData();
   const [time, setTime] = useState(0); //elapsed Time
   const [fullTime, setFullTime] = useState(5); //Fulltime
@@ -39,6 +40,7 @@ export default function Workout() {
   const [round, setRound] = useState(0); //round of workout
   const [nextAngle, setNextAngle] = useState(0); //mainly for better UX
   const [attemptedShots, setAttemptedShots] = useState(0);
+  const [waitingForSync, setWaitingForSync] = useState(false); //wait for motor synchronization
 
   const isRunningRef = useRef(); //main variable
   const countdownRef = useRef(null); //ref to INITIAL CountDown
@@ -50,8 +52,13 @@ export default function Workout() {
   const fullTimeRef = useRef(5);
   const attemptedShotsRef = useRef(0);
   const madeShotsRef = useRef(0);
+  const motorQueueLengthRef = useRef(0);
 
   const navigate = useNavigate(); //used for navigation between pages
+
+  useEffect(() => {
+    motorQueueLengthRef.current = motorQueueLength;
+  }, [motorQueueLength]);
 
   useEffect(() => {
     isOpenRef.current = isOpen;
@@ -258,6 +265,22 @@ export default function Workout() {
     setNewWorkout(false);
     setRefresh((prev) => !prev);
     setTime(0);
+
+    // Wait for the motor queue to clear before moving to the first angle.
+    // If the motor is still executing previous moves, we wait until it is finished.
+    if (motorQueueLengthRef.current > 0) {
+      setWaitingForSync(true);
+      await new Promise((resolve) => {
+        const checkQueue = setInterval(() => {
+          if (motorQueueLengthRef.current === 0) {
+            clearInterval(checkQueue);
+            resolve();
+          }
+        }, 100);
+      });
+      setWaitingForSync(false);
+    }
+
     setReset(true); //changes angle and motorSpeed to first value in array
     const firstShotAngle = Number(workoutData.angles?.[0] ?? globalAngle ?? 90);
     const currentAngle = Number(globalAngle ?? 90);
@@ -405,6 +428,25 @@ export default function Workout() {
 
   return (
     <div className="flex relative flex-col items-center justify-center w-full">
+      {waitingForSync && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+          <div className="flex flex-col items-center justify-center space-y-6 p-8 rounded-2xl bg-zinc-900/90 border border-zinc-800 shadow-2xl backdrop-blur-md max-w-sm text-center">
+            <div className="relative flex items-center justify-center w-16 h-16">
+              <div className="absolute w-16 h-16 border-4 border-zinc-700/50 rounded-full"></div>
+              <div className="absolute w-16 h-16 border-4 border-t-green-400 border-r-green-400 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+              <div className="absolute w-8 h-8 bg-green-500/20 rounded-full animate-ping"></div>
+            </div>
+            <div>
+              <p className="text-white text-2xl font-bold uppercase tracking-wider">
+                Waiting for synchronization
+              </p>
+              <p className="text-zinc-400 text-sm mt-2 leading-relaxed">
+                Please wait while the motor finishes aligning to its last target position...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <Countdown
         ref={(fn) => (countdownRef.current = fn)}
         onCountdownEnd={CountdownEnd}
