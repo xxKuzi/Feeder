@@ -111,7 +111,7 @@ export function Memory({ children }) {
     let unlistenRemoteStartCalibration = null;
 
     const resolveModeById = (modeId) => {
-      if (!modeId) {
+      if (modeId === undefined || modeId === null) {
         return null;
       }
       return modesRef.current.find((mode) => mode.modeId === modeId) || null;
@@ -123,7 +123,7 @@ export function Memory({ children }) {
         (event) => {
           console.log("active-mode-changed event received:", event);
           const payload = event.payload || {};
-          const modeId = Number(payload.mode_id || payload.modeId || 0);
+          const modeId = Number(payload.mode_id ?? payload.modeId ?? 0);
           const selectedMode = resolveModeById(modeId);
           if (selectedMode) {
             setWorkoutData(selectedMode);
@@ -160,7 +160,7 @@ export function Memory({ children }) {
           return;
         }
 
-        const modeId = Number(payload.mode_id || payload.modeId || 0);
+        const modeId = Number(payload.mode_id ?? payload.modeId ?? 0);
         const selectedMode = resolveModeById(modeId);
 
         if (selectedMode) {
