@@ -772,9 +772,9 @@ pub mod motor_system {
                 let step_dir = if times >= 0 { 1 } else { -1 };
 
                 for i in 0..steps {
-                    let pos = EMULATOR_POSITION.load(Ordering::SeqCst);
-                    let pressed_right = pos >= 5000;
-                    let pressed_left = pos <= -5000;
+                    // let pos = EMULATOR_POSITION.load(Ordering::SeqCst);
+                    // let pressed_right = pos >= 5000;
+                    // let pressed_left = pos <= -5000;
 
                     //NOT WORKING - DISABLED
                     /*if (pressed_right || pressed_left) && safety {

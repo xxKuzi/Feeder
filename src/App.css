@@ -86,7 +86,7 @@
   }
 
   .button__submit {
-    @apply bg-indigo-600 text-white duration-300 hover:bg-indigo-700; //hover:scale-[1.03]
+    @apply bg-indigo-600 text-white duration-300 hover:bg-indigo-700; /* hover:scale-[1.03] */
   }
 
   .button__positive {
