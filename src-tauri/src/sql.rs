@@ -43,6 +43,7 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
         user_id         INTEGER PRIMARY KEY,
         name            TEXT NOT NULL,
         number          INTEGER,
+        archived        INTEGER DEFAULT 0,
         created_at      DATETIME DEFAULT (datetime('now', 'localtime'))        
     );  
 
@@ -99,6 +100,13 @@ pub async fn connect_to_database() {
             Ok(_) => println!("Database created successfully"),
             Err(e) => panic!("{}", e),
         }
+    } else {
+        // Run migration for existing databases: add archived column if it doesn't exist
+        let pool = get_db_pool().await;
+        let pool = pool.lock().await;
+        let _ = sqlx::query("ALTER TABLE users ADD COLUMN archived INTEGER DEFAULT 0")
+            .execute(&*pool)
+            .await;
     }
 }
 
@@ -129,19 +137,19 @@ pub async fn delete_user(user_id: i32) -> Result<(), String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-        // Step 1: Get the count of users
-        let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users")
+    // Step 1: Get the count of active users
+    let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users WHERE archived = 0")
         .fetch_one(&*pool)
         .await
         .map_err(|e| e.to_string())?;
 
-    // Step 2: Check if there are at least 2 users
+    // Step 2: Check if there are at least 2 active users
     if count.0 < 2 {
-        return Err("Cannot delete user. At least 2 users are required.".to_string());
+        return Err("Cannot archive user. At least 2 active users are required.".to_string());
     }
 
-    // Step 3: Proceed to delete the user if the count condition is met
-    sqlx::query("DELETE FROM users WHERE user_id = ?")
+    // Step 3: Proceed to archive the user by setting archived = 1
+    sqlx::query("UPDATE users SET archived = 1 WHERE user_id = ?")
         .bind(user_id)
         .execute(&*pool)
         .await
@@ -232,12 +240,10 @@ pub async fn load_users() -> Result<Vec<User>, String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "SELECT user_id, name, number, created_at FROM users";
+    let qry = "SELECT user_id, name, number, created_at FROM users WHERE archived = 0";
     let users = sqlx::query_as::<_, User>(qry)
         .fetch_all(&*pool)
         .await;
-
-    
 
     users.map_err(|e| e.to_string())
 }
@@ -330,12 +336,15 @@ pub async fn load_records() -> Result<Vec<Record>, String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "SELECT records_id, name, category, made, taken, user_id, created_at FROM records";
+    let qry = r#"
+    SELECT r.records_id, r.name, r.category, r.made, r.taken, r.user_id, r.created_at 
+    FROM records r 
+    INNER JOIN users u ON r.user_id = u.user_id 
+    WHERE u.archived = 0
+    "#;
     let users = sqlx::query_as::<_, Record>(qry)
         .fetch_all(&*pool)
         .await;
-
-    
 
     users.map_err(|e| e.to_string())
 }
@@ -456,6 +465,7 @@ pub async fn load_user_accuracy_summary() -> Result<Vec<UserAccuracySummary>, St
             END AS accuracy
         FROM users u
         LEFT JOIN records r ON r.user_id = u.user_id
+        WHERE u.archived = 0
         GROUP BY u.user_id, u.name
         ORDER BY u.user_id
         "#;
@@ -464,6 +474,45 @@ pub async fn load_user_accuracy_summary() -> Result<Vec<UserAccuracySummary>, St
                 .fetch_all(&*pool)
                 .await
                 .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn load_archived_users() -> Result<Vec<User>, String> {
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    let qry = "SELECT user_id, name, number, created_at FROM users WHERE archived = 1";
+    let users = sqlx::query_as::<_, User>(qry)
+        .fetch_all(&*pool)
+        .await;
+
+    users.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn unarchive_user(user_id: i32) -> Result<(), String> {
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    sqlx::query("UPDATE users SET archived = 0 WHERE user_id = ?")
+        .bind(user_id)
+        .execute(&*pool)
+        .await
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_user_permanently(user_id: i32) -> Result<(), String> {
+    let pool = get_db_pool().await;
+    let pool = pool.lock().await;
+
+    sqlx::query("DELETE FROM users WHERE user_id = ?")
+        .bind(user_id)
+        .execute(&*pool)
+        .await
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 

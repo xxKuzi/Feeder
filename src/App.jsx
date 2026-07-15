@@ -17,6 +17,7 @@ import { useData } from "./parts/Memory";
 function App() {
   const location = useLocation(); // Get the current route
   const { isAppLocked } = useData();
+  const [sessionUserSelected, setSessionUserSelected] = useState(false);
 
   if (isAppLocked) {
     return (
@@ -28,6 +29,14 @@ function App() {
           <h1 className="text-3xl font-bold mb-2">System Locked</h1>
           <p className="text-gray-400">Please unlock via the remote control app.</p>
         </div>
+      </main>
+    );
+  }
+
+  if (!sessionUserSelected) {
+    return (
+      <main className="flex h-screen w-screen overflow-hidden bg-white text-gray-900 justify-center items-center">
+        <Profiles isStartup={true} onSelect={() => setSessionUserSelected(true)} />
       </main>
     );
   }
