@@ -22,7 +22,7 @@ const CalibrationModal = forwardRef((_, ref) => {
       {isOpen && (
         <div
           onClick={calibrationState === "true" ? closeModal : () => {}}
-          className="fixed z-40 inset-0 flex justify-center items-center bg-black/20 transition-colors"
+          className="fixed z-40 inset-0 flex justify-center items-center bg-black/20 backdrop-blur-sm transition-colors"
         >
           <div
             onClick={(e) => e.stopPropagation()}
