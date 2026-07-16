@@ -6,6 +6,7 @@ import React, {
   useImperativeHandle,
 } from "react";
 import Keyboard from "react-simple-keyboard";
+const KeyboardComponent = (Keyboard as any).default || Keyboard;
 import "react-simple-keyboard/build/css/index.css";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -79,7 +80,9 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
         setIsVisible(true);
         //for some reason - it needs time to load
         setTimeout(() => {
-          keyboardRef.current.setInput(e ? e.target.value : "");
+          if (keyboardRef.current) {
+            keyboardRef.current.setInput(e ? e.target.value : "");
+          }
         }, 50);
       },
       hideKeyboard: () => {
@@ -152,8 +155,8 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
               )}
             </div>
 
-            <Keyboard
-              keyboardRef={(r) => (keyboardRef.current = r)}
+            <KeyboardComponent
+              keyboardRef={(r: any) => (keyboardRef.current = r)}
               layoutName={layoutName}
               onChange={onChange}
               onKeyPress={onKeyPress}
