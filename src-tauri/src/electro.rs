@@ -484,12 +484,12 @@ impl Controller {
     }
 
     #[tauri::command]
-    pub fn run_auto_ball_cycle() -> Result<String, String> {
-        println!("Starting auto ball cycle (blocking)...");
+    pub async fn run_auto_ball_cycle() -> Result<String, String> {
+        println!("Starting auto ball cycle (async)...");
         send_arduino_command("SERVO1_RELEASE")?;
-        thread::sleep(Duration::from_millis(1500));
+        tokio::time::sleep(Duration::from_millis(1500)).await;
         send_arduino_command("SERVO1_STOP")?;
-        thread::sleep(Duration::from_millis(120));
+        tokio::time::sleep(Duration::from_millis(120)).await;
         send_arduino_command("SERVO2_DISPENSE")?;
         println!("Finished auto ball cycle");
         Ok("Auto ball cycle completed".to_string())
@@ -1081,9 +1081,9 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn run_auto_ball_cycle() -> Result<String, String> {
-        println!("Mocking auto ball cycle...");
-        std::thread::sleep(std::time::Duration::from_millis(1620));
+    pub async fn run_auto_ball_cycle() -> Result<String, String> {
+        println!("Mocking auto ball cycle (async)...");
+        tokio::time::sleep(std::time::Duration::from_millis(1620)).await;
         Ok("mock auto ball cycle completed".to_string())
     }
 

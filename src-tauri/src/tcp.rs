@@ -409,7 +409,7 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
         }
         "manual_try_shot" => {
             let _ = requires_auth(role)?;
-            let result = electro::motor_system::run_auto_ball_cycle()?;
+            let result = tauri::async_runtime::block_on(electro::motor_system::run_auto_ball_cycle())?;
             Ok(json!({ "ok": true, "message": result }))
         }
         "manual_run_shots" => {
