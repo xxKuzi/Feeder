@@ -485,25 +485,19 @@ impl Controller {
 
     #[tauri::command]
     pub async fn run_auto_ball_cycle() -> Result<String, String> {
-        println!("Starting auto ball cycle (async)...");
-        send_arduino_command("SERVO1_RELEASE")?;
-        tokio::time::sleep(Duration::from_millis(1500)).await;
-        send_arduino_command("SERVO1_STOP")?;
-        tokio::time::sleep(Duration::from_millis(120)).await;
-        send_arduino_command("SERVO2_DISPENSE")?;
+        println!("Starting auto ball cycle...");
+        send_arduino_command("AUTO_BALL_CYCLE")?;
+        tokio::time::sleep(Duration::from_millis(2000)).await;
         println!("Finished auto ball cycle");
         Ok("Auto ball cycle completed".to_string())
     }
 
      #[tauri::command]
     pub async fn release_ball_and_load_next() -> Result<String, String> {
-        println!("Starting auto ball cycle (async)...");
-        send_arduino_command("SERVO1_RELEASE")?;
-        send_arduino_command("SERVO2_DISPENSE")?;
-        tokio::time::sleep(Duration::from_millis(1500)).await;
-        send_arduino_command("SERVO1_STOP")?;
-        tokio::time::sleep(Duration::from_millis(120)).await;        
-        println!("Released and loaded");
+        println!("Starting release and load next ball...");
+        send_arduino_command("AUTO_BALL_CYCLE")?;
+        tokio::time::sleep(Duration::from_millis(2000)).await;
+        println!("Finished release and load next ball");
         Ok("Auto ball cycle completed".to_string())
     }
 
