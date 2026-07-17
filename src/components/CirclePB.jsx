@@ -13,7 +13,7 @@ export default function CirclePB({
 
   return (
     <div className="duration-300 transition w-full flex justify-center items-center">
-      <svg width="500" height="500" viewBox="-20 -20 250 250">
+      <svg width="500" height="460" viewBox="-20 -20 250 250">
         <circle
           cx={width / 2}
           cy={width / 2}
