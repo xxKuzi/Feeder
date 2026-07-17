@@ -1,8 +1,19 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 
 const Countdown = forwardRef(({ onCountdownEnd, onStop, onTick, lowSpec }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [count, setCount] = useState(null);
+
+  const onTickRef = useRef(onTick);
+  const onCountdownEndRef = useRef(onCountdownEnd);
+
+  useEffect(() => {
+    onTickRef.current = onTick;
+  }, [onTick]);
+
+  useEffect(() => {
+    onCountdownEndRef.current = onCountdownEnd;
+  }, [onCountdownEnd]);
 
   // Expose the function to the parent component
   useImperativeHandle(ref, () => ({
@@ -18,24 +29,24 @@ const Countdown = forwardRef(({ onCountdownEnd, onStop, onTick, lowSpec }, ref) 
   }));
 
   useEffect(() => {
-    if (count === null || count === 0) return;
+    if (count === null || count <= 0) return;
 
     const timer = setTimeout(() => {
       const nextCount = count - 1;
       setCount(nextCount);
-      if (onTick) onTick(nextCount);
+      if (onTickRef.current) onTickRef.current(nextCount);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [count, onTick]);
+  }, [count]);
 
   useEffect(() => {
     if (count === 0) {
       setIsOpen(false);
       setCount(-1);
-      if (onCountdownEnd) onCountdownEnd(); // Notify parent when countdown ends
+      if (onCountdownEndRef.current) onCountdownEndRef.current(); // Notify parent when countdown ends
     }
-  }, [count, onCountdownEnd]);
+  }, [count]);
 
   return (
     <>
