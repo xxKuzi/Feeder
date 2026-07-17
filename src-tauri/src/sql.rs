@@ -89,7 +89,7 @@ async fn create_schema() -> Result<SqliteQueryResult, sqlx::Error> {
         
     );    
 
-    INSERT INTO users (user_id, name, number)    VALUES (1, 'Default', 69);
+    INSERT INTO users (user_id, name, number)    VALUES (1, 'Vlčák', 0);
     INSERT INTO data (user_id)                VALUES (1);
     INSERT INTO modes (mode_id, category, name, predefined, angles, intervals, distances)                VALUES (0, 3, 'Free throws', true, '[90]', '[5]', '[5000]');
     INSERT INTO modes (category, name, predefined)                VALUES (1, 'Two Point', true);
