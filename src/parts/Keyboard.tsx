@@ -22,6 +22,30 @@ export interface KeyboardOverlayRef {
   hideKeyboard: () => void;
 }
 
+const KEYBOARD_LAYOUT = {
+  default: [
+    "1 2 3 4 5 6 7 8 9 0",
+    "q w e r t y u i o p",
+    "a s d f g h j k l",
+    "{shift} z x c v b n m . , - {bksp}",
+    "{space} {enter}"
+  ],
+  shift: [
+    "1 2 3 4 5 6 7 8 9 0",
+    "Q W E R T Y U I O P",
+    "A S D F G H J K L",
+    "{shift} Z X C V B N M . , - {bksp}",
+    "{space} {enter}"
+  ]
+};
+
+const KEYBOARD_DISPLAY = {
+  "{bksp}": "⌫",
+  "{enter}": "Enter",
+  "{shift}": "⇧",
+  "{space}": "Space",
+};
+
 const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
   (props, ref) => {
     const [layoutName, setLayoutName] = useState("default");
@@ -121,7 +145,7 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
     return (
       <div>
         {isVisible && (
-          <div className={`px-6 py-6 fixed z-50 inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-end ${hasNavbar ? "pl-[135px]" : ""}`}>
+          <div className={`px-6 py-4 fixed z-50 inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-end ${hasNavbar ? "pl-[135px]" : ""}`}>
             <button
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded fixed text-xl top-2 right-6" // 2, 6 - because of 4 padding
               onClick={() => {
@@ -132,7 +156,7 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
             >
               Zavřít
             </button>
-            <div className="relative flex items-center mb-12 w-[600px] max-w-full">
+            <div className="relative flex items-center mb-6 w-[600px] max-w-full">
               <input
                 autoFocus
                 type={inputType}
@@ -160,6 +184,8 @@ const KeyboardOverlay = forwardRef<KeyboardOverlayRef, KeyboardOverlayProps>(
               layoutName={layoutName}
               onChange={onChange}
               onKeyPress={onKeyPress}
+              layout={KEYBOARD_LAYOUT}
+              display={KEYBOARD_DISPLAY}
             />
           </div>
         )}
