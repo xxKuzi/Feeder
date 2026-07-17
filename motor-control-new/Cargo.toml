@@ -1,0 +1,8 @@
+[package]
+name = "motor-control-new"
+version = "0.1.0"
+edition = "2021"
+description = "Standalone CLI utility to control Feeder stepper motor"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rppal = "0.16"

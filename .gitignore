@@ -31,3 +31,4 @@ external-workout-monitor/.env
 
 .firebase/*
 
+motor-control-new/target
