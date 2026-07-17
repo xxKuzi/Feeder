@@ -613,9 +613,25 @@ impl Controller {
         thread::spawn(move || {
             let mut reader = BufReader::new(reader_port);
             let mut line = String::new();
+            let mut last_send = std::time::Instant::now();
+            let mut pending_line: Option<String> = None;
 
             loop {
                 line.clear();
+
+                // Flush the pending throttled line if the window has expired
+                if pending_line.is_some() && last_send.elapsed() >= Duration::from_millis(150) {
+                    if let Some(msg) = pending_line.take() {
+                        let _ = tcp::send_event(
+                            "arduino_rx",
+                            serde_json::json!({
+                                "line": msg
+                            }),
+                        );
+                        last_send = std::time::Instant::now();
+                    }
+                }
+
                 match reader.read_line(&mut line) {
                     Ok(0) => {
                         thread::sleep(Duration::from_millis(10));
@@ -628,12 +644,31 @@ impl Controller {
 
                         println!("Arduino RX: {}", msg);
 
-                        let _ = tcp::send_event(
-                            "arduino_rx",
-                            serde_json::json!({
-                                "line": msg
-                            }),
-                        );
+                        if msg.starts_with("SCORE:") || msg.starts_with("STATE:SCORE=") {
+                            // Score messages are critical and bypass throttle
+                            let _ = tcp::send_event(
+                                "arduino_rx",
+                                serde_json::json!({
+                                    "line": msg
+                                }),
+                            );
+                            last_send = std::time::Instant::now();
+                            pending_line = None;
+                        } else {
+                            // Standard telemetry/debug lines are throttled
+                            if last_send.elapsed() >= Duration::from_millis(150) {
+                                let _ = tcp::send_event(
+                                    "arduino_rx",
+                                    serde_json::json!({
+                                        "line": msg
+                                    }),
+                                );
+                                last_send = std::time::Instant::now();
+                                pending_line = None;
+                            } else {
+                                pending_line = Some(msg.to_string());
+                            }
+                        }
 
                         if let Some(delta_str) = msg.strip_prefix("SCORE:") {
                             let delta = delta_str.parse::<u32>().unwrap_or(1);
