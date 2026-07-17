@@ -109,6 +109,11 @@ export function Memory({ children }) {
     workoutDataRef.current = workoutData;
   }, [workoutData]);
 
+  const globalAngleRef = useRef(globalAngle);
+  useEffect(() => {
+    globalAngleRef.current = globalAngle;
+  }, [globalAngle]);
+
   useEffect(() => {
     const angle = Number(globalAngle);
     if (lastSentAngleRef.current === angle) return;
@@ -119,7 +124,7 @@ export function Memory({ children }) {
     }
 
     const send = () => {
-      const currentVal = Number(globalAngle);
+      const currentVal = Number(globalAngleRef.current);
       lastSentAngleRef.current = currentVal;
       invoke("tcp_send_event", {
         event: "global_angle_changed",
@@ -131,21 +136,23 @@ export function Memory({ children }) {
       throttleTimeoutRef.current = setTimeout(() => {
         throttleTimeoutRef.current = null;
         // If the angle changed again while we were throttled, send the latest one
-        if (lastSentAngleRef.current !== Number(globalAngle)) {
+        if (lastSentAngleRef.current !== Number(globalAngleRef.current)) {
           send();
         }
       }, 200);
     };
 
     send();
+  }, [globalAngle]);
 
+  useEffect(() => {
     return () => {
       if (throttleTimeoutRef.current) {
         clearTimeout(throttleTimeoutRef.current);
         throttleTimeoutRef.current = null;
       }
     };
-  }, [globalAngle]);
+  }, []);
 
   useEffect(() => {
     let unlistenRemoteStart = null;
