@@ -23,6 +23,7 @@ export default function Workout() {
     toggleServo,
     toggleFeederServo,
     runAutoBallCycle,
+    ReleaseAndLoadNext,
     basketPoints,
     resetBasketPoints,
     rotateStepperMotor,
@@ -434,7 +435,7 @@ export default function Workout() {
     console.log("A ball was released");
     setAttemptedShots((prev) => prev + 1);
     console.log("Attempted shots:", attemptedShots + 1);
-    await runAutoBallCycle();
+    await ReleaseAndLoadNext();
   };
 
   return (

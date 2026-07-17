@@ -495,6 +495,18 @@ impl Controller {
         Ok("Auto ball cycle completed".to_string())
     }
 
+     #[tauri::command]
+    pub async fn release_ball_and_load_next() -> Result<String, String> {
+        println!("Starting auto ball cycle (async)...");
+        send_arduino_command("SERVO1_RELEASE")?;
+        send_arduino_command("SERVO2_DISPENSE")?;
+        tokio::time::sleep(Duration::from_millis(1500)).await;
+        send_arduino_command("SERVO1_STOP")?;
+        tokio::time::sleep(Duration::from_millis(120)).await;        
+        println!("Released and loaded");
+        Ok("Auto ball cycle completed".to_string())
+    }
+
     #[tauri::command]
     pub fn get_basket_score() -> Result<u32, String> {
         Ok(BASKET_SCORE.load(Ordering::Relaxed))
@@ -1086,6 +1098,13 @@ pub mod motor_system {
         println!("Mocking auto ball cycle (async)...");
         tokio::time::sleep(std::time::Duration::from_millis(1620)).await;
         Ok("mock auto ball cycle completed".to_string())
+    }
+
+    #[tauri::command]
+    pub async fn release_ball_and_load_next() -> Result<String, String> {
+        println!("Mocking release and load next (async)...");
+        tokio::time::sleep(std::time::Duration::from_millis(1620)).await;
+        Ok("mock release and load next completed".to_string())
     }
 
     #[tauri::command]

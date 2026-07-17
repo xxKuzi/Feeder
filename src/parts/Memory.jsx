@@ -972,6 +972,17 @@ export function Memory({ children }) {
     }
   };
 
+  const ReleaseAndLoadNext = async () => {
+    try {
+      setGlobalServoState(false);
+      await invoke("release_ball_and_load_next");
+    } catch (error) {
+      console.error("Failed to release and load next ball:", error);
+    } finally {
+      setGlobalServoState(true);
+    }
+  };
+
   const resetBasketPoints = async () => {
     try {
       await invoke("reset_basket_score");
@@ -1092,6 +1103,7 @@ export function Memory({ children }) {
     toggleFeederServo,
     feederDispenseToServo1,
     runAutoBallCycle,
+    ReleaseAndLoadNext,
     basketPoints,
     motorQueueLength,
     resetBasketPoints,
