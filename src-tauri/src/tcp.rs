@@ -868,6 +868,10 @@ pub fn start_tcp_server(app_handle: AppHandle) -> Result<(), String> {
                         warn!("Failed to set TCP_NODELAY for {peer}: {e}");
                     }
 
+                    if let Err(e) = incoming.set_write_timeout(Some(std::time::Duration::from_millis(100))) {
+                        warn!("Failed to set write timeout for {peer}: {e}");
+                    }
+
                     let id = NEXT_CLIENT_ID.fetch_add(1, Ordering::Relaxed);
                     
                     let read_stream = match incoming.try_clone() {
