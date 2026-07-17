@@ -35,6 +35,17 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    // Hide mouse cursor on Linux (Raspberry Pi touch screen)
+    // while keeping it visible on development machines (Mac/Windows).
+    if (navigator.userAgent.toLowerCase().includes("linux")) {
+      const style = document.createElement("style");
+      style.id = "hide-cursor-style";
+      style.textContent = "* { cursor: none !important; }";
+      document.head.appendChild(style);
+    }
+  }, []);
+
   if (isAppLocked) {
     return (
       <main className="flex h-screen w-screen items-center justify-center bg-gray-900 text-white">
