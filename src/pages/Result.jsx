@@ -1,10 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { useData } from "../parts/Memory";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Result() {
   const { records, slowdownMotor, statistics, addRecord } = useData();
   const location = useLocation();
+  const navigate = useNavigate();
   const { made, taken } = statistics;
   const { category, name } = location.state || { category: 0, name: "" };
   const hasSaved = useRef(false);
@@ -22,6 +23,14 @@ export default function Result() {
 
     save();
   }, []);
+
+  const handleTrainAgain = () => {
+    navigate("/workout");
+  };
+
+  const handleBackToMenu = () => {
+    navigate("/menu");
+  };
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -41,7 +50,7 @@ export default function Result() {
               }}
               className="text-9xl font-bold"
             >
-              {Math.floor((made / taken) * 100)}%
+              {Math.floor(accuracy * 100)}%
             </p>
             <p className="text-2xl">úspěšnost</p>
           </div>
@@ -50,7 +59,24 @@ export default function Result() {
             <p className="text-2xl">vystřeleno</p>
           </div>
         </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-center mt-12 gap-8">
+          <button
+            className="button button__positive text-2xl px-8 py-4 font-semibold"
+            onClick={handleTrainAgain}
+          >
+            Trénovat znovu
+          </button>
+          <button
+            className="button button__black text-2xl px-8 py-4 font-semibold"
+            onClick={handleBackToMenu}
+          >
+            Zpět do menu
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
