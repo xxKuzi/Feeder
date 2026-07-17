@@ -1,0 +1,36 @@
+[Unit]
+Description=Cage Wayland Compositor running Tauri App
+After=network.target systemd-logind.service
+
+[Service]
+User=pb25
+WorkingDirectory=/home/pb25/Dokumenty/GitHub/Feeder/src-tauri/target/release
+
+# --- SCREEN PERMISSION MAGIC ---
+PAMName=login
+TTYPath=/dev/tty7
+StandardInput=tty
+
+# --- WAYLAND & TAURI ANTI-GLITCH VARIABLES ---
+# Required for Cage to know where to put temporary files
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+
+# Fixes Tauri WebKit screen tearing and artifacting
+Environment="WEBKIT_DISABLE_COMPOSITING_MODE=1"
+Environment="WEBKIT_DISABLE_DMABUF_RENDERER=1"
+Enviroment="WEBKIT_INSPECTOR_SERVER=0.0.0.0:8080"
+# Fixes Wayland hardware cursor and GPU rendering crashes
+Environment="WLR_NO_HARDWARE_CURSORS=1"
+Environment="WLR_RENDERER=pixman"
+ConditionPathExists=/this/not
+
+# --- LAUNCH COMMAND ---
+ExecStart=/home/pb25/Desktop/feeder
+
+# --- AUTO-RESTART RULES ---
+#Restart=on-failure
+#RestartSec=3
+#KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target
