@@ -849,6 +849,7 @@ export function Memory({ children }) {
     if (refresh) {
       //set global servo to true
       toggleServo(true);
+      invoke("feed_ball_to_servo1");
       setGlobalServoState(true);
       performCalibration();
     }

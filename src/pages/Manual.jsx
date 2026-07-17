@@ -26,8 +26,8 @@ export default function Manual() {
 
   useEffect(() => {
     const setupServosForLoader = async () => {
-      await toggleFeederServo(false);
-      await toggleServo(false);
+      await toggleFeederServo(true);
+      await toggleServo(true);
     };
 
     setupServosForLoader();
