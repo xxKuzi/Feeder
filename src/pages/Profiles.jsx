@@ -242,7 +242,7 @@ export default function Profiles({ isStartup = false, onSelect }) {
 
       {/* Screen Title */}
       <p className="text-5xl font-bold tracking-wide mb-2 select-none">
-        {isStartup ? "Kdo bude střílet?" : "Profily"}
+        {isStartup ? "Kdo jde trénovat?" : "Profily"}
       </p>
       <p className="text-gray-500 text-lg mb-4 select-none">
         {isStartup
