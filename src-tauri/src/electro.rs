@@ -446,9 +446,9 @@ impl Controller {
 
     
     #[tauri::command]
-    pub fn move_servo(angle: bool) -> Result<String, String> {
-       println!("move_servo (servo1): {}", angle);
-        let command = if angle { "SERVO1_STOP" } else { "SERVO1_RELEASE" };
+    pub fn move_servo(stop_ball: bool) -> Result<String, String> {
+       println!("move_servo (servo1): {}", stop_ball);
+        let command = if stop_ball { "SERVO1_STOP" } else { "SERVO1_RELEASE" };
         println!("Sending command '{}' to Arduino", command);
         
         // Non-blocking: spawn thread without joining
@@ -1066,7 +1066,8 @@ pub mod motor_system {
     }
 
     #[tauri::command]
-    pub fn move_servo(_angle: u8) -> Result<String, String> {
+    pub fn move_servo(stop_ball: bool) -> Result<String, String> {
+        let _ = stop_ball;
         Ok("end_place".to_string())
     }
 

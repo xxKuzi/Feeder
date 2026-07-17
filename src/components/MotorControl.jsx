@@ -229,7 +229,7 @@ export default function MotorControl({
       if (!runningRef.current) return;
       timeLeft -= step;
       setTimer(Math.max(timeLeft, 0).toFixed(lowSpec ? 0 : 1));
-      if (timeLeft <= 1 && !shotFiredRef.current) {
+      if (timeLeft <= 2 && !shotFiredRef.current) {
         releaseBall();
         shotFiredRef.current = true;
         setStopButton(false);
@@ -261,7 +261,7 @@ export default function MotorControl({
           smoothTransition(
             startSpeedForMotor,
             nextSpeed,
-            timeLeft > 2 ? timeLeft - 1 : 1,
+            timeLeft > 3 ? timeLeft - 2 : 1,
             setGlobalMotorSpeed,
           );
         }
@@ -270,7 +270,7 @@ export default function MotorControl({
           nextAngle,
           angleTransitionSeconds,
         );
-        changeMotorSpeed(nextSpeed, timeLeft > 2 ? timeLeft - 1 : 1);
+        changeMotorSpeed(nextSpeed, timeLeft > 3 ? timeLeft - 2 : 1);
       },
       newWorkout ? 1000 : 0,
     );

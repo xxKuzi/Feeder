@@ -54,6 +54,7 @@ export default function Workout() {
   const attemptedShotsRef = useRef(0);
   const madeShotsRef = useRef(0);
   const motorQueueLengthRef = useRef(0);
+  const firstShotFiredRef = useRef(false);
 
   const navigate = useNavigate(); //used for navigation between pages
 
@@ -267,6 +268,7 @@ export default function Workout() {
     console.log("STARTING INITIALIZATION");
     initializationRef.current = true;
     isRunningRef.current = false;
+    firstShotFiredRef.current = false;
     countdownRef.current?.stopCountdown();
     pauseCountdownRef.current?.stopCountdown();
     setIsOpen(false);
@@ -391,11 +393,13 @@ export default function Workout() {
 
   //WHEN COUNTDOWN ENDS
   const CountdownEnd = async () => {
-    // Start sequence: open servo1, close servo2 to hold next balls.
-    await toggleServo(true);
-    await toggleFeederServo(true);
-
-    releaseBall();
+    // Start sequence: open servo1, close servo2 to hold next balls if not already done.
+    if (!firstShotFiredRef.current) {
+      await toggleServo(true);
+      await toggleFeederServo(true);
+      releaseBall();
+      firstShotFiredRef.current = true;
+    }
     setStopButton(true);
     startWorkout(); //BLUETOOTH
     isRunningRef.current = true;
@@ -464,6 +468,14 @@ export default function Workout() {
         ref={(fn) => (countdownRef.current = fn)}
         onCountdownEnd={CountdownEnd}
         onStop={handleStopCountdown}
+        onTick={async (currentCount) => {
+          if (currentCount === 2 && !firstShotFiredRef.current) {
+            firstShotFiredRef.current = true;
+            await toggleServo(true);
+            await toggleFeederServo(true);
+            releaseBall();
+          }
+        }}
         lowSpec={lowSpec}
       />
       <Countdown

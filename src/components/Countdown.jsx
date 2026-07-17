@@ -1,6 +1,6 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 
-const Countdown = forwardRef(({ onCountdownEnd, onStop, lowSpec }, ref) => {
+const Countdown = forwardRef(({ onCountdownEnd, onStop, onTick, lowSpec }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [count, setCount] = useState(null);
 
@@ -21,11 +21,13 @@ const Countdown = forwardRef(({ onCountdownEnd, onStop, lowSpec }, ref) => {
     if (count === null || count === 0) return;
 
     const timer = setTimeout(() => {
-      setCount((prev) => prev - 1);
+      const nextCount = count - 1;
+      setCount(nextCount);
+      if (onTick) onTick(nextCount);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [count]);
+  }, [count, onTick]);
 
   useEffect(() => {
     if (count === 0) {
