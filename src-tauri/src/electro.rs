@@ -484,6 +484,18 @@ impl Controller {
     }
 
     #[tauri::command]
+    pub fn run_auto_ball_cycle() -> Result<String, String> {
+        println!("Starting auto ball cycle (blocking)...");
+        send_arduino_command("SERVO1_RELEASE")?;
+        thread::sleep(Duration::from_millis(1500));
+        send_arduino_command("SERVO1_STOP")?;
+        thread::sleep(Duration::from_millis(120));
+        send_arduino_command("SERVO2_DISPENSE")?;
+        println!("Finished auto ball cycle");
+        Ok("Auto ball cycle completed".to_string())
+    }
+
+    #[tauri::command]
     pub fn get_basket_score() -> Result<u32, String> {
         Ok(BASKET_SCORE.load(Ordering::Relaxed))
     }
@@ -1031,6 +1043,13 @@ pub mod motor_system {
     #[tauri::command]
     pub fn feed_ball_to_servo1() -> Result<String, String> {
         Ok("not supported on this platform".to_string())
+    }
+
+    #[tauri::command]
+    pub fn run_auto_ball_cycle() -> Result<String, String> {
+        println!("Mocking auto ball cycle...");
+        std::thread::sleep(std::time::Duration::from_millis(1620));
+        Ok("mock auto ball cycle completed".to_string())
     }
 
     #[tauri::command]

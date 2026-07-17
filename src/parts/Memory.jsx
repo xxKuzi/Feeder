@@ -957,18 +957,12 @@ export function Memory({ children }) {
 
   const runAutoBallCycle = async () => {
     try {
-      // 1) Open servo1 to release the current ball.
-      await toggleServo(true);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // 2) Close servo1 so it can receive and hold the next ball.
-      await toggleServo(false);
-      await new Promise((resolve) => setTimeout(resolve, 120));
-
-      // 3) Open servo2 briefly to move one ball to servo1, then close it.
-      await feederDispenseToServo1();
+      setGlobalServoState(true);
+      await invoke("run_auto_ball_cycle");
     } catch (error) {
       console.error("Failed to run automatic ball cycle:", error);
+    } finally {
+      setGlobalServoState(false);
     }
   };
 

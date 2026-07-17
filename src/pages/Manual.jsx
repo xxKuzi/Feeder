@@ -46,7 +46,6 @@ export default function Manual() {
 
   const pass = async () => {
     setIsPassDisabled(true);
-    await toggleFeederServo(true);
     await runAutoBallCycle();
     setTimeout(() => {
       setIsPassDisabled(false);
