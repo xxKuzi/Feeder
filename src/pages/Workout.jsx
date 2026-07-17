@@ -380,6 +380,11 @@ export default function Workout() {
 
   //At the end
   const end = async () => {
+    try {
+      await invoke("feed_ball_to_servo1");
+    } catch (err) {
+      console.error("Failed to feed ball to servo1 at workout end:", err);
+    }
     setTimeout(async () => {
       await exitWorkout(); //BLUETOOTH
       navigate("/result", {
