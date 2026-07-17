@@ -164,7 +164,7 @@ export default function MotorControl({
     let index = stepIndexRef.current;
     let currentRound = roundRef.current;
 
-    if (index >= motorData.angles.length) {
+    if (index >= motorData.angles.length - 1) {
       //new round
       index = 0;
       stepIndexRef.current = 0;

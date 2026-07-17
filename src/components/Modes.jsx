@@ -145,21 +145,23 @@ export default function Modes() {
         </p>
         {/* <img src={image} /> */}
         <div className="mt-4">
-          <p>Délka cvičení: {calculateOverallTime()}s</p>
+          <p><span className="font-bold">Délka cvičení:</span> {Math.floor(calculateOverallTime() / 60)}m {calculateOverallTime() % 60}s</p>
+          <p>Počet kol: {repetition}x</p>
+          <p>---------------------------</p>
+           <p><span className="font-bold">Úhly střelby:</span> {angles.map((angle) => angle + "°").join(", ")}</p>
           <p>
             Interval střelby:{" "}
-            {intervals.length === 1
-              ? intervals[0]
-              : intervals.map((interval) => interval + "s, ")}
-            s
+            {intervals.map((interval) => interval + "s").join(", ")}
           </p>
-          <p>Úhly střelby: {angles.map((angle) => angle + "° ")}</p>
+          
+          
+         
           <p>
             Délka výstřelu:{" "}
-            {distances.map((distance) => distance / 1000 + "m, ")}
+            {distances.map((distance) => distance / 1000 + "m").join(", ")}
           </p>
 
-          <p>Počet kol: {repetition}x</p>
+          
         </div>
         <button
           className="button mt-4 button__positive"
