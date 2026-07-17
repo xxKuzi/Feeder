@@ -65,6 +65,8 @@ export function Memory({ children }) {
   });
   const modesRef = useRef([]);
   const workoutDataRef = useRef(workoutData);
+  const lastSentAngleRef = useRef(null);
+  const throttleTimeoutRef = useRef(null);
   const usersRef = useRef(users);
   useEffect(() => {
     usersRef.current = users;
@@ -108,12 +110,41 @@ export function Memory({ children }) {
   }, [workoutData]);
 
   useEffect(() => {
-    invoke("tcp_send_event", {
-      event: "global_angle_changed",
-      payload: { angle: Number(globalAngle) },
-    }).catch(() => {
-      // Ignore telemetry failures when TCP clients are disconnected.
-    });
+    const angle = Number(globalAngle);
+    if (lastSentAngleRef.current === angle) return;
+
+    if (throttleTimeoutRef.current) {
+      // Already waiting to send/throttled
+      return;
+    }
+
+    const send = () => {
+      const currentVal = Number(globalAngle);
+      lastSentAngleRef.current = currentVal;
+      invoke("tcp_send_event", {
+        event: "global_angle_changed",
+        payload: { angle: currentVal },
+      }).catch(() => {
+        // Ignore telemetry failures when TCP clients are disconnected.
+      });
+
+      throttleTimeoutRef.current = setTimeout(() => {
+        throttleTimeoutRef.current = null;
+        // If the angle changed again while we were throttled, send the latest one
+        if (lastSentAngleRef.current !== Number(globalAngle)) {
+          send();
+        }
+      }, 200);
+    };
+
+    send();
+
+    return () => {
+      if (throttleTimeoutRef.current) {
+        clearTimeout(throttleTimeoutRef.current);
+        throttleTimeoutRef.current = null;
+      }
+    };
   }, [globalAngle]);
 
   useEffect(() => {
