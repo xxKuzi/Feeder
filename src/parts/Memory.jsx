@@ -620,7 +620,7 @@ export function Memory({ children }) {
       
       // Restore states if calibrated
       setGlobalAngle(userDataRust.angle);
-      toggleServo(true);
+      toggleServo(true);      
       updateLastCalibration(userDataRust.last_calibration);
     }
   };
@@ -929,11 +929,11 @@ export function Memory({ children }) {
     navigate("/");
   };
 
-  const toggleServo = async (newState) => {
-    setGlobalServoState(newState);
+  const toggleServo = async (stopBall) => {
+    setGlobalServoState(stopBall);
 
     try {
-      await invoke("move_servo", { angle: newState ? 0 : 180 });
+      await invoke("move_servo", { stopBall: stopBall });
     } catch (error) {
       console.error("Failed to toggle servo:", error);
     }
@@ -957,12 +957,12 @@ export function Memory({ children }) {
 
   const runAutoBallCycle = async () => {
     try {
-      setGlobalServoState(true);
+      setGlobalServoState(false);
       await invoke("run_auto_ball_cycle");
     } catch (error) {
       console.error("Failed to run automatic ball cycle:", error);
     } finally {
-      setGlobalServoState(false);
+      setGlobalServoState(true);
     }
   };
 
@@ -1039,8 +1039,8 @@ export function Memory({ children }) {
   useEffect(() => {
     const initializeServos = async () => {
       try {
-        await toggleServo(false);
-        await toggleFeederServo(false);
+        await toggleServo(true);
+        await toggleFeederServo(true);
       } catch (err) {
         console.error("Failed to initialize servos on app load:", err);
       }

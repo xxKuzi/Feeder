@@ -446,9 +446,9 @@ impl Controller {
 
     
     #[tauri::command]
-    pub fn move_servo(angle: u8) -> Result<String, String> {
-       println!("move_servo (servo1) called with angle: {}", angle);
-        let command = if angle >= 90 { "SERVO1_STOP" } else { "SERVO1_RELEASE" };
+    pub fn move_servo(angle: bool) -> Result<String, String> {
+       println!("move_servo (servo1): {}", angle);
+        let command = if angle { "SERVO1_STOP" } else { "SERVO1_RELEASE" };
         println!("Sending command '{}' to Arduino", command);
         
         // Non-blocking: spawn thread without joining
