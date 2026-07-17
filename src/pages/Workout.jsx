@@ -464,10 +464,12 @@ export default function Workout() {
         ref={(fn) => (countdownRef.current = fn)}
         onCountdownEnd={CountdownEnd}
         onStop={handleStopCountdown}
+        lowSpec={lowSpec}
       />
       <Countdown
         ref={(fn) => (pauseCountdownRef.current = fn)}
         onCountdownEnd={onPauseResume}
+        lowSpec={lowSpec}
       />
       <div className="absolute top-8 right-8">
         {" "}

@@ -1,6 +1,6 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 
-const Countdown = forwardRef(({ onCountdownEnd, onStop }, ref) => {
+const Countdown = forwardRef(({ onCountdownEnd, onStop, lowSpec }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [count, setCount] = useState(null);
 
@@ -39,7 +39,7 @@ const Countdown = forwardRef(({ onCountdownEnd, onStop }, ref) => {
     <>
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-          <p className="text-white text-9xl font-bold animate-bounce">
+          <p className={`text-white text-9xl font-bold ${lowSpec ? "" : "animate-bounce"}`}>
             {count}
           </p>
           {onStop && (
