@@ -60,11 +60,54 @@ pub fn my_callback_on_click(message: impl Into<String>) {
     }
 }
 
-fn feeder_pocket_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+fn resolve_feeder_pocket_dir() -> PathBuf {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    
+    // 1. Try candidates relative to CWD
+    let cwd_candidates = [
+        cwd.clone(),
+        cwd.join("FeederPocket"),
+        cwd.join("..").join("FeederPocket"),
+        cwd.join("..").join("..").join("FeederPocket"),
+        cwd.join("..").join("..").join("..").join("FeederPocket"),
+    ];
+
+    // 2. Try candidates relative to current executable directory
+    let mut exe_candidates = Vec::new();
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(mut parent) = exe_path.parent() {
+            exe_candidates.push(parent.join("FeederPocket"));
+            for _ in 0..5 {
+                if let Some(p) = parent.parent() {
+                    parent = p;
+                    exe_candidates.push(parent.join("FeederPocket"));
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Combine candidates
+    let mut candidates = Vec::new();
+    candidates.extend(cwd_candidates);
+    candidates.extend(exe_candidates);
+
+    for candidate in &candidates {
+        if candidate.exists() && candidate.join("package.json").exists() {
+            info!("Found FeederPocket directory at: {:?}", candidate);
+            return candidate.clone();
+        }
+    }
+
+    // 3. Fallback to compile-time macro
+    let compile_time_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("..")
         .join("..")
-        .join("FeederPocket")
+        .join("FeederPocket");
+    
+    warn!("Could not find FeederPocket directory at runtime. Falling back to compile-time path: {:?}", compile_time_path);
+    compile_time_path
 }
 
 fn start_pocket_bridge() -> Option<Child> {
@@ -78,10 +121,22 @@ fn start_pocket_bridge() -> Option<Child> {
         return None;
     }
 
-    let pocket_dir = feeder_pocket_dir();
+    let pocket_dir = resolve_feeder_pocket_dir();
+    
+    // Optimize startup: if the "dist" directory already exists, run the bridge directly (node bridge/server.js)
+    // instead of rebuilding the entire frontend with Vite on every startup on the Raspberry Pi.
+    let dist_dir = pocket_dir.join("dist");
+    let run_script = if dist_dir.exists() {
+        info!("Found pre-built frontend in 'dist'. Running bridge directly to save CPU/memory.");
+        "bridge"
+    } else {
+        info!("Pre-built frontend not found in 'dist'. Running full build and start.");
+        "start"
+    };
+
     let mut cmd = Command::new("npm");
     cmd.arg("run")
-        .arg("start")
+        .arg(run_script)
         .current_dir(&pocket_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::inherit())
