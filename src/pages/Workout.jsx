@@ -136,8 +136,8 @@ export default function Workout() {
     try {
       // Ensure both servos are closed before starting the workout
       try {
-        await toggleFeederServo(false);
-        await toggleServo(false);
+        await toggleFeederServo(true);
+        await toggleServo(true);
       } catch (err) {
         console.error("Failed to close servos before start_workout:", err);
       }
@@ -201,8 +201,8 @@ export default function Workout() {
         }
         // Ensure both servos are closed when workout is running or starting
         try {
-          await toggleFeederServo(false);
-          await toggleServo(false);
+          await toggleFeederServo(true);
+          await toggleServo(true);
         } catch (err) {
           console.error(
             "Failed to ensure servos closed on RUNNING/STARTING state:",
@@ -304,26 +304,15 @@ export default function Workout() {
 
     countdownRef.current.startCountdown(requiredStartupSeconds); // Wait for the motor to reach the first shot position
 
-    // Load one ball during startup countdown: open servo to release, then close to hold
-    setTimeout(async () => {
-      try {
-        await toggleServo(true); // Open servo 1 to load/release ball
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Hold open for 1s
-        await toggleServo(false); // Close servo 1 to hold the ball
-      } catch (err) {
-        console.error("Failed to load ball during startup:", err);
-      }
-    }, 1000); // Start ball loading after 1s to let motor start moving
-
     updateStatistics(0, 0); //reset statistics
     setAttemptedShots(0);
     attemptedShotsRef.current = 0;
     madeShotsRef.current = 0;
     resetBasketPoints();
 
-    // Loader preparation: servo2 open, servo1 closed.
-    await toggleFeederServo(false);
-    await toggleServo(false);
+    // Loader preparation: both servos closed.
+    await toggleFeederServo(true);
+    await toggleServo(true);
 
     await setStartingWorkout(); //BLUETOOTH
     const anglesCount = Math.max(0, workoutData.angles.length);
