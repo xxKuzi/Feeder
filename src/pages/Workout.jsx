@@ -27,6 +27,7 @@ export default function Workout() {
     resetBasketPoints,
     rotateStepperMotor,
     motorQueueLength,
+    lowSpec,
   } = useData();
   const [time, setTime] = useState(0); //elapsed Time
   const [fullTime, setFullTime] = useState(5); //Fulltime
@@ -290,6 +291,7 @@ export default function Workout() {
 
     setReset(true); //changes angle and motorSpeed to first value in array
     const firstShotAngle = Number(workoutData.angles?.[0] ?? globalAngle ?? 90);
+    setNextAngle(firstShotAngle);
     const currentAngle = Number(globalAngle ?? 90);
     const requiredStartupSeconds = Math.max(
       4,
@@ -334,7 +336,7 @@ export default function Workout() {
           0,
         );
         const lastInterval = workoutData.intervals[anglesCount - 1] ?? 0;
-        nextFullTime = (repetitionCount - 1) * sumIntervals - lastInterval;
+        nextFullTime = repetitionCount * sumIntervals - lastInterval;
       } else {
         const interval = workoutData.intervals[0] ?? 0;
         nextFullTime =
@@ -363,24 +365,28 @@ export default function Workout() {
   useEffect(() => {
     let interval = null;
     if (isRunningRef.current) {
+      const delay = lowSpec ? 1000 : 100;
+      const step = lowSpec ? 1 : 0.1;
       interval = setInterval(() => {
-        setTime((prev) => prev + 0.1);
-      }, 100);
+        setTime((prev) => prev + step);
+      }, delay);
     } else {
       clearInterval(interval);
     }
     return () => clearInterval(interval);
-  }, [isRunningRef.current]);
+  }, [isRunningRef.current, lowSpec]);
 
   //At the end
   const end = async () => {
-    exitWorkout(); //BLUETOOTH
-    navigate("/result", {
-      state: {
-        category: workoutData.category,
-        name: workoutData.name,
-      },
-    });
+    setTimeout(async () => {
+      await exitWorkout(); //BLUETOOTH
+      navigate("/result", {
+        state: {
+          category: workoutData.category,
+          name: workoutData.name,
+        },
+      });
+    }, 5000);
   };
 
   //WHEN COUNTDOWN ENDS
@@ -542,8 +548,7 @@ export default function Workout() {
       <div className="flex items-center justify-center flex-col">
         <div className="flex items-center justify-between space-x-[24px] font-spaceMono font-normal bg-green-200 rounded-lg px-4 py-2">
           <p className="text-6xl text-end">{timer}s</p>
-          <p className="text-6xl font-light">|</p>
-          <p className="text-6xl text-start">{nextAngle}°</p>
+          
         </div>
         <div className="flex w-full items-end justify-center flex-col">
           <p className="text-6xl font-spaceMono">{formatTime()}</p>

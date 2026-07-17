@@ -33,7 +33,10 @@ export default function MotorControl({
     globalMotorSpeed,
     setGlobalMotorSpeed,
     saveAngle,
+    lowSpec,
   } = useData();
+
+  const [angleTransitionDuration, setAngleTransitionDuration] = useState(0);
 
   const stepIndexRef = useRef(0);
   const roundRef = useRef(0);
@@ -70,33 +73,38 @@ export default function MotorControl({
       stepIndexRef.current = 0;
       shotFiredRef.current = false;
 
-      setTimer(Math.max(motorData.intervals[0], 0).toFixed(1));
+      setTimer(Math.max(motorData.intervals[0], 0).toFixed(lowSpec ? 0 : 1));
 
       const angleTransitionSeconds = getTransitionDurationSeconds(
         globalAngle,
         motorData.angles[0],
       );
 
-      smoothTransition(
-        globalAngle,
-        motorData.angles[0],
-        angleTransitionSeconds,
-        setGlobalAngle,
-      );
+      if (lowSpec) {
+        setGlobalAngle(motorData.angles[0]);
+        setGlobalMotorSpeed(motorData.distances[0]);
+      } else {
+        smoothTransition(
+          globalAngle,
+          motorData.angles[0],
+          angleTransitionSeconds,
+          setGlobalAngle,
+        );
+        smoothTransition(
+          globalMotorSpeed,
+          motorData.distances[0],
+          3,
+          setGlobalMotorSpeed,
+        );
+      }
       changeMotorAngle(
         globalAngle,
         motorData.angles[0],
         angleTransitionSeconds,
       );
-      smoothTransition(
-        globalMotorSpeed,
-        motorData.distances[0],
-        3,
-        setGlobalMotorSpeed,
-      );
       changeMotorSpeed(motorData.distances[0], 3);
     }
-  }, [reset]);
+  }, [reset, lowSpec]);
 
   //HANDLING THE CODE RUNS
   useEffect(() => {
@@ -160,22 +168,8 @@ export default function MotorControl({
       return;
     }
 
-    //ROUND AND INDEX OF CYCLE LOGIC
-    let index = stepIndexRef.current;
-    let currentRound = roundRef.current;
-
-    if (index >= motorData.angles.length - 1) {
-      //new round
-      index = 0;
-      stepIndexRef.current = 0;
-
-      currentRound += 1;
-      roundRef.current = currentRound;
-      setRound(currentRound);
-    }
-
-    // First shot is fired in CountdownEnd, so this loop runs only totalShots - 1 times.
-    const timedShotIndex = currentRound * anglesCount + index;
+    // stepIndexRef.current is the global index of timed shots (0, 1, 2, ...)
+    const timedShotIndex = stepIndexRef.current;
     const totalTimedShots = motorData.repetition * anglesCount - 1;
 
     if (timedShotIndex >= totalTimedShots) {
@@ -185,31 +179,42 @@ export default function MotorControl({
       return;
     }
 
+    // Calculate active angle index, target angle index, and round count based on the global timed shot index
+    const activeAngleIndex = timedShotIndex % anglesCount;
+    const targetAngleIndex = (timedShotIndex + 1) % anglesCount;
+    const currentRound = Math.floor((timedShotIndex + 1) / anglesCount);
+
+    // Update round state and ref
+    setRound(currentRound);
+    roundRef.current = currentRound;
+
     let actualInterval = motorData.intervals[0];
     // only if custom interval
     if (motorData.intervals.length > 1) {
-      actualInterval = motorData.intervals[index];
+      actualInterval = motorData.intervals[activeAngleIndex];
     }
 
-    let actualAngle = motorData.angles[index];
-    let actualSpeed = motorData.distances[index];
-    let nextAngle = 0;
-    let nextSpeed = 0;
-
-    if (index + 1 !== motorData.angles.length) {
-      nextAngle = motorData.angles[index + 1];
-      nextSpeed = motorData.distances[index + 1];
-    } else {
-      nextAngle = motorData.angles[0];
-      nextSpeed = motorData.distances[0];
-    }
+    let actualAngle = motorData.angles[activeAngleIndex];
+    let actualSpeed = motorData.distances[activeAngleIndex];
+    let nextAngle = motorData.angles[targetAngleIndex];
+    let nextSpeed = motorData.distances[targetAngleIndex];
 
     setNextAngle(nextAngle);
     targetAngleRef.current = nextAngle;
 
+    // Capture starting values before updating states
+    const startAngleForMotor = newWorkout ? actualAngle : globalAngle;
+    const startSpeedForMotor = newWorkout ? actualSpeed : globalMotorSpeed;
+
+    if (lowSpec) {
+      // Update immediately on low spec so it is visible earlier
+      setGlobalAngle(nextAngle);
+      setGlobalMotorSpeed(nextSpeed);
+    }
+
     //setting actual time left - after pause - only remaining time (SAVED IN TIMER) | after reset - NEW TIME
     let timeLeft = newWorkout ? actualInterval : timer;
-    setTimer(Math.max(timeLeft, 0).toFixed(1));
+    setTimer(Math.max(timeLeft, 0).toFixed(lowSpec ? 0 : 1));
 
     if (newWorkout) {
       shotFiredRef.current = false;
@@ -217,10 +222,13 @@ export default function MotorControl({
 
     if (timerRef.current) clearInterval(timerRef.current);
 
+    const delay = lowSpec ? 1000 : 100;
+    const step = lowSpec ? 1 : 0.1;
+
     timerRef.current = setInterval(() => {
       if (!runningRef.current) return;
-      timeLeft -= 0.1;
-      setTimer(Math.max(timeLeft, 0).toFixed(1));
+      timeLeft -= step;
+      setTimer(Math.max(timeLeft, 0).toFixed(lowSpec ? 0 : 1));
       if (timeLeft <= 1 && !shotFiredRef.current) {
         releaseBall();
         shotFiredRef.current = true;
@@ -234,31 +242,33 @@ export default function MotorControl({
         stepIndexRef.current += 1;
         nextStep();
       }
-    }, 100);
+    }, delay);
 
     setTimeout(
       () => {
         const angleTransitionSeconds = getTransitionDurationSeconds(
-          newWorkout ? actualAngle : globalAngle,
+          startAngleForMotor,
           nextAngle,
         );
 
-        smoothTransition(
-          newWorkout ? actualAngle : globalAngle,
-          nextAngle,
-          angleTransitionSeconds,
-          setGlobalAngle,
-        );
+        if (!lowSpec) {
+          smoothTransition(
+            startAngleForMotor,
+            nextAngle,
+            angleTransitionSeconds,
+            setGlobalAngle,
+          );
+          smoothTransition(
+            startSpeedForMotor,
+            nextSpeed,
+            timeLeft > 2 ? timeLeft - 1 : 1,
+            setGlobalMotorSpeed,
+          );
+        }
         changeMotorAngle(
-          newWorkout ? actualAngle : globalAngle,
+          startAngleForMotor,
           nextAngle,
           angleTransitionSeconds,
-        );
-        smoothTransition(
-          newWorkout ? actualSpeed : globalMotorSpeed,
-          nextSpeed,
-          timeLeft > 2 ? timeLeft - 1 : 1,
-          setGlobalMotorSpeed,
         );
         changeMotorSpeed(nextSpeed, timeLeft > 2 ? timeLeft - 1 : 1);
       },
@@ -280,29 +290,51 @@ export default function MotorControl({
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center p-5">
-      <div className=" p-6 rounded-lg shadow-lg text-center w-96">
-        <h2 className="text-3xl font-bold mb-4">Motor Control Panel</h2>
-        <div className="text-lg space-y-2">
-          <p>
-            <strong>Console Angle:</strong>{" "}
-            <span className="text-blue-400">{globalAngle.toFixed(1)}°</span>
-          </p>
-          <p>
-            <strong>Motor Speed:</strong>{" "}
-            <span className="text-green-400">
-              {globalMotorSpeed.toFixed(1)} rpm
-            </span>
-          </p>
-          <p>
-            <strong>Next Shot In:</strong>{" "}
-            <span className="text-yellow-400">{timer}s</span>
-          </p>
-          <p>
-            <strong>Round:</strong> {round + 1} / {motorData.repetition}
-          </p>
+    <div className="relative flex flex-col items-center justify-center p-6 bg-zinc-50 rounded-3xl border border-zinc-200 shadow-xl w-[480px] mt-4 text-zinc-800">
+      <h2 className="text-xl font-bold mb-6 text-zinc-400 tracking-wider uppercase">Motor Control Panel</h2>
+      
+      {/* Large visual representation of the angle */}
+      <div className="relative w-96 h-48 border-b border-zinc-200 flex items-end justify-center overflow-hidden mb-8">
+        {/* Semi-circle track */}
+        <div className="absolute w-96 h-96 rounded-full border border-zinc-200/80 border-b-transparent -bottom-48 pointer-events-none"></div>
+        
+        {/* Tick labels */}
+        <div className="absolute text-xs text-zinc-400 font-bold left-2 bottom-1">0°</div>
+        <div className="absolute text-xs text-zinc-400 font-bold left-[25%] top-10 -translate-x-1/2">45°</div>
+        <div className="absolute text-xs text-zinc-400 font-bold left-1/2 top-2 -translate-x-1/2">90°</div>
+        <div className="absolute text-xs text-zinc-400 font-bold right-[25%] top-10 translate-x-1/2">135°</div>
+        <div className="absolute text-xs text-zinc-400 font-bold right-2 bottom-1">180°</div>
+
+        {/* Rotating needle */}
+        <div 
+          className="absolute w-1.5 h-48 origin-bottom -bottom-0"
+          style={{ 
+            transform: `rotate(${globalAngle - 90}deg)`,
+            transition: lowSpec ? `transform ${angleTransitionDuration}s linear` : "none"
+          }}
+        >
+          <div className="w-full h-full bg-gradient-to-t from-blue-500/10 via-blue-400 to-blue-500 rounded-full relative shadow-[0_0_10px_rgba(59,130,246,0.4)]">
+            <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-blue-500 border-2 border-white shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+          </div>
         </div>
-        <div className="mt-5 flex space-x-4"></div>
+
+        {/* Huge dynamic text displaying the current angle */}
+        <div className="absolute bottom-2 text-center z-10">
+          <span className="text-8xl font-black font-spaceMono text-blue-600 tracking-tighter drop-shadow-[0_2px_8px_rgba(37,99,235,0.1)]">
+            {globalAngle.toFixed(0)}°
+          </span>
+          <p className="text-[10px] text-zinc-400 font-extrabold tracking-widest uppercase mt-1">ANGLE</p>
+        </div>
+      </div>
+
+      {/* Numerical info details (Timer/Next Shot removed) */}
+      <div className="w-full space-y-4 text-center px-4">
+        <p className="text-2xl text-zinc-600">
+          <strong>Speed:</strong> <span className="text-emerald-600 font-bold font-spaceMono">{globalMotorSpeed.toFixed(0)} rpm</span>
+        </p>
+        <p className="text-2xl text-zinc-650">
+          <strong>Round:</strong> <span className="text-zinc-800 font-bold font-spaceMono">{round + 1} / {motorData.repetition}</span>
+        </p>
       </div>
     </div>
   );

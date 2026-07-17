@@ -50,6 +50,9 @@ export function Memory({ children }) {
   const [modes, setModes] = useState([{ name: "XYZ" }]);
   const [globalAngle, setGlobalAngle] = useState(90);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
+  const [lowSpec, setLowSpec] = useState(
+    import.meta.env.VITE_LOW_SPEC === "true" || import.meta.env.LOW_SPEC === "true"
+  );
   const [calibrationState, setCalibrationState] = useState(false); // false (boolean), "running", "end_place", true (boolean)
   const [lastCalibration, setLastCalibration] = useState("0");
   const [globalServoState, setGlobalServoState] = useState(false);
@@ -554,6 +557,9 @@ export function Memory({ children }) {
         }
         if (env.VITE_ALWAYS_CALIBRATE) {
           setAlwaysCalibrate(env.VITE_ALWAYS_CALIBRATE === "true");
+        }
+        if (env.VITE_LOW_SPEC || env.LOW_SPEC) {
+          setLowSpec(env.VITE_LOW_SPEC === "true" || env.LOW_SPEC === "true");
         }
       }
     } catch (err) {
@@ -1099,6 +1105,7 @@ export function Memory({ children }) {
     openCalibration,
     lastCalibration,
     isAppLocked,
+    lowSpec,
   };
 
   return (

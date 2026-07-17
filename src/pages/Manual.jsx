@@ -17,6 +17,7 @@ export default function Manual() {
     manualMemory,
     setManualMemory,
     toggleFeederServo,
+    toggleServo,
     runAutoBallCycle,
     basketPoints,
     resetBasketPoints,
