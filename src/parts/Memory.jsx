@@ -164,6 +164,7 @@ export function Memory({ children }) {
     let unlistenRemoteExit = null;
     let unlistenRemoteManualMove = null;
     let unlistenRemoteStartCalibration = null;
+    let unlistenRemoteCalibrationSkipped = null;
 
     const resolveModeById = (modeId) => {
       if (modeId === undefined || modeId === null) {
@@ -305,6 +306,16 @@ export function Memory({ children }) {
           calibrate();
         },
       );
+
+      unlistenRemoteCalibrationSkipped = await listen(
+        "remote-calibration-skipped",
+        () => {
+          setCalibrationState("true");
+          setGlobalAngle(90);
+          calibrationRef.current?.closeModal();
+          updateLastCalibration(new Date().toISOString());
+        },
+      );
     };
 
     bindRemoteListeners();
@@ -327,6 +338,9 @@ export function Memory({ children }) {
       }
       if (unlistenRemoteStartCalibration) {
         unlistenRemoteStartCalibration();
+      }
+      if (unlistenRemoteCalibrationSkipped) {
+        unlistenRemoteCalibrationSkipped();
       }
     };
   }, [navigate, location.pathname]);

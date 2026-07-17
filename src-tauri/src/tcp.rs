@@ -366,6 +366,16 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             let _ = app.emit("remote-start-calibration", serde_json::json!({}));
             Ok(json!({ "ok": true }))
         }
+        "skip_calibration" => {
+            let _ = requires_developer(role)?;
+            tauri::async_runtime::block_on(sql::save_calibration_state(true))?;
+            let now = chrono::Utc::now().to_rfc3339();
+            tauri::async_runtime::block_on(sql::save_last_calibration(now))?;
+            tauri::async_runtime::block_on(sql::save_angle(90))?;
+            GLOBAL_ANGLE_MILLIDEG.store(90_000, Ordering::Relaxed);
+            let _ = app.emit("remote-calibration-skipped", serde_json::json!({}));
+            Ok(json!({ "ok": true }))
+        }
         "manual_move_position" => {
             let _ = requires_auth(role)?;
             let steps = extract_i32(args, "steps")?;
