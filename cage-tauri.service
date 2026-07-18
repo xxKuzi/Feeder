@@ -13,24 +13,26 @@ StandardInput=tty
 
 # --- WAYLAND & TAURI ANTI-GLITCH VARIABLES ---
 # Required for Cage to know where to put temporary files
+
+Environment="FNM_DIR=/home/pb25/.local/share/fnm"
+Environment="PATH=/home/pb25/.local/share/fnm/node-versions/v22.12.0/installation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
 Environment="XDG_RUNTIME_DIR=/run/user/1000"
 
-# Fixes Tauri WebKit screen tearing and artifacting
 Environment="WEBKIT_DISABLE_COMPOSITING_MODE=1"
 Environment="WEBKIT_DISABLE_DMABUF_RENDERER=1"
-Enviroment="WEBKIT_INSPECTOR_SERVER=0.0.0.0:8080"
+Environment="WEBKIT_INSPECTOR_SERVER=0.0.0.0:8080"
 # Fixes Wayland hardware cursor and GPU rendering crashes
 Environment="WLR_NO_HARDWARE_CURSORS=1"
 Environment="WLR_RENDERER=pixman"
-ConditionPathExists=/this/not
 
 # --- LAUNCH COMMAND ---
-ExecStart=/home/pb25/Desktop/feeder
+ExecStart=/usr/bin/cage -s -- /home/pb25/Dokumenty/GitHub/Feeder/src-tauri/target/release/feeder
 
 # --- AUTO-RESTART RULES ---
-#Restart=on-failure
-#RestartSec=3
-#KillMode=control-group
+Restart=on-failure
+RestartSec=3
+KillMode=control-group
 
 [Install]
 WantedBy=multi-user.target
