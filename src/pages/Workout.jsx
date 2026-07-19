@@ -433,6 +433,8 @@ export default function Workout() {
     await ReleaseAndLoadNext();
   };
 
+  const isOrange = isRunningRef.current === true && timer !== null && timer !== undefined && Number(timer) <= 2;
+
   return (
     <div className="flex relative flex-col items-center justify-center w-full">
       {waitingForSync && (
@@ -477,6 +479,7 @@ export default function Workout() {
         {" "}
         <Pause
           enabled={stopButton}
+          isOrange={isOrange}
           handleClick={() => {
             setIsOpen(true);
             isRunningRef.current = false;

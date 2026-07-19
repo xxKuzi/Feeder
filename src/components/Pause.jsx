@@ -9,6 +9,7 @@ export default function FullscreenPopup({
   handleExit,
   isOpen,
   setIsOpen,
+  isOrange,
 }) {
   return (
     <div className="relative">
@@ -16,7 +17,7 @@ export default function FullscreenPopup({
         onClick={() => (setIsOpen(true), handleClick())}
         disabled={!enabled}
       >
-        <FaCirclePause color={enabled ? "3167c5" : "4a5668"} size={60} />
+        <FaCirclePause color={isOrange ? "#f97316" : (enabled ? "#3167c5" : "#4a5668")} size={60} />
       </button>
 
       {isOpen && (
