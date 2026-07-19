@@ -111,6 +111,12 @@ fn resolve_feeder_pocket_dir() -> PathBuf {
 }
 
 fn start_pocket_bridge() -> Option<Child> {
+    // Skip in development mode (e.g. tauri dev)
+    if cfg!(dev) {
+        info!("Skipping Pocket bridge child process in development mode");
+        return None;
+    }
+
     // Skip only if START_POCKET_BRIDGE is explicitly set to "0" or "false"
     let should_skip = std::env::var("START_POCKET_BRIDGE")
         .map(|v| v == "0" || v == "false")
