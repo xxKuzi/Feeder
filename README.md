@@ -107,4 +107,6 @@ Because the project relies on specific Raspberry Pi GPIO, serial ports, and BLE 
 
 ## License
 
-This repository is shared for portfolio and review purposes. No formal license is included; please contact the author if you wish to reuse or modify the source code.
+All rights reserved. This repository is shared for portfolio and viewing
+purposes only — no permission is granted to use, copy, modify, or distribute
+it. See [LICENSE](./LICENSE).
