@@ -1,37 +1,48 @@
 <h1 align="center">Feeder</h1>
-<p align="center"><strong>A React + Tauri touchscreen controller for a custom basketball feeding machine, built for a local basketball club.</strong></p>
+<p align="center"><strong>A Tauri (React + Rust) touchscreen controller for a custom basketball feeding machine, built for a local basketball club.</strong></p>
+
+<p align="center">
+  <a href="#screenshots">Screenshots</a> &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#system-architecture">System Architecture</a> &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#key-features">Key Features</a> &nbsp;&nbsp;·&nbsp;&nbsp; 
+  <a href="#tech-stack">Tech Stack</a> &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#license">License</a>
+</p>
+
+<img src="./docs/images/app-ui.webp" alt="App interface">
+
+
+
+
+
 
 ---
 
 ## What it is
 
-**Feeder** is the touchscreen application that powers a custom-built, automated basketball passing machine. Running on a Raspberry Pi 5 bolted directly to the machine's chassis, the app serves as the system's control center: it coordinates stepper motors to adjust launching angles, triggers physical servos to dispense and pass basketballs, reads laser sensors to log shots, and tracks player performance metrics.
+### App
+**Feeder** is a React and Rust application that serves as the interactive control interface for an automated basketball passing machine. Built to make workouts more engaging and data-driven, the app lets players and coaches choose from pre-made or custom drills. It tracks shot performance in real time, logging makes and misses to a local SQLite database for easy data analysis.
 
-Rather than treating the touchscreen as a simple visual display, the app runs a full React + Tauri environment that makes the machine interactive. Players and coaches can select preset drills (two-pointers, three-pointers, free throws) or customize manual routines. The software logs makes and misses in real time, storing workout sessions in a local SQLite database for historical analytics.
+---
+
+### Hardware
+The software runs on a Raspberry Pi 5 built directly into the machine's chassis. From the touchscreen, it controls hardware components to physical execution: driving stepper motors to adjust launching angles, triggering servos to handle ball dispensing, and reading laser sensors to detect incoming shots automatically.
+
+
+<br>
 
 ## Screenshots
 
 <table align="center">
-  <tr>
-    <td width="50%">
-      <img src="./docs/images/app-ui.webp" alt="Home Dashboard">
-      <p align="center"><sub>Home Dashboard & Navigation</sub></p>
-    </td>
-    <td width="50%">
-      <img src="./docs/images/drills.webp" alt="Drills Selection">
-      <p align="center"><sub>Drill Presets (Two-point, Three-point, Free throws)</sub></p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <img src="./docs/images/manual-control.webp" alt="Manual Control">
-      <p align="center"><sub>Manual Mode (Angle, Distance & Interval Sliders)</sub></p>
-    </td>
-    <td width="50%">
-      <img src="./docs/images/stats.webp" alt="Shooting Statistics">
-      <p align="center"><sub>Session Stats & Historical Accuracy Charts</sub></p>
-    </td>
-  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./docs/images/workout.webp" alt="Workout screen">
+    </td>
+    <td width="50%" align="center">
+      <img src="./docs/images/stats_cut.png" alt="Shooting statistics">
+    </td>
+    
+  </tr>
 </table>
 
 ## System Architecture
@@ -60,10 +71,10 @@ cargo run -- --port /dev/ttyUSB0 --baud 115200
 ## Key Features
 
 - **Drill Presets & Custom Routines**: Configure angle, distance, shot count, and passing interval dynamically.
-- **Live Performance Feedback**: Displays motor status, current launcher angle, and a countdown timer for the next pass during active workouts.
+- **Live Performance Feedback**: Displays real-time motor status, launcher angle, and a countdown timer for the next pass during active workouts.
 - **Detailed History & Analytics**: Tracks historical makes, misses, and accuracy charts (today, 30 days, 6 months) for individual player profiles.
-- **Bluetooth LE Sync**: Acts as a BLE peripheral to sync workouts and profiles with companion mobile apps (FeederPocket / FeederMini).
-- **Embedded Touch Keyboard**: Integrated on-screen keyboard support designed for headless touchscreens without physical peripherals.
+- **Wifi Sync**: Acts as a Wifi hotspot for remote workout control and workout data sync with FeederPocket mobile app.
+- **Embedded Touch Keyboard**: Integrated React on-screen keyboard support designed for headless touchscreens without physical peripherals.
 
 ## Tech Stack
 
@@ -71,7 +82,7 @@ cargo run -- --port /dev/ttyUSB0 --baud 115200
 - **Desktop/Embedded Wrapper**: Tauri 2 (Rust backend)
 - **Local Storage**: SQLite (via `tauri-plugin-sql`)
 - **Hardware Integration**: Raspberry Pi GPIO control via `rppal`, USB Serial communication
-- **Connectivity**: Bluetooth LE peripheral (`ble-peripheral-rust`) for mobile integration
+- **Connectivity**: WiFi TCP Server + Bluetooth LE peripheral (`ble-peripheral-rust`) for mobile integration
 - **Real-Time Controller**: Arduino (C++ / Arduino IDE)
 
 ## Running Locally
@@ -79,18 +90,18 @@ cargo run -- --port /dev/ttyUSB0 --baud 115200
 Because the project relies on specific Raspberry Pi GPIO, serial ports, and BLE hardware, running the full stack requires the physical machine. However, the user interface can be run in mock mode for UI development:
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/xxKuzi/Feeder.git
-   cd Feeder
-   ```
+   ```bash
+   git clone https://github.com/xxKuzi/Feeder.git
+   cd Feeder
+   ```
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+   ```bash
+   npm install
+   ```
 3. Run the Tauri development server:
-   ```bash
-   npm run tauri dev
-   ```
+   ```bash
+   npm run tauri dev
+   ```
 
 *Note: Serial communication calls to `/dev/ttyUSB0` will fail gracefully if no Arduino is connected, allowing you to develop and test UI features independently.*
 
