@@ -13,11 +13,12 @@ import Calibration from "./Calibration.jsx";
 import { useLocation, useNavigate } from "react-router-dom";
 import KeyboardOverlay from "../parts/Keyboard";
 
-const INITIAL_DEV_PASSWORD = import.meta.env.VITE_DEVELOPER_MODE_PASSWORD;
-const INITIAL_IS_LOCKED = import.meta.env.VITE_APP_LOCKED === "true";
-const ALWAYS_CALIBRATE = import.meta.env.VITE_ALWAYS_CALIBRATE !== undefined
-  ? import.meta.env.VITE_ALWAYS_CALIBRATE === "true"
-  : true;
+// Defaults only. loadEnvSettings() overwrites all of these on mount with the
+// real values read from .env on disk, so nothing secret is compiled in here.
+const INITIAL_DEV_PASSWORD = null; // this_is_overwritten
+const INITIAL_IS_LOCKED = false;
+const ALWAYS_CALIBRATE = true;
+const INITIAL_LOW_SPEC = true;
 
 export function Memory({ children }) {
   const modalRef = useRef();
@@ -50,9 +51,7 @@ export function Memory({ children }) {
   const [modes, setModes] = useState([{ name: "XYZ" }]);
   const [globalAngle, setGlobalAngle] = useState(90);
   const [globalMotorSpeed, setGlobalMotorSpeed] = useState(0);
-  const [lowSpec, setLowSpec] = useState(
-    import.meta.env.VITE_LOW_SPEC === "true" || import.meta.env.LOW_SPEC === "true"
-  );
+  const [lowSpec, setLowSpec] = useState(INITIAL_LOW_SPEC);
   const [calibrationState, setCalibrationState] = useState(false); // false (boolean), "running", "end_place", true (boolean)
   const [lastCalibration, setLastCalibration] = useState("0");
   const [globalServoState, setGlobalServoState] = useState(false);
