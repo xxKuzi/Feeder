@@ -622,7 +622,7 @@ fn run_command(role: Option<RemoteRole>, command: &str, args: &Value, app: &AppH
             if new_password.trim().is_empty() {
                 return Err("Password cannot be empty".to_string());
             }
-            if let Err(e) = update_env_file(&resolve_feeder_env_path(), "VITE_DEVELOPER_MODE_PASSWORD", new_password.trim()) {
+            if let Err(e) = update_env_file(&resolve_feeder_env_path(), "DEVELOPER_MODE_PASSWORD", new_password.trim()) {
                 return Err(format!("Failed to update feeder .env: {}", e));
             }
             let _ = app.emit("feeder-dev-password-changed", json!({ "ok": true }));
@@ -852,7 +852,7 @@ pub fn start_tcp_server(app_handle: AppHandle) -> Result<(), String> {
     let feeder_content = fs::read_to_string(&feeder_env)
         .map_err(|e| format!("Failed to read frontend env file: {e}"))?;
     let feeder_map = parse_env(&feeder_content);
-    if let Some(pw) = feeder_map.get("VITE_DEVELOPER_MODE_PASSWORD") {
+    if let Some(pw) = feeder_map.get("DEVELOPER_MODE_PASSWORD") {
         if pw == "xxx" {
             return Err("Developer mode password in .env cannot be the default 'xxx' placeholder".to_string());
         }

@@ -562,8 +562,8 @@ export function Memory({ children }) {
     try {
       const env = await invoke("get_feeder_env");
       if (env) {
-        if (env.VITE_DEVELOPER_MODE_PASSWORD) {
-          setDynamicDevPassword(env.VITE_DEVELOPER_MODE_PASSWORD);
+        if (env.DEVELOPER_MODE_PASSWORD) {
+          setDynamicDevPassword(env.DEVELOPER_MODE_PASSWORD);
         }
         if (env.VITE_APP_LOCKED) {
           setIsAppLocked(env.VITE_APP_LOCKED === "true");

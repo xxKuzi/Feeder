@@ -248,7 +248,7 @@ if (isDemoMode) {
           return {
             // Demo-only values. No real credentials belong here — this map ships
             // in the public web bundle.
-            VITE_DEVELOPER_MODE_PASSWORD: "demo",
+            DEVELOPER_MODE_PASSWORD: "demo",
             VITE_APP_LOCKED: "false",
             VITE_ALWAYS_CALIBRATE: "true",
             VITE_LOW_SPEC: "false",
