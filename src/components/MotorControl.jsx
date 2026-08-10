@@ -11,6 +11,7 @@ const getTransitionDurationSeconds = (startValue, endValue) => {
 export default function MotorControl({
   motorData,
   runningRef,
+  setRunning,
   newWorkout,
   refresh,
   stopButton,
@@ -162,7 +163,7 @@ export default function MotorControl({
 
     const anglesCount = motorData.angles.length;
     if (anglesCount === 0 || motorData.repetition <= 0) {
-      runningRef.current = false;
+      setRunning(false);
       stopMotor();
       end();
       return;
@@ -173,7 +174,7 @@ export default function MotorControl({
     const totalTimedShots = motorData.repetition * anglesCount - 1;
 
     if (timedShotIndex >= totalTimedShots) {
-      runningRef.current = false;
+      setRunning(false);
       stopMotor();
       end();
       return;

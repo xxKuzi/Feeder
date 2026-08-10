@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "../parts/Memory";
 import CirclePB from "../components/CirclePB";
@@ -45,6 +45,7 @@ export default function Workout() {
   const [waitingForSync, setWaitingForSync] = useState(false); //wait for motor synchronization
 
   const isRunningRef = useRef(); //main variable
+  const [isRunning, setIsRunning] = useState(false);
   const countdownRef = useRef(null); //ref to INITIAL CountDown
   const pauseCountdownRef = useRef(null); //ref to PAUSE Countdown
   const [isOpen, setIsOpen] = useState(false);
@@ -58,6 +59,16 @@ export default function Workout() {
   const firstShotFiredRef = useRef(false);
 
   const navigate = useNavigate(); //used for navigation between pages
+
+  // Always change the running flag through this. The ref is what callbacks,
+  // intervals and MotorControl read, because state would be stale inside those
+  // closures. The state is what makes the timer effect below re-evaluate --
+  // writing only the ref never triggers a render, so the effect could miss a
+  // resume and leave the timer stopped for good.
+  const setRunning = useCallback((value) => {
+    isRunningRef.current = value;
+    setIsRunning(value);
+  }, []);
 
   useEffect(() => {
     motorQueueLengthRef.current = motorQueueLength;
@@ -179,10 +190,6 @@ export default function Workout() {
     initialization();
   }, []);
 
-  useEffect(() => {
-    console.log(initializationRef.current);
-  }, [initializationRef.current]);
-
   // Remote event listener for state changes from TCP commands
   useEffect(() => {
     const unlistenStateChanged = listen("state-changed", async (event) => {
@@ -217,7 +224,7 @@ export default function Workout() {
       } else if (code === WORKOUT_STATE_PAUSE || code === WORKOUT_STATE_BREAK) {
         // Pause or break
 
-        isRunningRef.current = false;
+        setRunning(false);
         setIsOpen(true);
       }
     });
@@ -248,7 +255,7 @@ export default function Workout() {
   useEffect(() => {
     const unlistenPause = listen("pause", () => {
       console.log("Pause command received from the server");
-      isRunningRef.current = !isRunningRef.current;
+      setRunning(!isRunningRef.current);
     });
 
     return () => {
@@ -258,7 +265,7 @@ export default function Workout() {
 
   // after delay after resume
   const onPauseResume = () => {
-    isRunningRef.current = true;
+    setRunning(true);
     startWorkout(); //BLUETOOTH
     setNewWorkout(false);
     setRefresh((prev) => !prev);
@@ -268,7 +275,7 @@ export default function Workout() {
   const initialization = async () => {
     console.log("STARTING INITIALIZATION");
     initializationRef.current = true;
-    isRunningRef.current = false;
+    setRunning(false);
     firstShotFiredRef.current = false;
     countdownRef.current?.stopCountdown();
     pauseCountdownRef.current?.stopCountdown();
@@ -355,18 +362,16 @@ export default function Workout() {
 
   //TIME MANAGEMENT
   useEffect(() => {
-    let interval = null;
-    if (isRunningRef.current) {
-      const delay = lowSpec ? 1000 : 100;
-      const step = lowSpec ? 1 : 0.1;
-      interval = setInterval(() => {
-        setTime((prev) => prev + step);
-      }, delay);
-    } else {
-      clearInterval(interval);
-    }
+    if (!isRunning) return;
+
+    const delay = lowSpec ? 1000 : 100;
+    const step = lowSpec ? 1 : 0.1;
+    const interval = setInterval(() => {
+      setTime((prev) => prev + step);
+    }, delay);
+
     return () => clearInterval(interval);
-  }, [isRunningRef.current, lowSpec]);
+  }, [isRunning, lowSpec]);
 
   //At the end
   const end = async () => {
@@ -392,7 +397,7 @@ export default function Workout() {
     }
     setStopButton(true);
     startWorkout(); //BLUETOOTH
-    isRunningRef.current = true;
+    setRunning(true);
     setNewWorkout(true); //for newWorkout in MotorControl
     setRefresh((prev) => !prev);
     initializationRef.current = false;
@@ -482,7 +487,7 @@ export default function Workout() {
           isOrange={isOrange}
           handleClick={() => {
             setIsOpen(true);
-            isRunningRef.current = false;
+            setRunning(false);
             pauseWorkout(); //BLUETOOTH
           }}
           handleResume={() => {
@@ -496,7 +501,7 @@ export default function Workout() {
           }}
           handleExit={() => {
             setIsOpen(false);
-            isRunningRef.current = false;
+            setRunning(false);
             exitWorkout().finally(() => {
               navigate("/menu");
             });
@@ -533,6 +538,7 @@ export default function Workout() {
           <MotorControl
             motorData={workoutData}
             runningRef={isRunningRef}
+            setRunning={setRunning}
             newWorkout={newWorkout}
             refresh={refresh}
             stopButton={stopButton}
