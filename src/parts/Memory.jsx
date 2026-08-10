@@ -595,21 +595,6 @@ export function Memory({ children }) {
       updateProfile(userData);
     }
 
-    //examines if last calibration is older than 7 days
-
-    const isOld = () => {
-      const lastCalibration = new Date(userDataRust.last_calibration);
-      const now = Date.now();
-      const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
-      return now - lastCalibration.getTime() > oneWeekInMs;
-    };
-
-    
-    
-
-    
-    
-
     // We only force ALWAYS_CALIBRATE if the session calibration has not run yet
     const forceCalibrate =
       alwaysCalibrate &&
@@ -624,11 +609,7 @@ export function Memory({ children }) {
         event: "needs_calibration",
         payload: { needsCalibration: true },
       }).catch(() => {});
-
-      // openCalibration is now deferred until after user selection
-      if (forceCalibrate && !isAppLocked) {
-        // deferred
-      }
+      // openCalibration is deferred until after user selection
     } else {
       setCalibrationState("true");
       saveCalibrationState(true);
@@ -638,9 +619,11 @@ export function Memory({ children }) {
       }).catch(() => {});
       
       // Restore states if calibrated
-      setGlobalAngle(userDataRust.angle);
-      toggleServo(true);      
-      updateLastCalibration(userDataRust.last_calibration);
+      if (userDataRust) {
+        setGlobalAngle(userDataRust.angle);
+        toggleServo(true);
+        updateLastCalibration(userDataRust.last_calibration);
+      }
     }
   };
 

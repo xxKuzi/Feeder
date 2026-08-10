@@ -462,7 +462,9 @@ pub async fn load_modes() -> Result<Vec<Mode>, String> {
     let pool = get_db_pool().await;
     let pool = pool.lock().await;
 
-    let qry = "SELECT mode_id, name, category, predefined, repetition, angles, distances, intervals, image FROM modes";
+    // image is nullable in the schema and NULL for every predefined row, so it has to be
+    // coalesced here — decoding NULL into Mode.image (String) fails the whole fetch_all.
+    let qry = "SELECT mode_id, name, category, predefined, repetition, angles, distances, intervals, COALESCE(image, '') AS image FROM modes";
     let modes = sqlx::query_as::<_, Mode>(qry)
         .fetch_all(&*pool)
         .await;

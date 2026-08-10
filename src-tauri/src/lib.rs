@@ -3,7 +3,6 @@ pub mod electro;
 pub mod bluetooth;
 pub mod limit_switch;
 pub mod tcp;
-use tauri::Emitter;
 use log::{info, warn};
 
 use limit_switch::platform::watch_limit_switch;
@@ -37,27 +36,9 @@ use electro::motor_system::{
 
 use tauri::{Manager, AppHandle};
 use tauri::WindowEvent;
-use once_cell::sync::OnceCell;
-
-static GLOBAL_APP_HANDLE: OnceCell<AppHandle> = OnceCell::new();
 
 struct PocketBridgeState {
     child: Mutex<Option<Child>>,
-}
-
-#[derive(Clone, serde::Serialize)]
-pub struct Payload {
-    pub message: String,
-}
-
-/// Global callback function that other modules can call to emit an event to the frontend.
-/// For example, call this from your BLE event handler when you want to notify the UI.
-pub fn my_callback_on_click(message: impl Into<String>) {
-    if let Some(app_handle) = GLOBAL_APP_HANDLE.get() {
-         app_handle
-             .emit("onClick", Payload { message: message.into() })
-             .unwrap();
-    }
 }
 
 fn resolve_feeder_pocket_dir() -> PathBuf {
