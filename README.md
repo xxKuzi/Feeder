@@ -1,5 +1,5 @@
 <h1 align="center">Feeder</h1>
-<p align="center"><strong>A Tauri (React + Rust) app running on custom basketball feeding machine, built for a local basketball club.</strong></p>
+<p align="center"><strong>A Tauri (React + Rust) app running on basketball feeding machine, built for a local basketball club.</strong></p>
 
 <p align="center">
   <a href="#screenshots">Screenshots</a> &nbsp;&nbsp;·&nbsp;&nbsp;
