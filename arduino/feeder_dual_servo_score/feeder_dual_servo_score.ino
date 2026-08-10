@@ -12,8 +12,10 @@ static const int SENSOR_3_PIN = A5; // Analog sensor 3
 static const int SERVO1_STOP_ANGLE = 60;
 static const int SERVO1_RELEASE_ANGLE = 140;
 
-static const int SERVO2_STOP_ANGLE = -55;
-static const int SERVO2_RELEASE_ANGLE = 110;
+// Must stay within 0-180. Servo::write() clamps anything below 0, so a negative
+// stop angle parked the servo against its mechanical limit and stalled it.
+static const int SERVO2_STOP_ANGLE = 30;
+static const int SERVO2_RELEASE_ANGLE = 100;
 
 // Servo movement speed: higher value = slower movement.
 static const int SERVO_STEP_DELAY_MS = 5;
@@ -21,10 +23,15 @@ static const int SERVO_STEP_DELAY_MS = 5;
 // Servo2 one-shot dispense timing (ms)
 static const unsigned long SERVO2_DISPENSE_OPEN_MS = 500; // Reduced from 1000ms to allow a faster cycle!
 
+// Time allowed for servo2 to sweep back to the stop angle before the dispense is
+// considered finished. Must be >= the sweep time, which is
+// (SERVO2_RELEASE_ANGLE - SERVO2_STOP_ANGLE) * SERVO_STEP_DELAY_MS = 70 * 5 = 350ms.
+static const unsigned long SERVO2_DISPENSE_CLOSE_MS = 400;
+
 // Timing configurations for the non-blocking auto ball cycle (ms)
 static const unsigned long CYCLE_RELEASE_MS = 1000;       // Time Servo 1 stays open for the ball to roll out (reduced from 1500ms)
 static const unsigned long CYCLE_STOP_MS = 200;          // Time to wait for Servo 1 to fully close before dispensing (reduced from 400ms)
-static const unsigned long CYCLE_COOLDOWN_MS = 300;      // Cooldown time after the cycle completes (total = 1000 + 200 + 500 + 300 = 2000ms)
+static const unsigned long CYCLE_COOLDOWN_MS = 300;      // Cooldown time after the cycle completes (total = 1000 + 200 + (500 + 400) + 300 = 2400ms)
 
 // Scoring rule: all analog sensors must be above this value.
 static const int ANALOG_TRIGGER_THRESHOLD = 300;
@@ -124,8 +131,8 @@ void updateDispense() {
       dispenseStartMs = now;
     }
   } else if (dispenseState == DISPENSE_CLOSE_WAIT) {
-    // Give it 300ms to fully sweep back to stop angle before returning to idle
-    if (now - dispenseStartMs >= 300) {
+    // Let it fully sweep back to the stop angle before returning to idle
+    if (now - dispenseStartMs >= SERVO2_DISPENSE_CLOSE_MS) {
       dispenseState = DISPENSE_IDLE;
     }
   }
@@ -174,8 +181,8 @@ void updateAutoCycle() {
         dispenseServo2ToServo1();
         cycleState = CYCLE_DISPENSE_WAIT;
         cycleStartMs = now;
-        // Wait for Servo 2 open duration + close sweep duration (approx 300ms)
-        cycleDuration = SERVO2_DISPENSE_OPEN_MS + 300;
+        // Wait for Servo 2 open duration + close sweep duration
+        cycleDuration = SERVO2_DISPENSE_OPEN_MS + SERVO2_DISPENSE_CLOSE_MS;
         break;
         
       case CYCLE_DISPENSE_WAIT:
