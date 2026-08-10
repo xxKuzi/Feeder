@@ -2,7 +2,7 @@
 pub mod motor_system {
     use crate::tcp;
     use rppal::gpio::{Gpio, OutputPin, InputPin};    
-    use std::{thread, time::Duration, sync::{mpsc, Mutex, atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering}}, io::{Write, Read, BufRead, BufReader}};
+    use std::{thread, time::Duration, sync::{mpsc, Mutex, atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering}}, io::{Write, BufRead, BufReader}};
     use once_cell::sync::Lazy;
     use rppal::pwm::{Pwm, Channel, Polarity};
     use tauri::{AppHandle, Emitter};
@@ -736,25 +736,22 @@ impl Controller {
         let mut port_guard = ARDUINO_PORT.lock().unwrap();
         
         if let Some(port) = port_guard.as_mut() {
-            // Clear any buffered data
-            let mut discard = vec![0u8; 256];
-            let _ = port.read(&mut discard);
-            
+            // Never read from the port here. The listener thread in ensure_arduino_listener
+            // holds a try_clone() of this same file descriptor and does not take this lock,
+            // so any read on this side steals bytes mid-line from its BufReader and loses or
+            // corrupts SCORE: / STATE:SCORE= messages. Replies are informational (OK:, PONG)
+            // and the listener already parses everything that matters.
             println!("Sending command: '{}'", command);
             let cmd_with_newline = format!("{}\n", command);
             port.write_all(cmd_with_newline.as_bytes())
                 .map_err(|e| format!("Failed to write: {e}"))?;
             port.flush()
                 .map_err(|e| format!("Failed to flush: {e}"))?;
-            
-            // Quick response read (non-blocking timeout)
+
+            // Pacing only, not a response wait: callers fire bursts of 3-4 commands from
+            // separate threads, and the Arduino has a 64-byte RX buffer with no flow control.
             thread::sleep(Duration::from_millis(50));
-            let mut response = vec![0u8; 128];
-            if let Ok(n) = port.read(&mut response) {
-                let msg = String::from_utf8_lossy(&response[..n]);
-                println!("Arduino: {}", msg.trim());
-            }
-            
+
             println!("Command sent successfully");
             Ok(())
         } else {
