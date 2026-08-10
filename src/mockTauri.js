@@ -142,6 +142,15 @@ if (isDemoMode) {
               "feeder_current_user",
               JSON.stringify(selected),
             );
+            // Rust emits this after selecting a user; the app relies on it to
+            // open the calibration modal, so the mock has to emit it too.
+            if (emit) {
+              emit("active-user-changed", {
+                user_id: selected.user_id,
+                name: selected.name,
+                number: selected.number,
+              });
+            }
           }
           return null;
         }
