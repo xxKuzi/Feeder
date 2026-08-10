@@ -30,8 +30,11 @@ static const unsigned long SERVO2_DISPENSE_CLOSE_MS = 400;
 
 // Timing configurations for the non-blocking auto ball cycle (ms)
 static const unsigned long CYCLE_RELEASE_MS = 1000;       // Time Servo 1 stays open for the ball to roll out (reduced from 1500ms)
-static const unsigned long CYCLE_STOP_MS = 200;          // Time to wait for Servo 1 to fully close before dispensing (reduced from 400ms)
-static const unsigned long CYCLE_COOLDOWN_MS = 300;      // Cooldown time after the cycle completes (total = 1000 + 200 + (500 + 400) + 300 = 2400ms)
+// Servo 1 sweeps (SERVO1_RELEASE_ANGLE - SERVO1_STOP_ANGLE) * SERVO_STEP_DELAY_MS
+// = 80 * 5 = 400ms, so anything less dispenses the next ball while the gate is
+// still open. Do not trim this without slowing the sweep to match.
+static const unsigned long CYCLE_STOP_MS = 400;          // Time to wait for Servo 1 to fully close before dispensing
+static const unsigned long CYCLE_COOLDOWN_MS = 300;      // Cooldown time after the cycle completes (total = 1000 + 400 + (500 + 400) + 300 = 2600ms)
 
 // Scoring rule: all analog sensors must be above this value.
 static const int ANALOG_TRIGGER_THRESHOLD = 300;
